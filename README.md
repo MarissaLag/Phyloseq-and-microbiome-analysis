@@ -1,7 +1,7 @@
 # mb2021_phyloseq
 Different methods for analyzing microbiome data in a phyloseq data format
 
-Here, data is in phyloseq format - "Marissa_Osyter" (Oyster spelled wrong - don't blame me)
+Here, data is in phyloseq format - "Marissa_Osyter" - yes, Oyster spelled wrong :) 
 
 Description of each script: 
 
