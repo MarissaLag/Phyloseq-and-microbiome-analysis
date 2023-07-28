@@ -40,6 +40,50 @@ Tax = Marissa_Osyter@tax_table
 Metadata = Marissa_Osyter@sam_data
 Tree = Marissa_Osyter@phy_tree
 
+##rarify seqs to exclude seqs that contribute to less than 0.05% of abundance data
+
+physeq <- phyloseq(OTU)
+
+sequence_abundance <- taxa_sums(physeq)
+
+threshold <- 0.0005
+
+# Get the names of sequences that meet the threshold
+abundant_sequences <- names(sequence_abundance[sequence_abundance > threshold])
+
+# Filter out sequences not meeting the threshold and create a new phyloseq object
+physeq_rarified <- prune_taxa(abundant_sequences, physeq)
+
+##rarify data to make sequences an even depth
+
+Rare_OTU <-rarefy_even_depth(physeq_rarified, sample.size= 5000)
+
+##12 samples removedbecause they contained fewer reads than `sample.size`.
+##Up to first five removed samples are: 
+  
+#F1C3F1H3F2H3F2L1F2L3 (i.e., most of day 3)
+...
+#6397OTUs were removed because they are no longer 
+#present in any sample after random subsampling
+
+
+##Only one sample from day 3 left - remove it from analysis 
+
+excluded_samples <- "F4L3"
+
+Rare_OTU_filtered <- Rare_OTU[, !colnames(Rare_OTU) %in% excluded_samples]
+
+# Convert the rarefied OTU matrix to a new phyloseq object and replace old OTU table in Marissa_Oyster data - Yay! I can tell it worked because sample number went from 63 to 50 (12 + 1 samples removed above)
+
+physeq_rarified_OTU <- phyloseq(otu_table(Rare_OTU_filtered))
+
+Marissa_Oyster@otu_table <- physeq_rarified_OTU
+
+
+# Save the modified marissa_oyster_data back to the RDS file
+
+saveRDS(Marissa_Oyster, "C:/Users/maris/OneDrive/Documents/USRA2021/mb2021/Data/Marissa_Oyster.rds")
+
 
 #create objects
 
