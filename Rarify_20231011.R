@@ -12,6 +12,8 @@ library(microbiome)
 
 pseq<- readRDS("Marissa_.rds")
 
+#pseq <- Marissa_Oyster
+
 pseq <- Marissa_MU42022_rare_nochloro
 
 pseq
@@ -55,7 +57,7 @@ rank_names(ps1)
 
 ###remove low prev
 
-plot(sort(taxa_sums(x2), TRUE), type="h", ylim=c(0, 10000))
+plot(sort(taxa_sums(x1), TRUE), type="h", ylim=c(0, 10000))
 
 x1 = prune_taxa(taxa_sums(ps1) > 200, ps1) 
 x2 = prune_taxa(taxa_sums(ps1) > 500, ps1) 
@@ -65,7 +67,7 @@ x3 = prune_taxa(taxa_sums(ps1) > 1000, ps1)
 
 library(microbiome)
 summarize_phyloseq(ps1)
-summarize_phyloseq(x2)
+summarize_phyloseq(x1)
 
 
 *************************************************
@@ -95,7 +97,7 @@ Rare <-rarefy_even_depth(x2, sample.size= 5000)
 
 ##check if seq depth is 10,000 or 5,000
 
-sample_depths <- sample_sums(Rare)
+sample_depths <- sample_sums(pseq)
 
 print(sample_depths)
 

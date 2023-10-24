@@ -1,49 +1,48 @@
-
- Multilevel pattern analysis
- ---------------------------
-
- Association function: r.g
- Significance level (alpha): 0.05
-
- Total number of species: 344
- Selected number of species: 19 
- Number of species associated to 1 group: 12 
- Number of species associated to 2 groups: 7 
-
- List of species associated to each combination: 
-
- Group Control  #sps.  3 
-        stat p.value  
-ASV240 0.535  0.0322 *
-ASV334 0.499  0.0496 *
-ASV234 0.496  0.0437 *
-
- Group Probiotics  #sps.  2 
-        stat p.value    
-ASV69  0.742  0.0002 ***
-ASV128 0.513  0.0340 *  
-
- Group Probiotics + HT  #sps.  7 
-        stat p.value    
-ASV208 0.661  0.0036 ** 
-ASV241 0.646  0.0026 ** 
-ASV338 0.641  0.0064 ** 
-ASV174 0.611  0.0009 ***
-ASV109 0.602  0.0057 ** 
-ASV68  0.513  0.0222 *  
-ASV116 0.501  0.0471 *  
-
- Group Control+Probiotics  #sps.  4 
-        stat p.value   
-ASV153 0.690  0.0022 **
-ASV360 0.573  0.0196 * 
-ASV118 0.547  0.0332 * 
-ASV289 0.524  0.0402 * 
-
- Group Probiotics+Probiotics + HT  #sps.  3 
-        stat p.value    
-ASV88  0.773  0.0002 ***
-ASV201 0.527  0.0475 *  
-ASV3   0.506  0.0374 *  
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+ Multilevel pattern analysis,,,,,,
+ ---------------------------,,,,,,
+,,,,,,
+ Association function: r.g,,,,,,
+ Significance level (alpha): 0.05,,,,,,
+,,,,,,
+ Total number of species: 344,,,,,,
+ Selected number of species: 19 ,,,,,,
+ Number of species associated to 1 group: 12 ,,,,,,
+ Number of species associated to 2 groups: 7 ,,,,,,
+,,,,,,
+ List of species associated to each combination: ,,,,,,
+,,,,,,
+ Group Control  #sps.  3 ,,,class,order,family,genus
+        stat p.value  ,,,,,,
+ASV240 0.535  0.0322 *,,Bdellovibrionota,Bdellovibrionia,Bacteriovoracales,Bacteriovoracaceae,Peredibacter
+ASV334 0.499  0.0496 *,,Bacteroidota,Bacteroidia,Cytophagales,Cyclobacteriaceae,Ekhidna
+ASV234 0.496  0.0437 *,,Proteobacteria,Gammaproteobacteria,Pseudomonadales,Porticoccaceae,Porticoccus
+,,,,,,
+ Group Probiotics  #sps.  2 ,,,,,,
+        stat p.value    ,,,,,,
+ASV69  0.742  0.0002 ***,,Proteobacteria,Alphaproteobacteria,Parvibaculales,PS1�clade,NA
+ASV128 0.513  0.0340 *  ,,Proteobacteria,Alphaproteobacteria,Parvibaculales,PS1�clade,NA
+,,,,,,
+ Group Probiotics + HT  #sps.  7 ,,,,,,
+        stat p.value    ,,,,,,
+ASV208 0.661  0.0036 ** ,,Bacteroidota,Bacteroidia,Chitinophagales,Saprospiraceae,NA
+ASV241 0.646  0.0026 ** ,,Proteobacteria,Gammaproteobacteria,Pseudomonadales,Pseudomonadaceae,Pseudomonas
+ASV338 0.641  0.0064 ** ,,Bacteroidota,Bacteroidia,Chitinophagales,Saprospiraceae,NA
+ASV174 0.611  0.0009 ***,,Proteobacteria,Gammaproteobacteria,Pseudomonadales,Halomonadaceae,Halomonas
+ASV109 0.602  0.0057 ** ,,Bacteroidota,Bacteroidia,Flavobacteriales,Flavobacteriaceae,Winogradskyella
+ASV68  0.513  0.0222 *  ,,Proteobacteria,Gammaproteobacteria,Pseudomonadales,Pseudomonadaceae,Pseudomonas
+ASV116 0.501  0.0471 *  ,,Bacteroidota,Bacteroidia,Flavobacteriales,Flavobacteriaceae,Kordia
+,,,,,,
+ Group Control+Probiotics  #sps.  4 ,,,,,,
+        stat p.value   ,,,,,,
+ASV153 0.690  0.0022 **,,Proteobacteria,Gammaproteobacteria,Pseudomonadales,Halieaceae,Halioglobus
+ASV360 0.573  0.0196 * ,,Bacteroidota,Bacteroidia,Flavobacteriales,Cryomorphaceae,NA
+ASV118 0.547  0.0332 * ,,Bacteroidota,Bacteroidia,Cytophagales,Cyclobacteriaceae,Reichenbachiella
+ASV289 0.524  0.0402 * ,,Bacteroidota,Bacteroidia,Chitinophagales,Saprospiraceae,NA
+,,,,,,
+ Group Probiotics+Probiotics + HT  #sps.  3 ,,,,,,
+        stat p.value    ,,,,,,
+ASV88  0.773  0.0002 ***,,Proteobacteria,Alphaproteobacteria,Rhodobacterales,Rhodobacteraceae,NA
+ASV201 0.527  0.0475 *  ,,Proteobacteria,Alphaproteobacteria,Rhodobacterales,Rhodobacteraceae,NA
+ASV3   0.506  0.0374 *  ,,Proteobacteria,Alphaproteobacteria,Rhodobacterales,Rhodobacteraceae,NA
+---,,,,,,
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 ,,,,,,

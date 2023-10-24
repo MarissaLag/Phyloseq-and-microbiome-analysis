@@ -361,6 +361,11 @@ set.seed(4235421)
 
 ord <- ordinate(pseq, "MDS", "bray")
 
+#scree plot - to assess pca axes
+
+eigenvalues <- ord$values$Eigenvalues
+eigenvalues <- eigenvalues^2
+
 #plot MDS/PcoA
 
 
