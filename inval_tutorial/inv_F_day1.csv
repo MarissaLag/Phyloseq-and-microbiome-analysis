@@ -1,52 +1,52 @@
-*day 1
- Multilevel pattern analysis
- ---------------------------
-
- Association function: r.g
- Significance level (alpha): 0.05
-
- Total number of species: 344
- Selected number of species: 18 
- Number of species associated to 1 group: 13 
- Number of species associated to 2 groups: 5 
- Number of species associated to 3 groups: 0 
-
- List of species associated to each combination: 
-
- Group Control  #sps.  11 
-        stat p.value   
-ASV320 0.997  0.0173 * 
-ASV177 0.987  0.0173 * 
-ASV159 0.981  0.0141 * 
-ASV130 0.981  0.0141 * 
-ASV68  0.977  0.0133 * 
-ASV119 0.956  0.0023 **
-ASV78  0.940  0.0128 * 
-ASV85  0.933  0.0047 **
-ASV330 0.898  0.0194 * 
-ASV35  0.875  0.0216 * 
-ASV45  0.838  0.0314 * 
-
- Group High temperature  #sps.  2 
-        stat p.value  
-ASV271 0.861  0.0440 *
-ASV300 0.845  0.0346 *
-
- Group Control+High temperature  #sps.  1 
-       stat p.value  
-ASV89 0.939  0.0105 *
-
- Group Control+Probiotics  #sps.  1 
-        stat p.value  
-ASV135 0.826  0.0317 *
-
- Group High temperature+Probiotics  #sps.  1 
-       stat p.value   
-ASV30 0.845  0.0069 **
-
- Group Probiotics+Probiotics + HT  #sps.  2 
-       stat p.value  
-ASV18 0.844  0.0199 *
-ASV7  0.822  0.0354 *
----
-Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 
+*day 1,,,,,,,,
+ Multilevel pattern analysis,,,,,,,,
+ ---------------------------,,,,,,,,
+,,,,,,,,
+ Association function: r.g,,,,,,,,
+ Significance level (alpha): 0.05,,,,,,,,
+,,,,,,,,
+ Total number of species: 344,,,,,,,,
+ Selected number of species: 18 ,,,,,,,,
+ Number of species associated to 1 group: 13 ,,,,,,,,
+ Number of species associated to 2 groups: 5 ,,,,,,,,
+ Number of species associated to 3 groups: 0 ,,,,,,,,
+,,,,,,,,
+ List of species associated to each combination: ,,,,,,,,
+,,,,,,,,
+ Group Control  #sps.  11 ,,,,phylum,class,order,family,genus
+        stat p.value   ,,,,,,,,
+ASV320 0.997  0.0173 * ,,,,Proteobacteria,Gammaproteobacteria,Pseudomonadales,Halieaceae,OM60(NOR5)�clade
+ASV177 0.987  0.0173 * ,,,,Proteobacteria,Gammaproteobacteria,Pseudomonadales,Nitrincolaceae,NA
+ASV159 0.981  0.0141 * ,,,,Proteobacteria,Gammaproteobacteria,Burkholderiales,Methylophilaceae,OM43�clade
+ASV130 0.981  0.0141 * ,,,,Actinobacteriota,Acidimicrobiia,Actinomarinales,Actinomarinaceae,Candidatus�Actinomarina
+ASV68  0.977  0.0133 * ,,,,Proteobacteria,Gammaproteobacteria,Pseudomonadales,Pseudomonadaceae,Pseudomonas
+ASV119 0.956  0.0023 **,,,,Proteobacteria,Alphaproteobacteria,SAR11�clade,Clade�II,NA
+ASV78  0.940  0.0128 * ,,,,Proteobacteria,Alphaproteobacteria,Rhodobacterales,Rhodobacteraceae,Amylibacter
+ASV85  0.933  0.0047 **,,,,Proteobacteria,Alphaproteobacteria,Puniceispirillales,SAR116�clade,Candidatus�Puniceispirillum
+ASV330 0.898  0.0194 * ,,,,Cyanobacteria,Vampirivibrionia,Obscuribacterales,Obscuribacteraceae,NA
+ASV35  0.875  0.0216 * ,,,,Proteobacteria,Alphaproteobacteria,Rhodobacterales,Rhodobacteraceae,Planktotalea
+ASV45  0.838  0.0314 * ,,,,Proteobacteria,Alphaproteobacteria,SAR11�clade,Clade�I,Clade�Ia
+,,,,,,,,
+ Group High temperature  #sps.  2 ,,,,,,,,
+        stat p.value  ,,,,,,,,
+ASV271 0.861  0.0440 *,,,,Bacteroidota,Bacteroidia,Flavobacteriales,Flavobacteriaceae,NA
+ASV300 0.845  0.0346 *,,,,Proteobacteria,Gammaproteobacteria,Enterobacterales,Alteromonadaceae,Aliiglaciecola
+,,,,,,,,
+ Group Control+High temperature  #sps.  1 ,,,,,,,,
+       stat p.value  ,,,,,,,,
+ASV89 0.939  0.0105 *,,,,Proteobacteria,Alphaproteobacteria,Rhodobacterales,Rhodobacteraceae,Paracoccus
+,,,,,,,,
+ Group Control+Probiotics  #sps.  1 ,,,,,,,,
+        stat p.value  ,,,,,,,,
+ASV135 0.826  0.0317 *,,,,Proteobacteria,Gammaproteobacteria,Pseudomonadales,Saccharospirillaceae,Oleispira
+,,,,,,,,
+ Group High temperature+Probiotics  #sps.  1 ,,,,,,,,
+       stat p.value   ,,,,,,,,
+ASV30 0.845  0.0069 **,,,,Bacteroidota,Bacteroidia,Flavobacteriales,Flavobacteriaceae,NA
+,,,,,,,,
+ Group Probiotics+Probiotics + HT  #sps.  2 ,,,,,,,,
+       stat p.value  ,,,,,,,,
+ASV18 0.844  0.0199 *,,,,Proteobacteria,Alphaproteobacteria,Rhodobacterales,Rhodobacteraceae,Celeribacter
+ASV7  0.822  0.0354 *,,,,Proteobacteria,Alphaproteobacteria,Rhodobacterales,Rhodobacteraceae,Celeribacter
+---,,,,,,,,
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1 ,,,,,,,,
