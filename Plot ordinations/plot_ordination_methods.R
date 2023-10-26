@@ -31,27 +31,6 @@ ord <- ordinate(pseq, "MDS", "bray")
 eigenvalues <- ord$values$Eigenvalues
 eigenvalues <- eigenvalues^2
 
-#phyloseq do es not allow axes selection (always plots top two)
-#change data structure to a data frame
-
-pseq <- psmelt(pseq)
-
-head(pseq)
-
-(ps_clr <- microbiome::transform(pseq, "clr")) 
-
-rd_clr <- phyloseq::ordinate(pseq, "RDA")
-
-ord_clr <- phyloseq::ordinate(ps_clr, "RDA")
-
-phyloseq::plot_scree(ord_clr) + 
-  geom_bar(stat="identity", fill = "blue") +
-  labs(x = "\nAxis", y = "Proportion of Variance\n")
-
-head(ord_clr$CA$eig)
-
-sapply(ord_clr$CA$eig[1:5], function(x) x / sum(ord_clr$CA$eig)) 
-
 #select axes for plot
 
 plot_ordination(pseq, ord, type = "samples", axes = 3:4,
