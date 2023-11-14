@@ -168,14 +168,21 @@ pseq.core <- microbiome::transform(pseq.core, "compositional")
 
 #if any columns have missing values (NA), must remove
 
-pseq_filtered <- subset_samples(pseq.fam.rel, !Treatment %in% "NA")
+pseq_filtered <- subset_samples(pseq.fam.rel, !Treatment %in% NA)
 
+#different method to remove NA
 Meta <- subset(Metadata, !is.na(Treatment))
-
-
 Meta <- meta(pseq.fam.rel)
+
+#use same data used in PCO plot
+
+Data <- data.frame(sample_data(pseq_filtered))
+
+Test_bray <- adonis2(Bray_dist ~ Type , data = Data)
+
+
 permanova <- adonis2(t(OTU) ~ Treatment*Age*Genetics,
-                     data = pseq.fam.rel, permutations=999, method = "bray")
+                     data = pseq, permutations=999, method = "bray")
 
 # P-value
 print(as.data.frame(permanova$aov.tab)["Tank_treatment", "Pr(>F)"])

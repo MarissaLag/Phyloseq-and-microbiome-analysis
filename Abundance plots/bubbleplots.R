@@ -24,6 +24,27 @@ Tax = pseq@tax_table
 Metadata = pseq@sam_data
 Tree = pseq@phy_tree
 
+#set theme ----
+
+theme.marissa <- function() {
+  theme_classic(base_size = 14) +
+    theme(
+      panel.border = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.text = element_text(size = 14),
+      axis.title = element_text(size = 16, face = "bold"),
+      legend.text = element_text(size = 16),
+      legend.title = element_text(size = 16, face = "bold"))
+}
+
+theme_set(theme.marissa())
+
+
+#remove F4 ----
+
+pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+
 #Day 1 only ----
 
 pseq <- subset_samples(pseq, !Age %in% c("Spat", "Day 03", "Day 06", "Day 15"))
@@ -35,6 +56,8 @@ pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 pseq <- subset_samples(pseq, !Age %in% c("Day 01", "Day 03", "Day 06", "Day 15"))
 
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+
+pseq <- subset_samples(pseq, !Genetics %in% "4")
 
 #remove algae ----
 
@@ -222,8 +245,74 @@ if (file.exists(file_path)) {
 #import excel sheet - have to make it with x, y, z setup (data as rows)
 
 
+####Box plots ----
+
+#Want to look at abundance of ASVs 3, 88, 201 in spat data
+
+selected_rows_ASVs <- subset(pseq, OTU %in% c("ASV201", "ASV88", "ASV3"))
+
+View(selected_rows_ASVs)
+
+#since ASV18 and 7 are 99.8% similar - combine into one OTU (most likely same bacteria)
+
+combined_data <- selected_rows_ASVs %>%
+  filter(OTU %in% c("ASV7", "ASV18")) %>%
+  group_by(Age, Treatment) %>%
+  summarise(
+    Avg_Abundance = mean(Abundance),
+    SD_Abundance = sd(Abundance),
+    .groups = 'drop'
+  )
 
 
+#graph
+
+p <- ggplot(combined_data, aes(x = Age, y = Avg_Abundance, fill = Treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(
+    aes(ymin = Avg_Abundance - SD_Abundance, ymax = Avg_Abundance + SD_Abundance),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Probiotic Abundance - Spat", x = "Treatment", y = "Abundance") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+print(p)
+
+p <- ggplot(combined_data, aes(x = Age, y = Avg_Abundance, fill = Treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(
+    aes(ymin = Avg_Abundance - SD_Abundance, ymax = Avg_Abundance + SD_Abundance),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Probiotic Abundance - Spat", x = "Treatment", y = "Abundance") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+print(p)
+
+
+
+p <- selected_rows_ASVs %>%
+  mutate(name = fct_relevel(name, 
+                            "ASV201", "ASV3", "ASV88")) %>%
+  ggplot(selected_rows_ASVs, aes(x=OTU, y=Abundance, fill=Treatment)) + # fill=name allow to automatically dedicate a color for each group
+  geom_boxplot() + scale_fill_brewer(palette = "Set2")
+p
+
+
+p <- ggplot(selected_rows_ASVs, aes(x=OTU, y=Abundance, fill=Treatment)) + # fill=name allow to automatically dedicate a color for each group
+  geom_boxplot() + scale_fill_brewer(palette = "Set2" + xlab = "")
+p
+
+#with jitter - shows data distribution better than typical boxplot
+
+p <- ggplot(selected_rows_ASVs, aes(x = Age, y = Abundance, fill = Treatment)) +
+  geom_boxplot()
+  
+print(p)
 
 ###Bubbble plots ----
 

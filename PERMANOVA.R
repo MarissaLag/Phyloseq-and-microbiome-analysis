@@ -50,26 +50,32 @@ pseq_filtered <- subset_samples(pseq_filtered, !Genetics %in% NA)
 
 #different method to remove NA
 Meta <- subset(Metadata, !is.na(Treatment))
-Meta <- meta(pseq.fam.rel)
+Meta <- meta(pseq)
 
 #use same data used in PCO plot
-#data must be in data frame
+#metadata must be in data frame
 #convert to data frame
 
 Data <- data.frame(sample_data(pseq_filtered))
 
+Data <- data.frame(pseq_filtered)
+
 #create matrix - 2 methods below
 
-Bray_dist <- ordinate(pseq_filtered, method = "MDS", distance = "bray", weighted = TRUE)
+#this method doesn't work... Not sure why
+Bray_dist2 <- ordinate(pseq_filtered, method = "MDS", distance = "bray", weighted = TRUE)
+
+#this method works
 
 Bray_dist<- phyloseq::distance(pseq_filtered, method = "bray", weighted = TRUE)
 
+head(Bray_dist)
 
 #Run PERMANOVA
 #data must be data frame (independent variables, i.e., your metadata)
 
 permanova <- adonis2(Bray_dist ~ Treatment*Age*Genetics,
-                     data = Data, permutations=999, method = "bray")
+                     data = Data, permutations=999, method = "bray", by = "terms")
 permanova
 
 #For some reason, get different p values with only Treatment?
@@ -115,7 +121,7 @@ ord <- ordinate(pseq, "MDS", "bray")
 
 #plot MDS/PcoA ----
 
-plot_ordination(pseq, ord, color = "Treatment", shape = "Age") + geom_point(size = 4) + theme.marissa()
+plot_ordination(pseq, ord, color = "Genetics", shape = "Age") + geom_point(size = 4) + theme.marissa()
 
 #to subset samples (e.g., time series analysis) and create more PCO plots see Factors_PCO_PCA_mb2021 tutorial
 

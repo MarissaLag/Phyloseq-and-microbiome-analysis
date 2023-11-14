@@ -21,6 +21,27 @@ pseq <- Marissa_MU42022_rarefied_20231016
 # Different project
 #Marissa_Oyster <- Rare_filtered_data
 
+#theme
+
+theme.marissa <- function() {
+  theme_classic(base_size = 14) +
+    theme(
+      panel.border = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.text = element_text(size = 14),
+      axis.title = element_text(size = 16, face = "bold"),
+      legend.text = element_text(size = 16),
+      legend.title = element_text(size = 16, face = "bold"))
+}
+
+theme_set(theme.marissa())
+
+#change data genetics into character
+
+pseq@sam_data$Genetics <- as.character(pseq@sam_data$Genetics)
+
+str(pseq@sam_data)
 
 ##### 02. Analysis #####
 head(pseq@sam_data)
@@ -49,8 +70,7 @@ ord <- ordinate(pseq, "MDS", "bray")
 plot_ordination(pseq, ord, color = "Treatment", shape = "Age") + geom_point(size = 4)
 
 plot_ordination(pseq, ord, color = "Treatment", shape = "Age") +
-  geom_point(size = 4) +
-  theme_classic()
+  geom_point(size = 4)
 
 plot_ordination(pseq, ord, color = "Treatment") +
   geom_point(size = 4) +
@@ -86,16 +106,12 @@ set.seed(4235421)
 
 ord <- ordinate(pseq.core, "MDS", "bray")
 
-p <- plot_ordination(pseq.core, ord, color = "Treatment", shape = "Age") + geom_point(size = 4)
+plot_ordination(pseq.nospat, ord, color = "Treatment", shape = "Age") +
+  geom_point(size = 4)
 
 plot_ordination(pseq.core, ord, color = "Treatment", shape = "Age") +
   geom_point(size = 4) +
-  theme_classic()
-
-plot_ordination(pseq.core, ord, color = "Treatment", shape = "Age") +
-  geom_point(size = 4) +
-  ggalt::geom_encircle(aes(fill = Treatment), color = "black", expand = 0.2, alpha = 0.2) +
-  theme_classic() 
+  ggalt::geom_encircle(aes(fill = Treatment), color = "black", expand = 0.2, alpha = 0.2)
 
 p = p + geom_point(size=7, alpha=0.75)
 p = p + scale_colour_brewer(type="qual", palette="Set1")
@@ -124,7 +140,7 @@ ord <- ordinate(pseq.core, "MDS", "bray")
 
 #plot MDS/PcoA
 
-plot_ordination(pseq, ord, color = "Treatment") + geom_point(size = 4) + theme_classic()
+plot_ordination(pseq.core, ord, color = "Genetics", shape = "Treatment") + geom_point(size = 4)
 
 plot_ordination(pseq, ord, color = "Treatment") +
   geom_point(size = 4) +
