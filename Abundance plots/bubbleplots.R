@@ -230,10 +230,12 @@ Top5P <- psmelt(top5P)
 #Extract core data as .csv ----
 
 
-file_path <- "C:/Users/maris/OneDrive/Documents/GitHub/pseq_core_spat.csv"
+file_path <- "C:/Users/maris/OneDrive/Documents/GitHub/pseq_otu.csv"
 
 # Write the otu_table to a CSV file
-write.csv(pseq.core@otu_table, file = file_path)
+write.csv(pseq@otu_table, file = file_path)
+
+write.csv(sam_data, file = file_path)
 
 if (file.exists(file_path)) {
   cat("OTU table CSV file has been created:", file_path, "\n")
@@ -366,31 +368,90 @@ ggplot(Top5P, aes(x=Age, y=OTU, size = Abundance, color = Age)) +
   theme(legend.position = "none")
 
 
-#all samples
+#View Vibrionaceae abundance ----
 
-#core ASVs ----
-#source: https://microbiome.github.io/tutorials/Core.html 
+selected_rows_ASVs <- subset(pseq, Family %in% c("Vibrionaceae"))
 
-pseq <-  Marissa_MU42022_rare
+View(selected_rows_ASVs)
 
-###Day 1 only ----
+#combine all vibrio abundances
 
-pseq <- subset_samples(pseq, !Age %in% c("Spat", "Day 03", "Day 06", "Day 15"))
+combined_data <- selected_rows_ASVs %>%
+  filter(Family %in% c("Vibrionaceae")) %>%
+  group_by(Age, Treatment) %>%
+  summarise(
+    Avg_Abundance = mean(Abundance),
+    SD_Abundance = sd(Abundance),
+    .groups = 'drop'
+  )
 
-pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+View(combined_data)
 
-###psmelt ----
+#graph
 
-pseq <- psmelt(pseq)
+p <- ggplot(combined_data, aes(x = Age, y = Avg_Abundance, fill = Treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(
+    aes(ymin = Avg_Abundance - SD_Abundance, ymax = Avg_Abundance + SD_Abundance),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Vibrionaceae Abundance", x = "", y = "Abundance") +
+  theme(plot.title = element_text(hjust = 0.5))
 
-pseq_core <- psmelt(pseq.core)
+print(p)
 
-pseq_fam <- psmelt(pseq_fam)
 
-pseq_phy <- psmelt(pseq_phy)
 
-pseq_phy_rel <- psmelt(pseq.phy.rel)
+#View Rhodo abundance ----
 
-pseq_fam_rel <- psmelt(pseq.fam.rel)
+selected_rows_ASVs <- subset(pseq, Family %in% c("Rhodobacteraceae"))
 
-pseq_gen_rel <- psmelt(pseq.gen.rel)
+View(selected_rows_ASVs)
+
+
+p <- ggplot(selected_rows_ASVs, aes(x = Treatment, y = Abundance, fill = Genus)) +
+  geom_bar(stat = "identity", position = "stack") + facet_grid(cols = vars(Age))
+print(p)
+
+#make averages of genus's for each treatment and Age point
+
+combined_data <- selected_rows_ASVs %>%
+  group_by(Genus, Treatment, Age) %>%
+  summarise(
+    Avg_Abundance = mean(Abundance),
+    SD_Abundance = sd(Abundance),
+    .groups = 'drop'
+  )
+
+View(combined_data)
+
+#graph
+
+p <- ggplot(combined_data, aes(x = Treatment, y = Avg_Abundance, fill = Genus)) +
+  geom_bar(stat = "identity", position = "stack") + facet_grid(cols = vars(Age)) +
+  geom_errorbar(
+    aes(ymin = Avg_Abundance - SD_Abundance, ymax = Avg_Abundance + SD_Abundance),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(title = "Rhodobacteraceae Abundance", x = "", y = "Abundance") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+print(p)
+
+combined_data_2 <- subset(combined_data, Genus %in% c("Phaeobacter"))
+
+p <- ggplot(combined_data_2, aes(x = Treatment, y = Avg_Abundance, fill = Treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_errorbar(
+    aes(ymin = Avg_Abundance - SD_Abundance, ymax = Avg_Abundance + SD_Abundance),
+    position = position_dodge(width = 0.9),
+    width = 0.25
+  ) +  scale_fill_brewer(palette = "Set2") + 
+  labs(title = "Rhodobacteraceae Abundance", x = "", y = "Abundance") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+print(p)
