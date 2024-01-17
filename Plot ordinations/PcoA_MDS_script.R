@@ -24,15 +24,22 @@ library("devtools")
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
 
-BiocManager::install("GenomeInfoDbData")
+BiocManager::install("GenomeInfoDbData", force = TRUE)
 
 BiocManager::install("phyloseq")
 ##update all changes
 #if phyloseq not installing use below code
 BiocManager::install("phyloseq", force = TRUE)
 
-library(phyloseq)
+#if phyloseq is not still not installing try this:
 
+if(!requireNamespace("BiocManager")){
+  install.packages("BiocManager")
+}
+BiocManager::install("phyloseq")
+
+library(phyloseq)
+library(GenomeInfoDb)
 #source: https://www.bioconductor.org/packages/release/bioc/html/microbiome.html
 if (!require("BiocManager", quietly = TRUE))
   install.packages("BiocManager")
@@ -47,7 +54,7 @@ setwd("/Users/maris/OneDrive/Documents/MSc/MU42022_16S")
 
 pseq <- readRDS("James_MU42022.rds")
 
-pseq <- James_MU42022
+pseq <- Marissa_MU42022_rarefied_20231016
 
 #Create objects ----
 
@@ -210,6 +217,10 @@ set.seed(4235421)
 ord <- ordinate(pseq, "MDS", "bray")
 
 #plot MDS/PcoA ----
+
+#Code to order levels ----
+pseq@sam_data$Treatment <- factor(pseq@sam_data$Treatment,
+                                  levels = c("Control", "Probiotics","Probiotics + HT", "High temperature", "NA"))
 
 plot_ordination(pseq, ord, color = "Treatment", shape = "Age") + geom_point(size = 4)
 
