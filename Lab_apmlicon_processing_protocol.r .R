@@ -51,12 +51,14 @@ sapply(c(.cran_packages, .bioc_packages), require, character.only = TRUE)
 set.seed(100)
 
 ####Tell R where the data is...
-miseq_path <- "Marissa_seqs/"
+miseq_path <- "R1:R2fastq_files/"
 list.files(miseq_path)
 
 # Sort ensures forward/reverse reads are in same order. notice the pattern (two different reads, Forward and Reverse)
-fnFs <- sort(list.files(miseq_path, pattern="_R1_001.fastq"))
-fnRs <- sort(list.files(miseq_path, pattern="_R2_001.fastq"))
+fnFs <- sort(list.files(miseq_path, pattern="_R1.fastq"))
+fnRs <- sort(list.files(miseq_path, pattern="_R2.fastq"))
+#fnFs <- sort(list.files(miseq_path, pattern="_R1_001.fastq"))
+#fnRs <- sort(list.files(miseq_path, pattern="_R2_001.fastq"))
 # Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
 sampleNames <- sapply(strsplit(fnFs, "_"), `[`, 1)
 # Specify the full path to the fnFs and fnRs
@@ -73,6 +75,7 @@ plotQualityProfile(fnFs[1:8])
 
 plotQualityProfile(fnRs[1:8])
 
+#for mb2021 - forward reads good, reverse good (above QS of 30) until 200bp - may want to remove reverse
 ####Quality for Reverse is bad. So we are only doing the Forward 
 
 filt_path <- file.path(miseq_path, "filtered") # Place filtered files in filtered/ subdirectory
@@ -88,8 +91,8 @@ if(!file_test("-d", filt_path)) dir.create(filt_path)
 filtFs <- file.path(filt_path, paste0(sampleNames, "_F_filt.fastq.gz"))
 filtRs <- file.path(filt_path, paste0(sampleNames, "_R_filt.fastq.gz"))
 
-out <- filterAndTrim(fnFs, filtFs, truncLen=c(150),
-                      maxEE=c(2), truncQ=1, rm.phix=TRUE, trimLeft = 10,
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(150, 200),
+                      maxEE=c(2,2), truncQ=2, rm.phix=TRUE, trimLeft = 10,
                      compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
 head(out)
 

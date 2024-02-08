@@ -10,7 +10,7 @@ library("devtools")
 library(phyloseq)
 library(microbiome)
 
-pseq<- readRDS("Marissa_.rds")
+pseq<- readRDS("Marissa_MU42022_unfiltered.rds")
 
 pseq <- Marissa_MU42022_rare_nochloro
 
@@ -55,7 +55,7 @@ rank_names(ps1)
 
 ###remove low prev
 
-plot(sort(taxa_sums(x2), TRUE), type="h", ylim=c(0, 10000))
+plot(sort(taxa_sums(ps1), TRUE), type="h", ylim=c(0, 10000))
 
 x1 = prune_taxa(taxa_sums(ps1) > 200, ps1) 
 x2 = prune_taxa(taxa_sums(ps1) > 500, ps1) 
@@ -92,10 +92,14 @@ ps2 = prune_taxa(keepTaxa, ps1)
 Rare <-rarefy_even_depth(x2, sample.size= 5000)
 
 #Marissa/James = 17 samples removed because they contained fewer reads than `sample.size' - first 5 reads are T13-1,T13-2-2,T14-2-2,T15-S-1,T16-10-r3
+#Marissa only - 5,000 = 8 samples removed (largely algae)
+#Marissa only - 10, 000 = 30 samples removed 
+
+
 
 ##check if seq depth is 10,000 or 5,000
 
-sample_depths <- sample_sums(Rare)
+sample_depths <- sample_sums(Marissa_MU42022)
 
 print(sample_depths)
 
@@ -136,9 +140,9 @@ ord <- ordinate(ps1, "MDS", "bray")
 #plot MDS/PcoA - can set "colour" and "shape" for any of your variableas
 #geompoint controls data point size on plot
 
-plot_ordination(ps1, ord, color = "Family.1", shape = "Percent.Fouled") + geom_point(size = 4) + scale_shape_binned()
+plot_ordination(ps1, ord, color = "Sample.type", shape = "Age") + geom_point(size = 4)
 
-plot_ordination(ps1, ord, color = "Factor") + geom_point(size = 4)
+plot_ordination(ps1, ord, color = "Treatment") + geom_point(size = 4)
 
 plot_ordination(ps1, ord, color = "Family.1") + geom_point(size = 4)
 
@@ -147,3 +151,6 @@ plot_ordination(ps1, ord, color = "Treatment", shape = "Age") + geom_point(size 
 
 p <- plot_ordination(ps1, ord, color = "Factor") + geom_point(size = 4)
 
+#save new rarefied data
+
+saveRDS(ps1, file= "Marissa_MU42022_rarefied.rds")
