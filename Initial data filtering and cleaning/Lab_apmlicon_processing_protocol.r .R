@@ -116,7 +116,6 @@ dadaFs[[1]]
 
 #mergers <- mergePairs(dadaFs, derepFs) 
 
-
 seqtabAll <- makeSequenceTable(dadaFs[!grepl("Mock", names(dadaFs))])
 table(nchar(getSequences(seqtabAll)))
 
@@ -238,6 +237,7 @@ pseq_filter<-phyloseq_filter_prevalence(pseq, prev.trh = 0.05, abund.trh = 10, t
 
 
 phyloseq_filter_prevalence()
+
 ######Rare_faction 
 
 Rare_10000<-rarefy_even_depth(pseq_filter, sample.size= 10000)

@@ -76,19 +76,17 @@ pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
 #Top phyla, all samples ----
 
-top5P.names = sort(tapply(taxa_sums(pseq), tax_table(pseq)[, "Phylum"], sum), TRUE)[1:5]
+top5F.names = sort(tapply(taxa_sums(pseq), tax_table(pseq)[, "Family"], sum), TRUE)[1:5]
 
-top5P = subset_taxa(pseq, Phylum %in% names(top5P.names))
+top5F = subset_taxa(pseq, Family %in% names(top5F.names))
 
-pseq <- top5P
+
+top10G.names = sort(tapply(taxa_sums(pseq), tax_table(pseq)[, "Genus"], sum), TRUE)[1:10]
+
+top10G = subset_taxa(pseq, Genus %in% names(top10G.names))
 
 #Create pseq objects ----
 
-pseq_fam <- microbiome::aggregate_rare(pseq, level = "Family", detection = 50/100, prevalence = 70/100)
-
-pseq_phy <- microbiome::aggregate_rare(pseq, level = "Phylum", detection = 50/100, prevalence = 70/100)
-
-pseq_gen <- microbiome::aggregate_rare(pseq, level = "Genus", detection = 50/100, prevalence = 70/100)
 
 #convert to compositional data
 
@@ -98,9 +96,15 @@ pseq.phy.rel <- microbiome::transform(pseq_phy, "compositional")
 
 pseq.gen.rel <- microbiome::transform(pseq_gen, "compositional")
 
-pseq.core <- core(pseq.fam.rel, detection = .1/100, prevalence = 95/100)
-
 pseq.core <- microbiome::transform(pseq.core, "compositional")
+
+pseq_fam <- microbiome::aggregate_rare(pseq, level = "Family", detection = 50/100, prevalence = 70/100)
+
+pseq_phy <- microbiome::aggregate_rare(pseq, level = "Phylum", detection = 50/100, prevalence = 70/100)
+
+pseq_gen <- microbiome::aggregate_rare(pseq, level = "Genus", detection = 50/100, prevalence = 70/100)
+
+pseq.core <- core(pseq.fam.rel, detection = .1/100, prevalence = 95/100)
 
 
 #pseq core - Probiotics + PB + Heat only (must remove all other samples first
@@ -222,9 +226,11 @@ pseq_fam_rel_larvae <- psmelt(pseq.fam.rel)
 pseq_gen_rel_larvae <- psmelt(pseq.gen.rel)
 
 
-#Top phyla
+#Top phyla psmelt ----
 
-Top5P <- psmelt(top5P)
+top5P <- psmelt(top5P)
+
+top10G <- psmelt(top10G)
 
 #If not using psmelt: 
 #Extract core data as .csv ----
@@ -265,6 +271,9 @@ combined_data <- selected_rows_ASVs %>%
     SD_Abundance = sd(Abundance),
     .groups = 'drop'
   )
+
+
+
 
 
 #graph
@@ -316,12 +325,30 @@ p <- ggplot(selected_rows_ASVs, aes(x = Age, y = Abundance, fill = Treatment)) +
   
 print(p)
 
+
+
+#composition boxplots ----
+
+Avg_abundance <- top10G %>%
+  group_by(Treatment, Genus) %>%
+  summarise(
+    Avg_Abundance = mean(Abundance),
+    SD_Abundance = sd(Abundance),
+    .groups = 'drop'
+  )
+
+ggplot(Avg_abundance, aes(fill=Genus, y=Avg_Abundance, x=Treatment)) + 
+  geom_bar(position="dodge", stat="identity")
+
+ggplot(Avg_abundance, aes(fill=Genus, y=Avg_Abundance, x=Treatment)) + 
+  geom_bar(position="stack", stat="identity")
+
 ###Bubbble plots ----
 
 
 ###pseq ----
 
-ggplot(pseq_core, aes(x=Treatment, y=OTU, size = Abundance, color = Family)) + 
+ggplot(pseq_fam, aes(x=Treatment, y=OTU, size = Abundance, color = Family)) + 
   geom_point(alpha=0.7)+ 
   scale_size(range = c(.3, 12)) +
   scale_colour_ipsum() +
