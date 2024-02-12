@@ -150,12 +150,23 @@ plot_ordination(pseq, ord, color = "Treatment") +
 # plot MDS/PcoA
 
 p <- plot_ordination(pseq.core, ord, color = "Treatment") + geom_point(size = 4)
+
 p <- p + scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF"))
-p <- p +
-  ggalt::geom_encircle(aes(fill = "Treatment", colour = c("#F8766D", "#00BFC4", "#C77CFF")), color = "black", expand = 0.2, alpha = 0.2) 
+
+p <- p + ggalt::geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2) 
+
+p
+
+
+
+
+p <- plot_ordination(pseq.core, ord, color = "Treatment") + geom_point(size = 4)
+p <- p + scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF"))
+p <- p + ggalt::geom_encircle(colour = c("#F8766D", "#00BFC4",), expand = 0.2, alpha = 0.2)
 
 theme_classic()
 p
+
 
 ## Answer key colour ----
 # scale_fill_manual(values = c("#F8766D", "#7CAE00", "#00BFC4", "#C77CFF"))

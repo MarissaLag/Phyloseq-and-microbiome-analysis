@@ -56,6 +56,7 @@ Meta <- meta(pseq)
 #metadata must be in data frame
 #convert to data frame
 
+psmelt(pseq_filtered)
 Data <- data.frame(sample_data(pseq_filtered))
 
 Data <- data.frame(pseq_filtered)
@@ -85,44 +86,14 @@ permanova2 <- adonis2(Bray_dist ~ Treatment,
 
 permanova2
 
-#below is for "strata" analysis - if factors within data are nested use strata
+
+
+
+#below is for "strata" analysis - if factors within data are nested use strata - could not working
 #I am still unsure when strata is needed - most examples are for repeated measures
 
 permanova_strata <- adonis2(Bray_dist ~ Genetics,
                      data = Data, permutations=999, method = "bray", strata = pseq_filtered@sam_data$Treatment)
 
-#make new data frame where treatment and age are numeric
-
-Data$Treatment <- sub("Control", 1, Data$Treatment)
-Data$Treatment <- sub("Probiotics.+.HT", 3, Data$Treatment)
-Data$Treatment <- sub("Probiotics", 2, Data$Treatment)
-Data$Treatment <- sub("High temperature", 4, Data$Treatment)
-
-Data$Age <- sub("Day 01", 1, Data$Age)
-Data$Age <- sub("Day 03", 3, Data$Age)
-Data$Age <- sub("Day 06", 6, Data$Age)
-Data$Age <- sub("Day 15", 15, Data$Age)
-Data$Age <- sub("Spat", 20, Data$Age)
-
-View(Data)
-
-#making new data frame - code not working
-
-replications <- c(11, 13, 11, 12, 20)
-
-dat <- expand.grid(Age=gl(5, replications), Treatment=factor(c(1,2,3,4)),Genetics=factor(c(1,2,3,4)) )
-View(dat)
-
-#PCO plot ----
-
-set.seed(4235421)
-
-ord <- ordinate(pseq, "MDS", "bray")
-
-#plot MDS/PcoA ----
-
-plot_ordination(pseq, ord, color = "Genetics", shape = "Age") + geom_point(size = 4) + theme.marissa()
-
 #to subset samples (e.g., time series analysis) and create more PCO plots see Factors_PCO_PCA_mb2021 tutorial
-
 #scree plot to assess PCo axes see plot_ordination_methods script
