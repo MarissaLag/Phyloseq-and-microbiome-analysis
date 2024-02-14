@@ -17,10 +17,47 @@ setwd("~/USRA2021/mb2021/m2021_new")
 
 Data=read.csv("marissa_mb2021data_primer_use.csv")
 View(Data)
+#Data = X60_fert_Phenotype_Data_CSV
+
+#Assumptions test ----
+#source: https://www.datanovia.com/en/lessons/anova-in-r/#assumptions
+
+#check for outliers
+Data %>% 
+  group_by() %>%
+  identify_outliers()
+
+#check for distribution
+
+# Build the linear model
+model  <- lm(weight ~ group, data = PlantGrowth)
+# Create a QQ plot of residuals
+ggqqplot(residuals(model))
+
+#check All the points fall approximately along the reference line, for each cell. So we can assume normality of the data.
+
+#2nd assumption: Homogneity of variance assumption
+
+
+
+# Compute Shapiro-Wilk test of normality
+#Note that, if your sample size is greater than 50, the normal QQ plot is preferred because at larger sample sizes the Shapiro-Wilk test becomes very sensitive even to a minor deviation from normality.
+shapiro_test(residuals(model))
+
+#check within groups
+PlantGrowth %>%
+  group_by(group) %>%
+  shapiro_test(weight)
+
+#check the score were normally distributed (p > 0.05) for each group
+ggqqplot(PlantGrowth, "weight", facet.by = "group")
+
+
 
 
 
 set.seed(123)
+#get means of groups ----
 Data %>% sample_n_by(Treatment, size = 3)
 
 Data %>%
@@ -51,8 +88,18 @@ Treatment     variable              n  mean    sd
 3 Low salinity  Flavobacteriaceae    15  553.  258.
 
 
-#perform three-way ANOVA
+#perform three-way ANOVA ----
 model <- aov(Rhodobacteraceae ~ Age * Treatment * Genetics, data=Data)
+
+
+str(Data)
+
+Data$Family_Number <- as.character(Data$Family_Number)
+Data$Size <- as.numeric(Data$Size)
+
+model <- aov(Size ~ Treatment * Family_Number, data=Data)
+
+
 
 #view summary of three-way ANOVA
 summary(model)
