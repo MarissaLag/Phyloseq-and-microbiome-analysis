@@ -11,9 +11,9 @@ library(phyloseq)
 library(microbiome)
 
 pseq<- readRDS("Marissa_.rds")
+#pseq <- Marissa_mb2021_filtered_20240203
 
-#pseq <- Marissa_Oyster
-#pseq <- MB2021_filtered
+
 
 pseq <- Marissa_MU42022_rare_nochloro
 
@@ -98,7 +98,9 @@ Rare <-rarefy_even_depth(x2, sample.size= 5000)
 
 ##check if seq depth is 10,000 or 5,000
 
-sample_depths <- sample_sums(pseq1)
+#mb2021 rarefied to 3000
+
+sample_depths <- sample_sums(pseq)
 
 print(sample_depths)
 
@@ -108,7 +110,20 @@ print(sample_depths)
 
 ps1 <- Rare
 
-###calculate relative abundance at family, phylum, and genus level.
+
+#convert to compositional data
+
+pseq.fam.rel <- microbiome::transform(pseq, "compositional")
+
+pseq.phy.rel <- microbiome::transform(pseq, "compositional")
+
+pseq.gen.rel <- microbiome::transform(pseq, "compositional")
+
+pseq.core <- microbiome::transform(pseq.core, "compositional")
+
+
+
+pseq.core <- core(pseq.fam.rel, detection = .1/100, prevalence = 90/100)
 
 pseq_fam <- microbiome::aggregate_rare(ps1, level = "Family", detection = 50/100, prevalence = 70/100)
 
@@ -116,25 +131,11 @@ pseq_phy <- microbiome::aggregate_rare(ps1, level = "Phylum", detection = 50/100
 
 pseq_gen <- microbiome::aggregate_rare(ps1, level = "Genus", detection = 50/100, prevalence = 70/100)
 
-#convert to compositional data
-
-pseq.fam.rel <- microbiome::transform(pseq_fam, "compositional")
-
-pseq.phy.rel <- microbiome::transform(pseq_phy, "compositional")
-
-pseq.gen.rel <- microbiome::transform(pseq_gen, "compositional")
-
-pseq.core <- core(pseq.fam.rel, detection = .1/100, prevalence = 90/100)
-
-pseq.core <- microbiome::transform(pseq.core, "compositional")
-
-
-
 ##Get a quick look at the data (plot ordination)
 
 set.seed(4235421)
 
-ord <- ordinate(ps1, "MDS", "bray")
+ord <- ordinate(pseq, "MDS", "bray")
 
 #plot MDS/PcoA - can set "colour" and "shape" for any of your variableas
 #geompoint controls data point size on plot
@@ -145,8 +146,8 @@ plot_ordination(ps1, ord, color = "Factor") + geom_point(size = 4)
 
 plot_ordination(ps1, ord, color = "Family.1") + geom_point(size = 4)
 
-plot_ordination(ps1, ord, color = "Treatment", shape = "Age") + geom_point(size = 4)
+plot_ordination(pseq, ord, color = "Treatment", shape = "Age") + geom_point(size = 4)
 
 
-p <- plot_ordination(ps1, ord, color = "Factor") + geom_point(size = 4)
+p <- plot_ordination(pseq, ord, color = "Factor") + geom_point(size = 4)
 

@@ -16,6 +16,7 @@ library(dplyr)
 
 Marissa_MU42022_rarefied_20231016 <- readRDS("~/GitHub/mb2021_phyloseq/Marissa_MU42022_rarefied_20231016.rds")
 
+#pseq<- Marissa_mb2021_filtered_20240203
 pseq <-  Marissa_MU42022_rarefied_20231016
 
 #set theme ----
@@ -36,9 +37,13 @@ theme_set(theme.marissa())
 
 #Sample selection ----
 
-#Remove F4 ----
+#Remove F4 (MU42022) ----
 
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+
+#Remove day 3 (only 1 sample remaining) for mb2021 project
+
+pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 
 #Remove algae ----
 
