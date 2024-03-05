@@ -1,0 +1,75 @@
+ASV1:f__Rhodobacteraceae
+ASV13:Alteromonas
+ASV44:f__Flavobacteriaceae
+ASV92:Pseudoalteromonas
+ASV109:Synechococcus CC9902
+ASV131:Amylibacter
+ASV150:Pseudoalteromonas
+ASV189:SUP05 cluster
+ASV205:Pseudoalteromonas
+ASV257:Candidatus Actinomarina
+ASV338:f__SAR86 clade
+ASV447:OM43 clade
+ASV559:NS3a marine group
+ASV1:f__Rhodobacteraceae
+ASV8:Phaeobacter
+ASV13:Alteromonas
+ASV24:Flavobacterium
+ASV38:Pseudofulvibacter
+ASV44:f__Flavobacteriaceae
+ASV45:f__Flavobacteriaceae
+ASV47:Aliivibrio
+ASV49:f__Rhodobacteraceae
+ASV59:Ponticoccus
+ASV66:Pseudoalteromonas
+ASV69:Oceanibulbus
+ASV75:Alteromonas
+ASV81:Psychroserpens
+ASV92:Pseudoalteromonas
+ASV94:Colwellia
+ASV95:Oceaniserpentilla
+ASV130:Pseudoalteromonas
+ASV131:Amylibacter
+ASV139:Blastomonas
+ASV358:Oleiphilus
+ASV1:f__Rhodobacteraceae
+ASV2:Porticoccus
+ASV3:Litoreibacter
+ASV4:f__Methyloligellaceae
+ASV8:Phaeobacter
+ASV11:Bacillus
+ASV12:f__Rhizobiaceae
+ASV13:Alteromonas
+ASV14:f__Rhodobacteraceae
+ASV15:Croceibacter
+ASV16:Aquimarina
+ASV18:Lewinella
+ASV19:Cognatishimia
+ASV20:Planktotalea
+ASV21:f__Rhodobacteraceae
+ASV25:Mesonia
+ASV27:Gramella
+ASV29:f__Flavobacteriaceae
+ASV30:f__Rhodobacteraceae
+ASV31:Salinicola
+ASV34:f__Rhodobacteraceae
+ASV35:f__Rhodobacteraceae
+ASV36:f__Rhizobiaceae
+ASV37:f__Rhodobacteraceae
+ASV40:Celeribacter
+ASV42:f__Rhodobacteraceae
+ASV43:Paraglaciecola
+ASV46:Planktomarina
+ASV50:Litoreibacter
+ASV51:Sva0996 marine group
+ASV54:f__Rhodobacteraceae
+ASV58:Portibacter
+ASV67:Sva0996 marine group
+ASV71:f__Flavobacteriaceae
+ASV76:Ilumatobacter
+ASV79:f__Microtrichaceae
+ASV86:f__Rhodobacteraceae
+ASV88:Yoonia-Loktanella
+ASV91:Henriciella
+ASV106:Bdellovibrio
+ASV107:Arenibacter

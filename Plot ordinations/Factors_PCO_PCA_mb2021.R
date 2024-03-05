@@ -17,6 +17,7 @@ setwd("C:/Users/maris/OneDrive/Documents/USRA2021/mb2021/Data")
 ##### 01. Load data #####
 #data <- readRDS("~/GitHub/mb2021_phyloseq/Marissa_MU42022.rds")
 pseq <- Marissa_MU42022_rarefied_20231016
+pseq<- Marissa_mb2021_filtered_20240203
 
 # Different project
 #Marissa_Oyster <- Rare_filtered_data
@@ -37,6 +38,11 @@ theme.marissa <- function() {
 
 theme_set(theme.marissa())
 
+#remove samples
+#Remove day 3 (only 1 sample remaining) for mb2021 project
+
+pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
+
 #change data genetics into character
 
 pseq@sam_data$Genetics <- as.character(pseq@sam_data$Genetics)
@@ -53,6 +59,8 @@ unique(pseq@sam_data$Age)
 
 #convert to compositional data
 
+pseq.rel <- microbiome::transform(pseq, "compositional")
+
 pseq_fam <- microbiome::aggregate_rare(pseq,level = "Family", detection = 50/100, prevalence = 70/100)
 
 pseq.fam.rel <- microbiome::transform(pseq_fam, "compositional")
@@ -63,26 +71,28 @@ pseq.core <- microbiome::transform(pseq.core, "compositional")
 
 set.seed(4235421)
 
-ord <- ordinate(pseq, "MDS", "bray")
+ord <- ordinate(pseq.rel, "MDS", "bray")
 
 #plot MDS/PcoA
 
 plot_ordination(pseq, ord, color = "Treatment", shape = "Age") + geom_point(size = 4)
 
 plot_ordination(pseq, ord, color = "Treatment", shape = "Age") +
-  geom_point(size = 4)
-
-plot_ordination(pseq, ord, color = "Treatment") +
-  geom_point(size = 4) +
-  ggalt::geom_encircle(aes(fill = Treatment), color = "black", expand = 0.2, alpha = 0.2) +
-  theme_classic() 
+  geom_point(size = 3) +
+  scale_colour_brewer(palette="Set1") +
+  theme(legend.text = element_text(size = 11), 
+        legend.title = element_text(size = 14)) +
+  theme(axis.text = element_text(size = 11, face = "plain"), 
+        axis.title = element_text(size = 13)) +
+  ggalt::geom_encircle(aes(fill = Treatment), color = "black", expand = 0.2, alpha = 0.2)
+  
 
 ?ggalt::geom_encircle
 
 
 
 #All larvae ----
-# watch, the subset samples fxn is case sensitive
+
 # "tolower" fxn can be used to convert all Spat to spat (all uppercase to lowercase)
 
 pseq
@@ -118,62 +128,124 @@ p = p + scale_colour_brewer(type="qual", palette="Set1")
 p
 
 #Spat only ----
-pseq <- Marissa_MU42022_rarefied_20231016
+#pseq <- Marissa_MU42022_rarefied_20231016
 
-pseq <- subset_samples(pseq, !(Age %in% c("Day 03", "Day 06", "Day 15", "Day 01")))
+pseq<- Marissa_mb2021_filtered_20240203
 
-pseq <- subset_samples(pseq, !(Sample.type %in% "Algae"))
+pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 
 
-pseq_fam <- microbiome::aggregate_rare(pseq,level = "Family", detection = 50/100, prevalence = 70/100)
-#convert to compositional data
+#Compositional ----
 
-pseq.fam.rel <- microbiome::transform(pseq_fam, "compositional")
+pseq.rel <- microbiome::transform(pseq, "compositional")
 
-pseq.core <- core(pseq.fam.rel, detection = .1/100, prevalence = 90/100)
+#pseq <- subset_samples(pseq, !(Age %in% c("Day 03", "Day 06", "Day 15", "Day 01")))
 
-pseq.core <- microbiome::transform(pseq.core, "compositional")
+#pseq <- subset_samples(pseq, !(Sample.type %in% "Algae"))
+
 
 set.seed(4235421)
 
-ord <- ordinate(pseq.core, "MDS", "bray")
+ord <- ordinate(pseq.rel, "MDS", "bray")
 
 #plot MDS/PcoA
 
-plot_ordination(pseq.core, ord, color = "Genetics", shape = "Treatment") + geom_point(size = 4)
+plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
+  geom_point(size = 3) +
+  scale_colour_brewer(palette="Set1") +
+  theme(legend.text = element_text(size = 11), 
+        legend.title = element_text(size = 14)) +
+  theme(axis.text = element_text(size = 11, face = "plain"), 
+        axis.title = element_text(size = 13)) +
+  ggalt::geom_encircle(aes(fill = Treatment), color = "black", expand = 0.2, alpha = 0.2)
 
-plot_ordination(pseq, ord, color = "Treatment") +
-  geom_point(size = 4) +
-  ggalt::geom_encircle(aes(fill = Treatment), color = "black", expand = 0.2, alpha = 0.2) +
-  theme_classic()
+
+
 
 # plot MDS/PcoA
 
-p <- plot_ordination(pseq.core, ord, color = "Treatment") + geom_point(size = 4)
-
+p <- plot_ordination(pseq.rel, ord, color = "Treatment", label = "Library_Name") + geom_point(size = 4)
 p <- p + scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF"))
+p <- p + ggtitle("18 dpf")
+p <- p + theme(plot.title = element_text(hjust = 0.5))  
+p4 <- p + ggalt::geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)  
 
-p <- p + ggalt::geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2) 
-
-p
+print(p4)
 
 
+#Make plot for each time-point
 
+pseq<- Marissa_mb2021_filtered_20240203
 
-p <- plot_ordination(pseq.core, ord, color = "Treatment") + geom_point(size = 4)
+pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
+
+pseq.rel <- microbiome::transform(pseq, "compositional")
+
+set.seed(4235421)
+
+ord <- ordinate(pseq.rel, "MDS", "bray")
+
+p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") + geom_point(size = 4)
 p <- p + scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF"))
-p <- p + ggalt::geom_encircle(colour = c("#F8766D", "#00BFC4",), expand = 0.2, alpha = 0.2)
+p <- p + ggtitle("1 dpf")
+p <- p + theme(plot.title = element_text(hjust = 0.5)) + theme(legend.position="none")
+p1 <- p + ggalt::geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)  
 
-theme_classic()
-p
+print(p1)
+
+p <- plot_ordination(pseq.rel, ord, color = "Treatment") + geom_point(size = 4, shape = 17)
+p <- p + scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF"))
+p <- p + ggtitle("18 dpf")
+p <- p + theme(plot.title = element_text(hjust = 0.5)) + theme(legend.position="none")
+p2 <- p + ggalt::geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
+
+print(p2)
+
+p <- plot_ordination(pseq.rel, ord, color = "Treatment") + geom_point(size = 4, shape = 15 )
+p <- p + scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF"))
+p <- p + ggtitle("Spat")
+p <- p + theme(plot.title = element_text(hjust = 0.5)) + theme(legend.position="none")
+p3 <- p + ggalt::geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2) 
+
+print(p3)
+
+p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age", label = "Library_Name") + geom_point(size = 4)
+p <- p + scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF"))
+p <- p + ggtitle("All Time-points")
+p <- p + theme(plot.title = element_text(hjust = 0.5))
+p4 <- p + ggalt::geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2) 
+
+print(p4)
+
+
+#arrange pco plots
+
+library(gridExtra)
+library(ggpubr)
+
+grid.arrange(p1, p2, p3, p4, ncol = 2)
+
+ggarrange(p4, p1, p2, p3, ncol=2, nrow=2, common.legend = TRUE, legend="bottom")
+#extract legend
+#https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
+g_legend<-function(a.gplot){
+  tmp <- ggplot_gtable(ggplot_build(a.gplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)}
+
+mylegend<-g_legend(p4)
+
+p_combined <- grid.arrange(arrangeGrob(p1 + theme(legend.position="none"),
+                               p2 + theme(legend.position="none"),
+                               p3 + theme(legend.position="none"),
+                               p4 + theme(legend.position="none"),
+                               ncol=2),
+                   mylegend, nrow=1)
 
 
 ## Answer key colour ----
 # scale_fill_manual(values = c("#F8766D", "#7CAE00", "#00BFC4", "#C77CFF"))
-
-plot_ordination(pseq, ord, color = "Treatment", shape = "Age") +
-  geom_point(size = 4) +
-  theme_classic()
 
 
 #DAY 1 ONLY, no algae ----

@@ -1,21 +1,22 @@
 ###doing correlations and heatmaps from mb2021 data
-
+install.packages("Hmisc")
 library("devtools")
 library(phyloseq)
 library(microbiome)
+library(Hmisc)
 
 #load data
 
 Marissa_Osyter <- readRDS("~/mb2021/Marissa_Osyter.rds")
 
-Marissa_Osyter
+pseq <- Marissa_mb2021_filtered_20240203
 
 #create objects
 
-OTU = Marissa_Osyter@otu_table
-Tax = Marissa_Osyter@tax_table
-Metadata = Marissa_Osyter@sam_data
-Tree = Marissa_Osyter@phy_tree
+OTU = pseq@otu_table
+Tax = pseq@tax_table
+Metadata = pseq@sam_data
+Tree = pseq@phy_tree
 
 # Calculate Spearman's correlation matrix
 cor_matrix <- rcorr(as.matrix(OTU), type = "spearman")
@@ -58,8 +59,6 @@ ggplot(data = cor_data, aes(x = Var1, y = Var2, fill = value)) +
 (ggplot2)
 library(reshape2)
 library(viridis)
-
-# Assuming 'excluded_samples' contains the names of samples you want to exclude
 
 excluded_samples <- c("T10r1", "T10r2", "T10r3", "T11r1", "T11r3", "T12r1", "T12r2", "T12r3", "T13r1","T13r2","T13r3", "T14r1", "T14r2", "T15r1", "T15r2", "T16r1", "T16r2", "T16r3", "T1r1", "T1r2", "T1r3", "T2r1", "T2r3", "T3r1", "T3r2", "T3r3", "T4r1", "T4r2", "T9r1", "T9r3", "T11r2", "T14r3", "T2r2")
 

@@ -17,6 +17,8 @@ Marissa_MU42022_rare <- readRDS("~/GitHub/mb2021_phyloseq/Marissa_MU42022_rare.r
 
 pseq <- Marissa_MU42022_rare
 
+#pseq <- Marissa_mb2021_filtered_20240203
+
 #Load objects ----
 
 OTU = pseq@otu_table
@@ -43,6 +45,10 @@ pc_FUN <- data_table
 
 #if removing samples ----
 
+#for mb2021 project remove remaining day 3 samples
+
+pc_FUN <- pc_FUN[!pc_FUN$`Time-point` == "3 dpf", ]
+
 #Day 1 only ----
 
 pc_FUN <- data_table[data_table$Age == "Day 01", ]
@@ -50,8 +56,8 @@ pc_FUN <- data_table[data_table$Age == "Day 01", ]
 
 #Spat only ----
 
-pc_FUN <- data_table[data_table$Age == "Spat", ]
-
+pc_FUN <- data_table[data_table$Time.point == "Spat", ]
+pc_FUN <- pc_FUN[pc_FUN$`Time-point` == "Spat", ]
 
 #Larvae only ----
 
@@ -67,12 +73,19 @@ funi_df<- t(pc_FUN)
 
 matrix_F = pc_FUN[ ,8:366]
 
+#mb2021#matrix_F = pc_FUN[ ,6:585]
+
 ### Make the equation. Saying we want to examine specific column of metadata
-time_a_F = pc_FUN$Treatment
+time_a_F = pc_FUN$`Salinity Level`
 
 ### Run test 
 inv_F = multipatt(matrix_F, time_a_F, func = "r.g", control = how(nperm=9999))
 results <- summary(inv_F)
+
+#save results
+write.csv(inv_F, "Spat_INVALsummary_results.csv", row.names = TRUE)
+
+
 
 ###Example of using the data data but testing different variables (from metadata)
 
@@ -119,3 +132,4 @@ ggplot(pc_FUN, aes(x=Treatment, y= Genus, size = Abundance, color = Treatment)) 
   ylab("") +
   xlab("") +
   theme(legend.position = "none")
+
