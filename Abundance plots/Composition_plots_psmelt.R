@@ -1,5 +1,5 @@
 #Abundance plots using psmelt
-#Written by MArissa WL (2024-01-18)
+#Written by Marissa WL (2024-01-18)
 #workflow: Load data (pseq) -> filter data (if you want) -> manipulate data (e.g., top families, relative composition, etc.) -> psmelt -> plot
 
 
@@ -49,24 +49,10 @@ pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
-#Select time-points ----
-
-pseq <- subset_samples(pseq, !Age %in% c("Spat", "Day 03", "Day 06", "Day 15"))
-
-pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
 #Spat only
 
 pseq <- subset_samples(pseq, !Age %in% c("Day 01", "Day 03", "Day 06", "Day 15"))
-
-pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
-
-pseq <- subset_samples(pseq, !Genetics %in% "4")
-
-
-#Larvae only with algae
-
-pseq <- subset_samples(pseq, !Age %in% "Spat")
 
 
 #Top families ----
@@ -74,6 +60,19 @@ pseq <- subset_samples(pseq, !Age %in% "Spat")
 top5F.names = sort(tapply(taxa_sums(pseq), tax_table(pseq)[, "Family"], sum), TRUE)[1:5]
 
 top5F = subset_taxa(pseq, Family %in% names(top5F.names))
+
+#Top Class ----
+
+top10C.names = sort(tapply(taxa_sums(pseq), tax_table(pseq)[, "Class"], sum), TRUE)[1:10]
+
+top10C = subset_taxa(pseq, Class %in% names(top10C.names))
+
+#Top Order ----
+
+top10.names = sort(tapply(taxa_sums(pseq), tax_table(pseq)[, "Order"], sum), TRUE)[1:10]
+
+top10 = subset_taxa(pseq, Order %in% names(top10.names))
+
 
 #Top Genus ----
 
@@ -85,6 +84,8 @@ top10G = subset_taxa(pseq, Genus %in% names(top10G.names))
 
 #convert to compositional data
 
+pseq.rel <- microbiome::transform(pseq, "compositional")
+
 pseq_fam <- microbiome::aggregate_rare(pseq, level = "Family", detection = 50/100, prevalence = 70/100)
 
 pseq_phy <- microbiome::aggregate_rare(pseq, level = "Phylum", detection = 50/100, prevalence = 70/100)
@@ -93,6 +94,7 @@ pseq_gen <- microbiome::aggregate_rare(pseq, level = "Genus", detection = 50/100
 
 pseq.core <- core(pseq_fam, detection = .1/100, prevalence = 95/100)
 
+pseq.rel <- microbiome::transform(pseq, "compositional")
 
 pseq.fam.rel <- microbiome::transform(pseq_fam, "compositional")
 
@@ -122,15 +124,21 @@ top5F <- psmelt(top5F)
 
 top10G <- psmelt(top10G)
 
+top10 <- psmelt(top10)
+
+top10C <- psmelt(top10C)
+
 pseq <- psmelt(pseq)
 
 relative_fam <- psmelt(pseq.fam.rel)
 
-relative_fam <- psmelt(pseq.phy.rel)
+relative_phy <- psmelt(pseq.phy.rel)
 
 core <- psmelt(pseq.core)
 
-#composition boxplots ----
+
+
+#Manipulating data ----
 
 Avg_abundance <- top5F %>%
   group_by(Treatment, Family) %>%
@@ -147,6 +155,9 @@ Avg_abundance <- pseq %>%
     SD_Abundance = sd(Abundance),
     .groups = 'drop'
   )
+
+
+#composition boxplots ----
 
 ggplot(Avg_abundance, aes(fill=Family, y=Avg_Abundance, x=Treatment)) + 
   geom_bar(position="dodge", stat="identity") + scale_fill_ipsum()
@@ -172,17 +183,49 @@ ggplot(relative, aes(fill=Family, y=Abundance, x=Treatment)) +
   labs(title = "All time-points", x = "", y = "Total abundance") +
   theme(plot.title = element_text(hjust = 0.5))
 
-ggplot(core, aes(fill=Family, y=Abundance, x=Treatment)) + 
+ggplot(top5F, aes(fill=Family, y=Abundance, x=Treatment)) + 
   geom_bar(position="stack", stat="identity") +
   scale_fill_brewer(palette = "Paired") +
-  labs(title = "Core - All time-points", x = "", y = "Relative abundance") +
+  labs(title = "All time-points", x = "", y = "Relative abundance") +
   theme(plot.title = element_text(hjust = 0.5)) +
   facet_wrap(~Age) +
   theme(axis.text.x = element_text(size=11, angle=45, hjust=1)) +
   theme(axis.text.y = element_text(size=11)) +
   theme(legend.text = element_text(size = 11))
   
-  
+
+ggplot(top10C, aes(fill=Class, y=Abundance, x=Treatment)) + 
+  geom_bar(position="stack", stat="identity") +
+  scale_fill_brewer(palette = "Paired") +
+  labs(title = "All time-points", x = "", y = "Relative abundance") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~Age) +
+  theme(axis.text.x = element_text(size=11, angle=45, hjust=1)) +
+  theme(axis.text.y = element_text(size=11)) +
+  theme(legend.text = element_text(size = 11))
+
+
+ggplot(top10, aes(fill=Order, y=Abundance, x=Treatment)) + 
+  geom_bar(position="stack", stat="identity") +
+  scale_fill_brewer(palette = "Paired") +
+  labs(title = "All time-points", x = "", y = "Relative abundance") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~Age) +
+  theme(axis.text.x = element_text(size=11, angle=45, hjust=1)) +
+  theme(axis.text.y = element_text(size=11)) +
+  theme(legend.text = element_text(size = 11))
+
+
+ggplot(top5F, aes(fill=Family, y=Abundance, x=Treatment)) + 
+  geom_bar(position="dodge", stat="identity") +
+  labs(title = "All time-points", x = "", y = "Relative abundance") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~Age) +
+  theme(axis.text.x = element_text(size=11, angle=45, hjust=1)) +
+  theme(axis.text.y = element_text(size=11)) +
+  theme(legend.text = element_text(size = 11))
+
+
 
 ggplot(Avg_abundance, aes(fill=Family, y=Avg_Abundance, x=Treatment)) + 
   geom_bar(position="stack", stat="identity") +
@@ -190,17 +233,19 @@ ggplot(Avg_abundance, aes(fill=Family, y=Avg_Abundance, x=Treatment)) +
   labs(title = "Larval samples", x = "", y = "Average abundance") +
   theme(plot.title = element_text(hjust = 0.5)) 
 
-#Genus level ----
-Avg_abundance <- top10G %>%
-  group_by(Treatment, Genus) %>%
-  summarise(
-    Avg_Abundance = mean(Abundance),
-    SD_Abundance = sd(Abundance),
-    .groups = 'drop'
-  )
 
-ggplot(Avg_abundance, aes(fill=Genus, y=Avg_Abundance, x=Treatment)) + 
-  geom_bar(position="dodge", stat="identity")
+#subset Vibrio
 
-ggplot(Avg_abundance, aes(fill=Genus, y=Avg_Abundance, x=Treatment)) + 
-  geom_bar(position="stack", stat="identity")
+pseq.rel.vibrio <- subset_taxa(pseq.rel, Family=="Vibrionaceae")
+
+pseq.rel.vibrio <- psmelt(pseq.rel.vibrio)
+
+View(pseq.rel.vibrio)
+
+ggplot(pseq.rel.vibrio, aes(fill=Family, y=Abundance, x=Treatment)) + 
+  geom_bar(position="stack", stat="identity") +
+  labs(title = "", x = "", y = "Relative abundance") +
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+boxplot(pseq.rel.vibrio$Abundance ~ Treatment*Age,data=pseq.rel.vibrio, main="Vibrio", xlab="", ylab="Abundance", las=2) + facet_grid(~Age)
+

@@ -10,10 +10,10 @@ library(microbiome)
 
 #Load data ----
 
-
+pseq <- Marissa_mb2021_filtered_20240203
 pseq <-  Marissa_MU42022_rare
 
-
+pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 
 #Create objects ----
 
@@ -24,6 +24,7 @@ Tree = pseq@phy_tree
 
 #create objects
 
+pseq.rel <- microbiome::transform(pseq, "compositional")
 
 pseq_fam <- microbiome::aggregate_rare(pseq, level = "Family", detection = 50/100, prevalence = 70/100)
 
@@ -48,38 +49,80 @@ pseq.core <- microbiome::transform(pseq.core, "compositional")
 ###NEXT SECTION - HEATMAPS (TOP ## OTU'S)
 
 #Sort the OTUs by abundance and pick the top 20
-top20OTU.names = names(sort(taxa_sums(pseq.fam.rel), TRUE)[1:20])
+top30OTU.names = names(sort(taxa_sums(pseq.rel), TRUE)[1:30])
 
 #Cut down the physeq.tree data to only the top 10 Phyla
-top20OTU = prune_taxa(top20OTU.names, pseq.fam.rel)
+top30OTU = prune_taxa(top30OTU.names, pseq.rel)
 
-top20OTU
+top30OTU
 
 plot_heatmap(top20OTU)
 
-plot_heatmap(top20OTU, sample.label="Age", sample.order="Age")
+plot_heatmap(top30OTU, sample.label="Treatment", sample.order="Age", taxa.label="Family", taxa.order="Order", low="grey", high="red", na.value="black", facet_wrap(~Age))
+
+plot_heatmap(top30OTU, sample.label = "Treatment", sample.order = "Age", taxa.label = "Family", taxa.order = "Order", 
+             low = "deepskyblue2", high = "red", na.value = "black") + facet_grid(~Age)
+
 
 plot_heatmap(top20OTU, sample.label="Age", sample.order="Age", taxa.label="Phylum", taxa.order="Family", low="white", high="purple", na.value="grey")
 
 plot_heatmap(top20OTU, "NMDS", "bray", title="Bray-Curtis")
 
 
-plot_heatmap(top20OTU, sample.label="Tank_treatment", sample.order="Tank_treatment")
+#Heat map of specific bacterial groups - starting with relative data
+
+gpac <- subset_taxa(pseq.rel, Family=="Vibrionaceae")
+gpac2 <- subset_samples(gpac, Age=="Spat")
+View(gpac)
+gpac2 <- psmelt(gpac)
+
+#remove outlier samples
+pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+
+ggplot(gpac2, aes(Sample, OTU, fill= Abundance)) + 
+  geom_tile() +
+  theme(axis.text.x = element_text(size=11, angle=45, hjust=1))
+
+ggplot(gpac, aes(x = Sample, y = OTU, fill = Abundance)) + 
+  geom_tile() +
+  scale_x_discrete(limits = unique(gpac$Sample[order(gpac$Age)]), labels = gpac$Treatment) +
+  xlab("Treatment") +
+  theme(axis.text.x = element_text(size=11, angle=45, hjust=1))
+
+ggplot(gpac2, aes(x = Sample, y = OTU, fill = Abundance)) + 
+  geom_tile() +
+  scale_x_discrete(limits = unique(gpac2$Sample[order(gpac2$Treatment)]), breaks = gpac2$Sample, labels = gpac2$Treatment) +
+  xlab("Treatment") +
+  theme(axis.text.x = element_text(size=11, angle=45, hjust=1)) +
+  ggtitle("Vibrionaceae - Spat")
+
+ggplot(gpac2, aes(x = Sample, y = OTU, fill = Abundance)) + 
+  geom_tile() +
+  scale_x_discrete(limits = unique(gpac2$Sample[order(gpac2$Treatment)]), breaks = gpac2$Sample, labels = gpac2$Sample) +
+  xlab("Treatment") +
+  theme(axis.text.x = element_text(size=11, angle=45, hjust=1)) +
+  ggtitle("Vibrionaceae - Spat")
+
+ggplot(gpac2, aes(x = Sample, y = OTU, fill = Abundance)) + 
+  geom_tile() +
+  xlab("Treatment") +
+  theme(axis.text.x = element_text(size=11, angle=45, hjust=1)) +
+  ggtitle("Vibrionaceae - Spat")
 
 
-plot_heatmap(top20OTU, "NMDS", "bray", title="Bray-Curtis", ample.label="Tank_treatment", sample.order="Tank_treatment")
-
-
-##I want to look at heatmap of only larval samples
-
-# Exclude specific data from top20OTU object
-
-top20OTU = prune_taxa(top20OTU.names, pseq.fam.rel)
-
-top20OTU
-
-excluded_samples <- c("T10r1", "T10r2", "T10r3", "T11r1", "T11r3", "T12r1", "T12r2", "T12r3", "T13r1","T13r2","T13r3", "T14r1", "T14r2", "T15r1", "T15r2", "T16r1", "T16r2", "T16r3", "T1r1", "T1r2", "T1r3", "T2r1", "T2r3", "T3r1", "T3r2", "T3r3", "T4r1", "T4r2", "T9r1", "T9r3", "T11r2", "T14r3", "T2r2")
-
-top20OTU <- prune_samples(!(sample_names(top20OTU) %in% excluded_samples), top20OTU)
-
-plot_heatmap(top20OTU, sample.label="Tank_treatment", sample.order="Tank_treatment")
+ggplot(gpac2, aes(x = Sample, y = OTU, fill = Abundance)) + 
+  geom_tile() +
+  facet_grid(~Age)
+  scale_x_discrete(limits = unique(gpac2$Sample[order(gpac2$Age)]), breaks = gpac2$Sample, labels = gpac2$Treatment) +
+  xlab("Treatment") +
+  theme(axis.text.x = element_text(size=11, angle=45, hjust=1)) +
+  ggtitle("Vibrionaceae")
+  
+  ggplot(gpac2, aes(x = Sample, y = OTU, fill = Abundance)) + 
+    geom_tile() +
+    xlab("Treatment") +
+    scale_x_discrete(limits = unique(gpac2$Sample[order(gpac2$Age)]), breaks = gpac2$Sample, labels = gpac2$Treatment) +
+    theme(axis.text.x = element_text(size=11, angle=45, hjust=1)) +
+    ggtitle("Vibrionaceae")
+  
+  View()

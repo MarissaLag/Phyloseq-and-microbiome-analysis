@@ -9,6 +9,7 @@ library(hrbrthemes)
 library(viridis)
 library(dplyr)
 library(ggplot2)
+library(RColorBrewer)
 
 
 #Load data ----
@@ -16,6 +17,8 @@ library(ggplot2)
 Marissa_MU42022_rarefied_20231016 <- readRDS("~/GitHub/mb2021_phyloseq/Marissa_MU42022_rarefied_20231016.rds")
 
 pseq <-  Marissa_MU42022_rarefied_20231016
+
+pseq <- Marissa_mb2021_filtered_20240203
 
 #Create objects ----
 
@@ -44,6 +47,10 @@ theme_set(theme.marissa())
 #remove F4 ----
 
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+
+#Remove day 3 (only 1 sample remaining) for mb2021 project
+
+pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 
 #Day 1 only ----
 
@@ -90,6 +97,8 @@ top10G = subset_taxa(pseq, Genus %in% names(top10G.names))
 
 #convert to compositional data
 
+pseq.rel <- microbiome::transform(pseq, "compositional")
+
 pseq.fam.rel <- microbiome::transform(pseq_fam, "compositional")
 
 pseq.phy.rel <- microbiome::transform(pseq_phy, "compositional")
@@ -116,14 +125,6 @@ pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 pseq.core <- core(pseq, detection = .1/100, prevalence = 90/100)
 
 pseq.core <- microbiome::transform(pseq.core, "compositional")
-
-#plot MDS/PcoA ----
-
-set.seed(4235421)
-
-ord <- ordinate(pseq, "MDS", "bray")
-
-plot_ordination(pseq, ord, color = "Treatment", shape = "Age") + geom_point(size = 4)
 
 
 #psmelt ----
@@ -348,11 +349,12 @@ ggplot(Avg_abundance, aes(fill=Genus, y=Avg_Abundance, x=Treatment)) +
 
 ###pseq ----
 
-ggplot(pseq_fam, aes(x=Treatment, y=OTU, size = Abundance, color = Family)) + 
-  geom_point(alpha=0.7)+ 
-  scale_size(range = c(.3, 12)) +
-  scale_colour_ipsum() +
+ggplot(top10, aes(x=Treatment, y=Order, size = Abundance, color = Order)) + 
+  geom_point(alpha=1)+ 
+  scale_size(range = c(5, 15)) +
+  scale_colour_brewer() +
   theme_ipsum() +
+  facet_wrap(~Age)
   theme(legend.position="bottom") +
   ylab("Taxa (Family)") +
   xlab("") +
@@ -360,15 +362,16 @@ ggplot(pseq_fam, aes(x=Treatment, y=OTU, size = Abundance, color = Family)) +
 
 ###pseq relative ----
 
-ggplot(pseq_fam_rel_spat, aes(x=Treatment, y=Family, size = Abundance, color = Treatment)) + 
-  geom_point(alpha=0.7)+ 
-  scale_size(range = c(.1, 10)) +
-  scale_colour_ipsum() +
-  theme_ipsum() +
-  theme(legend.position="bottom") +
-  ylab("Taxa (Family)") +
-  xlab("") +
-  theme(legend.position = "none")
+ggplot(pseq, aes(x = Treatment, y = Phylum, size = Abundance, color = Order)) + 
+    geom_point(alpha = 0.75) + 
+    scale_size(range = c(5, 15)) +
+    scale_color_brewer(type = 'qual', palette = 'Paired') +  # Using the Set3 palette with 12 colors
+    theme_classic() +
+    facet_wrap(~Age) +
+    theme(legend.position = "right") +
+    ylab("Taxa (Order)") +
+    xlab("") +
+    theme(axis.text.x = element_text(size=11, angle=45, hjust=1))
 
 ###pseq core ----
 
@@ -382,19 +385,59 @@ ggplot(pseq_core_larvae, aes(x=Treatment, y=OTU, size = Abundance, color = Treat
   xlab("") +
   theme(legend.position = "none")
 
-###top phyla ----
+###top families ----
 
-ggplot(Top5P, aes(x=Age, y=OTU, size = Abundance, color = Age)) + 
-  geom_point(alpha=0.7)+ 
-  scale_size(range = c(.1, 10)) +
-  scale_colour_ipsum() +
-  theme_ipsum() +
-  theme(legend.position="bottom") +
-  ylab("Taxa (Family)") +
-  xlab("") +
-  theme(legend.position = "none")
+  ggplot(top5F, aes(x = Treatment, y = Family, size = Abundance, color = Family)) + 
+    geom_point(alpha = 0.75) + 
+    scale_size(range = c(5, 15)) +
+    scale_color_brewer(type = 'qual', palette = 'Paired') +  # Using the Set3 palette with 12 colors
+    theme_classic() +
+    facet_wrap(~Age) +
+    theme(legend.position = "right") +
+    ylab("Taxa (Order)") +
+    xlab("") +
+    theme(axis.text.x = element_text(size=11, angle=45, hjust=1))
+  
 
-
+#Top order ----
+  
+  ggplot(top10, aes(x = Treatment, y = Order, size = Abundance, color = Order)) + 
+    geom_point(alpha = 0.75) + 
+    scale_size(range = c(5, 15)) +
+    scale_color_brewer(type = 'qual', palette = 'Paired') +  # Using the Set3 palette with 12 colors
+    theme_classic() +
+    facet_wrap(~Age) +
+    theme(legend.position = "right") +
+    ylab("Taxa (Order)") +
+    xlab("") +
+    theme(axis.text.x = element_text(size=11, angle=45, hjust=1))
+  
+  #Top class ----
+  
+  ggplot(top10C, aes(x = Treatment, y = Class, size = Abundance, color = Class)) + 
+    geom_point(alpha = 0.75) + 
+    scale_size(range = c(5, 15)) +
+    scale_color_brewer(type = 'qual', palette = 'Paired') +  # Using the Set3 palette with 12 colors
+    theme_classic() +
+    facet_wrap(~Age) +
+    theme(legend.position = "right") +
+    ylab("Taxa (Class)") +
+    xlab("") +
+    theme(axis.text.x = element_text(size=11, angle=45, hjust=1))  
+  
+  #Top order ----
+  
+  ggplot(top10, aes(x = Treatment, y = Order, size = Abundance, color = Order)) + 
+    geom_point(alpha = 0.75) + 
+    scale_size(range = c(5, 15)) +
+    scale_color_brewer(type = 'qual', palette = 'Paired') +  # Using the Set3 palette with 12 colors
+    theme_classic() +
+    facet_wrap(~Age) +
+    theme(legend.position = "right") +
+    ylab("Taxa (Order)") +
+    xlab("") +
+    theme(axis.text.x = element_text(size=11, angle=45, hjust=1))    
+  
 #View Vibrionaceae abundance ----
 
 selected_rows_ASVs <- subset(pseq, Family %in% c("Vibrionaceae"))
@@ -421,14 +464,21 @@ p <- ggplot(combined_data, aes(x = Age, y = Avg_Abundance, fill = Treatment)) +
   geom_errorbar(
     aes(ymin = Avg_Abundance - SD_Abundance, ymax = Avg_Abundance + SD_Abundance),
     position = position_dodge(width = 0.9),
-    width = 0.25
-  ) +
-  scale_fill_brewer(palette = "Set2") +
+    width = 0.25) +
+  scale_fill_brewer(palette = "Paired") +
   labs(title = "Vibrionaceae Abundance", x = "", y = "Abundance") +
   theme(plot.title = element_text(hjust = 0.5))
 
-print(p)
+ggplot(combined_data, aes(x = Age, y = Avg_Abundance, fill = Treatment)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_brewer(palette = "Paired") +
+  labs(title = "Vibrionaceae", x = "", y = "Relative Abundance (Reads)") +
+  theme_bw() +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(panel.grid = element_blank())
 
+
+View(data)
 
 
 #View Rhodo abundance ----
@@ -440,6 +490,7 @@ View(selected_rows_ASVs)
 
 p <- ggplot(selected_rows_ASVs, aes(x = Treatment, y = Abundance, fill = Genus)) +
   geom_bar(stat = "identity", position = "stack") + facet_grid(cols = vars(Age))
+
 print(p)
 
 #make averages of genus's for each treatment and Age point
@@ -461,24 +512,22 @@ p <- ggplot(combined_data, aes(x = Treatment, y = Avg_Abundance, fill = Genus)) 
   geom_errorbar(
     aes(ymin = Avg_Abundance - SD_Abundance, ymax = Avg_Abundance + SD_Abundance),
     position = position_dodge(width = 0.9),
-    width = 0.25
-  ) +
-  scale_fill_brewer(palette = "Set2") +
+    width = 0.25) +
   labs(title = "Rhodobacteraceae Abundance", x = "", y = "Abundance") +
   theme(plot.title = element_text(hjust = 0.5))
 
 print(p)
 
-combined_data_2 <- subset(combined_data, Genus %in% c("Phaeobacter"))
+combined_data_2 <- subset(combined_data, Genus %in% c("Celeribacter"))
 
-p <- ggplot(combined_data_2, aes(x = Treatment, y = Avg_Abundance, fill = Treatment)) +
+ggplot(combined_data_2, aes(x = Treatment, y = Avg_Abundance, fill = Treatment)) +
   geom_bar(stat = "identity", position = "dodge") +
+  facet_grid(~Age) +
   geom_errorbar(
     aes(ymin = Avg_Abundance - SD_Abundance, ymax = Avg_Abundance + SD_Abundance),
     position = position_dodge(width = 0.9),
     width = 0.25
   ) +  scale_fill_brewer(palette = "Set2") + 
-  labs(title = "Rhodobacteraceae Abundance", x = "", y = "Abundance") +
+  labs(title = "Celeribacter Abundance", x = "", y = "Abundance") +
   theme(plot.title = element_text(hjust = 0.5))
 
-print(p)

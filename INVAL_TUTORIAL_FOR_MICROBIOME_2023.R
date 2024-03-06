@@ -41,7 +41,7 @@ data_table <- read.csv("data_table.csv")
 
 pc_FUN = read.csv("data_table.csv", header= TRUE)
 
-pc_FUN <- data_table
+pc_FUN <- data_table_mb2021
 
 #if removing samples ----
 
@@ -89,7 +89,7 @@ write.csv(inv_F, "Spat_INVALsummary_results.csv", row.names = TRUE)
 
 ###Example of using the data data but testing different variables (from metadata)
 
-trt_a_F = pc_FUN$Treatment
+trt_a_F = pc_FUN$`Time-point`
 Just_trt_inv_F = multipatt(matrix_F, trt_a_F, func = "r.g", control = how(nperm=9999))
 summary(Just_trt_inv_F)
 
