@@ -47,20 +47,21 @@ pseq.core <- microbiome::transform(pseq.core, "compositional")
 
 
 ###NEXT SECTION - HEATMAPS (TOP ## OTU'S)
+pseq.rel <- subset_samples(pseq.rel, !Age %in% c("3 dpf", "1 dpf", "18 dpf"))
 
 #Sort the OTUs by abundance and pick the top 20
-top30OTU.names = names(sort(taxa_sums(pseq.rel), TRUE)[1:30])
+top10OTU.names = names(sort(taxa_sums(pseq.rel), TRUE)[1:10])
 
 #Cut down the physeq.tree data to only the top 10 Phyla
-top30OTU = prune_taxa(top30OTU.names, pseq.rel)
+top10OTU = prune_taxa(top10OTU.names, pseq.rel)
 
 top30OTU
 
-plot_heatmap(top20OTU)
+plot_heatmap(top60OTU)
 
-plot_heatmap(top30OTU, sample.label="Treatment", sample.order="Age", taxa.label="Family", taxa.order="Order", low="grey", high="red", na.value="black", facet_wrap(~Age))
+plot_heatmap(top60OTU, sample.label="Treatment", sample.order="Age", taxa.label="Family", taxa.order="Order", low="grey", high="red", na.value="black", facet_wrap(~Age))
 
-plot_heatmap(top30OTU, sample.label = "Treatment", sample.order = "Age", taxa.label = "Family", taxa.order = "Order", 
+plot_heatmap(top10OTU, sample.label = "Treatment", sample.order = "Treatment", taxa.label = "Family", taxa.order = "Order", 
              low = "deepskyblue2", high = "red", na.value = "black") + facet_grid(~Age)
 
 

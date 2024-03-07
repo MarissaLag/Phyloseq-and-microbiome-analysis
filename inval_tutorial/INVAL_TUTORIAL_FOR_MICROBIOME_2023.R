@@ -114,18 +114,106 @@ cleaned_matrix <- inv_F$str[complete.cases(inv_F$str), ]
 inv_F <-cleaned_matrix
 
 #To view all ASVs and samples
-pheatmap(inv_F$str)
+pheatmap(inv_F)
 
 
 # Assuming p.value is the column name for p-values in the sign section
-significant_asvs_indices <- which(inv_F$sign$p.value < 0.01)  # Substitute the threshold as per your significance criterion
+significant_asvs_indices <- which(inv_F$sign$p.value < 0.05)
+View(significant_asvs_indices)
+
+#To extract as list of ASVs
+
+significant_asvs_indices <- c(29, 33, 47, 52, 66, 80, 88, 100, 102, 104, 114, 115, 129, 130, 151, 162, 163, 169, 170, 194, 
+                              202, 206, 218, 245, 251, 265, 266, 272, 285, 287, 315, 324, 332, 358, 377, 392, 400, 412, 419, 
+                              432, 477, 502, 524, 535)
+
+# Prepend "ASV" to each value in the list
+significant_asvs_names <- paste("ASV", significant_asvs_indices, sep = "")
+print(significant_asvs_names)
+
+#Get pseq data
+
+pseq<- Marissa_mb2021_filtered_20240203
+pseq <- subset_samples(pseq, !Age %in% c("3 dpf", "18 dpf", "Spat"))
+pseq.rel <- microbiome::transform(pseq, "compositional")
+
+ps <- psmelt2(pseq) #long format
+View(ps)
+
+
+output <- ps %>%
+  filter(FeatureID %in% significant_asvs_names) %>% 
+  group_by(Treatment, FeatureID, Family.x, Order, Phylum, Class) %>%
+  mutate(Log_Abundance = log(value))
+
+
+
+library(RColorBrewer)
+n <- 50
+qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
+col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
+color = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
+
+custom_shapes <- c(16, 15, 18, 17, 19, 20)  # Choose from a list of available shapes (0-25) in ggplot2
+
+
+ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order, shape = Phylum)) + 
+  geom_point(size = 3) +
+  theme_bw() +
+  facet_grid(~Treatment) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x.bottom = element_blank(),
+    axis.title.x = element_blank(),
+    legend.position = "bottom") +
+  scale_shape_manual(values = custom_shapes)
+  
+
+ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order)) + 
+  geom_point(size = 3) +
+  theme_bw() +
+  scale_color_manual(values=col_vector) +
+  facet_grid(~Treatment) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x.bottom = element_blank(),
+    axis.title.x = element_blank()
+  ) +
+  scale_shape_manual(values = custom_shapes)
+
+ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order)) + 
+  geom_point(size = 3) +
+  theme_bw() +
+  scale_color_manual(values=col_vector) +
+  facet_grid(~Treatment) +
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x.bottom = element_blank(),
+    axis.title.x = element_blank()
+  ) +
+  scale_shape_manual(values = custom_shapes)
+
+
+
+
+#To make ASV significance as a matrix for heatmap 
 significant_asvs_matrix <- inv_F$str[significant_asvs_indices, ]
 View(significant_asvs_matrix)
-pheatmap(significant_asvs_matrix)
+str(significant_asvs_indices)
+
+pheatmap(significant_asvs_matrix, angle_col="45")
 
 #exclude certain columns
 selected_columns <- c("Day 01", "Day 03", "Day 06", "Day 15", "Spat")  # Replace with your actual column names
 selected_columns <- c("Day 01", "Day 03", "Day 06", "Day 08", "Day 15")
+
+selected_columns <- c("Control", "High salinity", "Low salinity")
 
 # Create a subset of your data including only the selected columns
 subset_data <- significant_asvs_matrix[, selected_columns]

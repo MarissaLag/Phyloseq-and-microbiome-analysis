@@ -47,19 +47,19 @@ pc_FUN <- data_table_mb2021
 
 #for mb2021 project remove remaining day 3 samples
 
-pc_FUN <- pc_FUN[!pc_FUN$`Time-point` == "3 dpf", ]
+pc_FUN <- pc_FUN[!pc_FUN$`Time-point` == "3 dpf", ] 
 
-#Day 1 only ----
+#Day 1 only 
 
-pc_FUN <- data_table[data_table$Age == "Day 01", ]
+pc_FUN <- pc_FUN[pc_FUN$'Time-point' == "1 dpf", ]
 
 
-#Spat only ----
+#Spat only
 
 pc_FUN <- data_table[data_table$Time.point == "Spat", ]
 pc_FUN <- pc_FUN[pc_FUN$`Time-point` == "Spat", ]
 
-#Larvae only ----
+#Larvae only 
 
 pc_FUN <- data_table[data_table$Age %in% c("Day 01", "Day 03", "Day 06", "Day 15"), ]
 
@@ -86,6 +86,11 @@ results <- summary(inv_F)
 write.csv(inv_F, "Spat_INVALsummary_results.csv", row.names = TRUE)
 
 
+#Create lists of signif ASVs for each covariate
+
+View(inv_F)
+
+
 
 ###Example of using the data data but testing different variables (from metadata)
 
@@ -99,7 +104,6 @@ summary(Just_trt_inv_F)
 #ASV7 and 18 unique to PB/PBH treatments
 #plotting ASV 7 and 18 on day 1 data as was differentially abundant on day 1 (p < 0.05)
 
-pc_FUN <- day1_PB_ASV
 
 pc_FUN <- pc_FUN[pc_FUN$Age == "Day 01", ]
 
@@ -115,8 +119,6 @@ ggplot(pc_FUN, aes(x=Treatment, y= ASV, size = Abundance, color = Treatment)) +
   theme(legend.position = "none")
 
 #plotting ASV 376 and 88 on spat data as was differentially abundant in spat (p < 0.05)
-
-pc_FUN <- PB_ASVs
 
 pc_FUN <- pc_FUN[pc_FUN$Age == "Spat", ]
 
