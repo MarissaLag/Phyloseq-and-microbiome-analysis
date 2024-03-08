@@ -79,8 +79,9 @@ matrix_F = pc_FUN[ ,8:366]
 time_a_F = pc_FUN$`Salinity Level`
 
 ### Run test 
-inv_F = multipatt(matrix_F, time_a_F, func = "r.g", control = how(nperm=9999))
-results <- summary(inv_F)
+inv_F_day1 = multipatt(matrix_F, time_a_F, func = "r.g", control = how(nperm=9999))
+results <- summary(inv_F_day1)
+
 
 #save results
 write.csv(inv_F, "Spat_INVALsummary_results.csv", row.names = TRUE)
