@@ -6,12 +6,20 @@
 
 install.packages("indicspecies")
 library(indicspecies)
+library(phyloseq)
+library(RColorBrewer)
+library(ggplot2)
+library(ggsci)
+library(dplyr)
+
 #Set data ----
 
 Marissa_MU42022_rare <- readRDS("~/GitHub/mb2021_phyloseq/Marissa_MU42022_rare.rds")
 
 pseq <- Marissa_MU42022_rarefied_20231016
 pseq <-`Filtered_Rarified_MU42022_23-12-13`
+pseq <- Marissa_mb2021_filtered_20240203
+
 
 #Load objects ----
 
@@ -36,6 +44,8 @@ write.table(Metadata,file="data_table_James_Meta.csv",sep=",",dec = " ")
 #reload edited table
 
 pc_FUN = read.csv("data_table_James.csv", header= TRUE)
+
+pc_FUN <- data_table_mb2021
 
 View(pc_FUN)
 
@@ -118,17 +128,61 @@ pheatmap(inv_F)
 
 
 # Assuming p.value is the column name for p-values in the sign section
-significant_asvs_indices <- which(inv_F$sign$p.value < 0.05)
-View(significant_asvs_indices)
+###signif_asvs code NOT working -> is grouping non-signif ASVs... not sure why
+View(inv_F_day1$sign)
+inv_F_day1$sign$Feature_ID <- row.names(inv_F_day1$sign)
+View(inv_F_day1$sign)
 
+# Extract the relevant columns from the 'sign' data frame
+inv_F_sign_df <- data.frame(
+  Feature_ID = inv_F_day1$Feature_ID,
+  p.value = inv_F_day1$sign$p.value,
+  s.Control = inv_F_day1$sign$s.Control,
+  s.High = inv_F_day1$sign$s.High,
+  s.Low = inv_F_day1$sign$s.Low
+)
+
+# View the resulting data frame
+View(inv_F_sign_df)
+
+
+# Initialize the "condition" column as an empty character vector
+inv_F_sign_df$condition <- ""
+
+# Check each row for conditions and concatenate letters accordingly
+inv_F_sign_df$condition <- ifelse(inv_F_sign_df$s.Control == 1, paste0(inv_F_sign_df$condition, "C"), inv_F_sign_df$condition)
+inv_F_sign_df$condition <- ifelse(inv_F_sign_df$s.High == 1, paste0(inv_F_sign_df$condition, "H"), inv_F_sign_df$condition)
+inv_F_sign_df$condition <- ifelse(inv_F_sign_df$s.Low == 1, paste0(inv_F_sign_df$condition, "L"), inv_F_sign_df$condition)
+
+View(inv_F_sign_df)
+
+
+
+#Code below for signif asvs not working**
+#significant_asvs_indices <- which(inv_F_day1$sign["p.value"] <= 0.05)
+
+#signif_asv <- which(inv_F_spat$sign$p.value <= 0.05)
+
+#View(significant_asvs_indices)
+
+#instead making manual list of signif (p<0.05) ASVs
 #To extract as list of ASVs
 
-significant_asvs_indices <- c(29, 33, 47, 52, 66, 80, 88, 100, 102, 104, 114, 115, 129, 130, 151, 162, 163, 169, 170, 194, 
-                              202, 206, 218, 245, 251, 265, 266, 272, 285, 287, 315, 324, 332, 358, 377, 392, 400, 412, 419, 
-                              432, 477, 502, 524, 535)
+#note: removed 319 (enriched in control and high sal)
+
+significant_asvs_indices_day1 <- c(119, 244, 192, 341, 510, 240, 428, 76, 450, 468,
+                                   484, 579, 385, 116, 199, 290, 54, 114, 60, 149, 339,
+                                   300, 200, 373, 326, 193, 659, 609, 318, 524, 102, 179, 
+                                   232, 38, 641, 150, 131, 92, 130, 257, 34, 499, 394)
+
+
+significant_asvs_indices_spat <- c(333, 507, 580, 494, 656, 371, 373, 623, 227, 283, 332, 571, 662, 385, 314, 380)
+
+sorted_indices <- sort(significant_asvs_indices_day1, decreasing = FALSE)
+
 
 # Prepend "ASV" to each value in the list
-significant_asvs_names <- paste("ASV", significant_asvs_indices, sep = "")
+significant_asvs_names <- paste("ASV", sorted_indices, sep = "")
 print(significant_asvs_names)
 
 #Get pseq data
@@ -141,37 +195,80 @@ ps <- psmelt2(pseq) #long format
 View(ps)
 
 
+#Match condition column to ps ---- 
+
+#make a new column in ps called condition and merge condition columns from 
+#inv_F_sign_df to match up to FeatureID and populate condition column in ps
+
+View(inv_F_sign_df)
+
+match_result <- match(ps$FeatureID, inv_F_sign_df$Feature_ID)
+
+# Assign condition values from inv_F_sign_df to ps, handling NA values
+ps$condition <- ifelse(is.na(match_result), NA, inv_F_sign_df$condition[match_result])
+
+View(ps)
+
+
+#formulate output dataframe - get signif asvs and log_abundance values
+#arrange = to arrange in order highest to lowest ASV#
+
 output <- ps %>%
   filter(FeatureID %in% significant_asvs_names) %>% 
   group_by(Treatment, FeatureID, Family.x, Order, Phylum, Class) %>%
-  mutate(Log_Abundance = log(value))
+  mutate(Log_Abundance = log(value))%>% 
+  arrange(match(FeatureID, significant_asvs_names))
+View(output)
+
+str(output)
 
 
 
-library(RColorBrewer)
-n <- 50
-qual_col_pals = brewer.pal.info[brewer.pal.info$category == 'qual',]
-col_vector = unlist(mapply(brewer.pal, qual_col_pals$maxcolors, rownames(qual_col_pals)))
-color = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
+#Colours ----
+nb.cols <- 20
+mycolors <- colorRampPalette(brewer.pal(8, "Set1"))(nb.cols)
 
 custom_shapes <- c(16, 15, 18, 17, 19, 20)  # Choose from a list of available shapes (0-25) in ggplot2
 
+#order x-axis from highest to lowest ASVs
+output$FeatureID <- factor(output$FeatureID, levels = unique(output$FeatureID))
 
-ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order, shape = Phylum)) + 
-  geom_point(size = 3) +
+
+#scatterplot signif ASVs ----
+
+ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order, shape = condition)) + 
+  geom_point(size = 5) +
   theme_bw() +
   facet_grid(~Treatment) +
+  scale_color_manual(values=mycolors) +
+  scale_shape_manual(values = c("C" = 6, "H" = 17, "L" = 6, "CL" = 6, "HL" = 1)) +  # Custom shapes for each condition
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
-    axis.text.x = element_blank(),
-    axis.ticks.x.bottom = element_blank(),
     axis.title.x = element_blank(),
-    legend.position = "bottom") +
-  scale_shape_manual(values = custom_shapes)
+    axis.text.x = element_blank(),
+    legend.position = "right",
+    #axis.text.x = element_text(size=7, angle=45, hjust=1),
+    legend.text = element_text(size = 7)
+  )
+
+
+ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order, shape = Treatment)) + 
+  geom_point(size = 3) +
+  theme_bw() +
+  #facet_grid(~Treatment) +
+  scale_color_manual(values=mycolors) +
+  #scale_shape_manual(values = c("C" = 6, "H" = 2, "L" = 6, "CH" = 4, "CL" = 6, "HL" = 1)) +  # Custom shapes for each condition
+  theme(
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    axis.title.x = element_blank(),
+    legend.position = "right",
+    axis.text.x = element_text(size=7, angle=45, hjust=1)
+  )
   
 
-ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order)) + 
+ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order, shape = Phylum)) + 
   geom_point(size = 3) +
   theme_bw() +
   scale_color_manual(values=col_vector) +
@@ -185,7 +282,7 @@ ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order)) +
   ) +
   scale_shape_manual(values = custom_shapes)
 
-ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order)) + 
+ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order, shape = Phylum)) + 
   geom_point(size = 3) +
   theme_bw() +
   scale_color_manual(values=col_vector) +
