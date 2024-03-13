@@ -14,19 +14,23 @@ Marissa_MU42022_rarefied_20231016 <- readRDS("~/GitHub/Phyloseq and microbiome a
 
 pseq <- Marissa_MU42022_rarefied_20231016
 
-#set theme.marissa as plot theme
+pseq <- Marissa_mb2021_filtered_20240203
 
-theme.marissa <- function() {
-  theme_classic(base_size = 14) +
-    theme(
-      panel.border = element_blank(),
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      axis.text = element_text(size = 14),
-      axis.title = element_text(size = 16, face = "bold"),
-      legend.text = element_text(size = 16),
-      legend.title = element_text(size = 16, face = "bold"))
-}
+#for mb2021 remove 3 dpf
+
+pseq <- subset_samples(pseq, !Age %in% "3 dpf")
+
+#correct family column
+
+# Replace values according to your mapping
+pseq@sam_data$Family <- ifelse(pseq@sam_data$Family %in% c(9, 13), "1",
+                               ifelse(pseq@sam_data$Family %in% c(10, 14), "2",
+                                      ifelse(pseq@sam_data$Family %in% c(11, 15), "3",
+                                             ifelse(pseq@sam_data$Family %in% c(12, 16), "4", pseq@sam_data$Family))))
+
+# Print the updated Family column
+print(pseq@sam_data$Family)
+View(pseq@sam_data) 
 
 
 #Create objects ----
@@ -36,64 +40,104 @@ Tax = pseq@tax_table
 Metadata = pseq@sam_data
 Tree = pseq@phy_tree
 
-#PERMANOVA ----
-#source: https://microbiome.github.io/tutorials/PERMANOVA.html
-
-#set seed
-
+#PERMAOVA
+#source: https://deneflab.github.io/MicrobeMiseq/demos/mothur_2_phyloseq.html#permanova
 set.seed(452)
 
-#if any columns have missing values (NA), must remove
+pseq_bray <- phyloseq::distance(pseq, method = "bray")
 
-pseq_filtered <- subset_samples(pseq, !Treatment %in% NA)
-pseq_filtered <- subset_samples(pseq_filtered, !Genetics %in% NA)
+metadata <- as(sample_data(pseq), "data.frame")
 
-#different method to remove NA
-Meta <- subset(Metadata, !is.na(Treatment))
-Meta <- meta(pseq)
-
-#use same data used in PCO plot
-#metadata must be in data frame
-#convert to data frame
-
-psmelt(pseq_filtered)
-Data <- data.frame(sample_data(pseq_filtered))
-
-Data <- data.frame(pseq_filtered)
-
-#create matrix - 2 methods below
-
-#this method doesn't work... Not sure why
-Bray_dist2 <- ordinate(pseq_filtered, method = "MDS", distance = "bray", weighted = TRUE)
-
-#this method works
-
-Bray_dist<- phyloseq::distance(pseq_filtered, method = "bray", weighted = TRUE)
-
-head(Bray_dist)
-
-#Run PERMANOVA
-#data must be data frame (independent variables, i.e., your metadata)
-
-permanova <- adonis2(Bray_dist ~ Treatment*Age*Genetics,
-                     data = Data, permutations=999, method = "bray", by = "terms")
-permanova
-
-#For some reason, get different p values with only Treatment?
-
-permanova2 <- adonis2(Bray_dist ~ Treatment,
-                     data = Data, permutations=999, method = "bray")
-
-permanova2
+summary <- adonis2(pseq_bray ~ Treatment*Age*Family, data = metadata)
 
 
+#Homogeneity of dispersion test
+beta <- betadisper(pseq_bray, metadata$Family)
+permutest(beta)
+
+##treatment/family follows homogeneity but Age does not (p = 0.001)
 
 
-#below is for "strata" analysis - if factors within data are nested use strata - could not working
-#I am still unsure when strata is needed - most examples are for repeated measures
+#CAP plots ----
 
-permanova_strata <- adonis2(Bray_dist ~ Genetics,
-                     data = Data, permutations=999, method = "bray", strata = pseq_filtered@sam_data$Treatment)
+pseq <- Marissa_mb2021_filtered_20240203
 
-#to subset samples (e.g., time series analysis) and create more PCO plots see Factors_PCO_PCA_mb2021 tutorial
-#scree plot to assess PCo axes see plot_ordination_methods script
+#for mb2021 remove 3 dpf
+
+pseq <- subset_samples(pseq, !Age %in% "3 dpf")
+pseq_bray <- phyloseq::distance(pseq, method = "bray")
+
+# CAP ordinate
+cap_ord <- ordinate(
+  physeq = pseq, 
+  method = "CAP",
+  distance = pseq_bray,
+  formula = ~Age 
+)
+
+# CAP plot
+cap_plot <- plot_ordination(
+  physeq = pseq, 
+  ordination = cap_ord, 
+  color = "Treatment", 
+  axes = c(1,2)
+) + 
+  aes(shape = Age) + 
+  geom_point(aes(colour = Treatment), alpha = 0.4, size = 4) + 
+  #geom_point(colour = "grey90", size = 3) + 
+  scale_color_manual(values = c("#a65628", "red", "#ffae19", "#4daf4a", 
+                                "#1919ff", "darkorchid3", "magenta")
+  )
+
+
+arrowmat <- vegan::scores(cap_ord, display = "bp")
+
+# Add labels, make a data.frame
+arrowdf <- data.frame(labels = rownames(arrowmat), arrowmat)
+arrowdf$labels <- ifelse(grepl("High", arrowdf$labels), "High salinity", "Low salinity")
+print(arrowdf)
+
+# Define the arrow aesthetic mapping
+arrow_map <- aes(xend = CAP1, 
+                 yend = CAP2, 
+                 x = 0, 
+                 y = 0, 
+                 shape = NULL, 
+                 color = NULL, 
+                 label = labels)
+
+label_map <- aes(x = 1.3 * CAP1, 
+                 y = 1.3 * CAP2, 
+                 shape = NULL, 
+                 color = NULL, 
+                 label = labels)
+
+arrowhead = arrow(length = unit(0.01, "npc"))
+
+# Make a new graphic
+cap_plot + 
+  geom_segment(
+    mapping = arrow_map, 
+    size = .5, 
+    data = arrowdf, 
+    color = "grey", 
+    arrow = arrowhead
+  ) + 
+  geom_text(
+    mapping = label_map, 
+    size = 4,  
+    data = arrowdf, 
+    show.legend = FALSE,
+    nudge_x = 0.05,
+    nudge_y = 0.05
+  ) +
+  facet_wrap(~Age)
+
+##need to find code for pairwise comparison
+
+
+
+
+
+
+

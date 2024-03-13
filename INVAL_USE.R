@@ -2,24 +2,27 @@
 
 ### Source:  https://jkzorz.github.io/2019/07/02/Indicator-species-analysis.html 
 
+
+#to look for differentially abundant ASVs using indicator species analysis
+
+
 #Packages ----
 
 install.packages("indicspecies")
 library(indicspecies)
+library(ggplot2)
+library(dplyr)
+library(microbiome)
 library(phyloseq)
 library(RColorBrewer)
-library(ggplot2)
-library(ggsci)
-library(dplyr)
 
 #Set data ----
 
 Marissa_MU42022_rare <- readRDS("~/GitHub/mb2021_phyloseq/Marissa_MU42022_rare.rds")
 
-pseq <- Marissa_MU42022_rarefied_20231016
-pseq <-`Filtered_Rarified_MU42022_23-12-13`
-pseq <- Marissa_mb2021_filtered_20240203
+pseq <- Marissa_MU42022_rare
 
+#pseq <- Marissa_mb2021_filtered_20240203
 
 #Load objects ----
 
@@ -33,73 +36,97 @@ Tree = pseq@phy_tree
 #from the phyloseq object using phyloseq
 
 OTU1 = as(OTU, "matrix")
-Metadata = as(Metadata, "matrix")
-write.csv(OTU1, file="Data_fram_1_James.cvs",row.names=TRUE)
-write.csv(Metadata, file="Data_fram_1_James_Meta.cvs",row.names=TRUE )
+write.csv(OTU1, file="Data_fram_1.cvs",row.names=TRUE)
 
-write.table(OTU1,file="data_table_James.csv",sep=",",dec = " ")
-write.table(Metadata,file="data_table_James_Meta.csv",sep=",",dec = " ")
+write.table(OTU1,file="data_table.csv",sep=",",dec = " ")
 ####Format to example data and reload below for actual test 
 
 #reload edited table
+data_table <- read.csv("data_table.csv")
 
-pc_FUN = read.csv("data_table_James.csv", header= TRUE)
+pc_FUN = read.csv("data_table.csv", header= TRUE)
 
-pc_FUN <- data_table_mb2021
+pc_FUN <- data_table_mb2021_w_Meta
 
-View(pc_FUN)
+#if removing samples ----
 
+#for mb2021 project remove remaining day 3 samples
+
+pc_FUN <- pc_FUN[!pc_FUN$`Time-point` == "3 dpf", ] 
+
+#Day 1 only 
+
+pc_FUN <- pc_FUN[pc_FUN$'Time-point' == "1 dpf", ]
+
+
+#Spat only
+
+pc_FUN <- pc_FUN[pc_FUN$`Time-point` == "Spat", ]
+
+#Larvae only 
+
+pc_FUN <- data_table[data_table$Age %in% c("Day 01", "Day 03", "Day 06", "Day 15"), ]
+
+  
 ####Test ASVs ----
 
 #Inverse data
 funi_df<- t(pc_FUN)
 
-View(funi_df)
-View(pc_FUN)
-
-#if need to remove samples
-
-rows_to_remove <- 1
-new_matrix <- pc_FUN[-rows_to_remove, ]
-View(new_matrix)
-pc_FUN <- new_matrix
-
-#to subset James' samples into antibiotics and control only 
-
-AntiB <- c("Antibiotics")
-
-AntiB <- pc_FUN[pc_FUN[, 3] %in% AntiB, ]
-
-View(AntiB)
-
-Control <- c("Control")
-
-Control <- pc_FUN[pc_FUN[, 3] %in% Control, ]
-
-View(Control)
-
 ###make into a matrix and populate::: This tells r what is metadata and what is the actual data ... Below 5-952 are the coloumns that are the data
 
-matrix_F = pc_FUN[ ,9:350]
+matrix_F = pc_FUN[ ,8:366]
 
-matrix_F = AntiB[ ,9:350]
+#mb2021
+#matrix_F = pc_FUN[ ,6:585]
 
-matrix_F = Control[ ,9:350]
-
-# Select covariates to test
-time_a_F <- pc_FUN$Treatment_Age
-
-time_a_F = pc_FUN$Age
-
-time_a_F = pc_FUN$Treatment
-
-time_a_F = Control$Age
-
-time_a_F = AntiB$Age
+### Make the equation. Saying we want to examine specific column of metadata
+time_a_F = pc_FUN$`Salinity Level`
 
 ### Run test 
-inv_F = multipatt(matrix_F, time_a_F, func = "r.g", control = how(nperm=999))
-summary(inv_F)
+inv_F_day1 = multipatt(matrix_F, time_a_F, func = "r.g", control = how(nperm=9999))
+results <- summary(inv_F_day1)
+
+
+#save results
+write.csv(inv_F, "Spat_INVALsummary_results.csv", row.names = TRUE)
+
+
+#Bubble plot results ----
+#MU42022 project
+#ASV7 and 18 unique to PB/PBH treatments
+#plotting ASV 7 and 18 on day 1 data as was differentially abundant on day 1 (p < 0.05)
+
+
+pc_FUN <- pc_FUN[pc_FUN$Age == "Day 01", ]
+
+
+ggplot(pc_FUN, aes(x=Treatment, y= ASV, size = Abundance, color = Treatment)) + 
+  geom_point(alpha=0.7)+ 
+  scale_size(range = c(.1, 10)) +
+  scale_colour_ipsum() +
+  theme_ipsum() +
+  theme(legend.position="bottom") +
+  ylab("") +
+  xlab("") +
+  theme(legend.position = "none")
+
+#plotting ASV 376 and 88 on spat data as was differentially abundant in spat (p < 0.05)
+
+pc_FUN <- pc_FUN[pc_FUN$Age == "Spat", ]
+
+pc_FUN <- pc_FUN[pc_FUN$ASV %in% c("ASV88", "ASV376"), ]
+
+
+ggplot(pc_FUN, aes(x=Treatment, y= Genus, size = Abundance, color = Treatment)) + 
+  geom_point(alpha=0.7)+ 
+  scale_size(range = c(.1, 10)) +
+  scale_colour_ipsum() +
+  theme_ipsum() +
+  theme(legend.position="bottom") +
+  ylab("") +
+  xlab("") +
+  theme(legend.position = "none")
 
 #heat maps ----
 library(pheatmap)
@@ -130,7 +157,7 @@ pheatmap(inv_F)
 # Assuming p.value is the column name for p-values in the sign section
 ###signif_asvs code NOT working -> is grouping non-signif ASVs... not sure why
 View(inv_F_day1$sign)
-inv_F_day1$sign$Feature_ID <- row.names(inv_F_day1$sign)
+inv_F_day1$sign$Feature_ID <- row.names(inv_F_spat$sign)
 View(inv_F_day1$sign)
 
 View(inv_F_spat$sign)
@@ -139,7 +166,14 @@ View(inv_F_spat$sign)
 
 # Extract the relevant columns from the 'sign' data frame
 inv_F_sign_df <- data.frame(
-  Feature_ID = inv_F_spat$Feature_ID,
+  Feature_ID = inv_F_day1$sign$Feature_ID,
+  p.value = inv_F_day1$sign$p.value,
+  s.Control = inv_F_day1$sign$s.Control,
+  s.High = inv_F_day1$sign$s.High,
+  s.Low = inv_F_day1$sign$s.Low
+)
+inv_F_sign_df <- data.frame(
+  Feature_ID = inv_F_spat$sign$Feature_ID,
   p.value = inv_F_spat$sign$p.value,
   s.Control = inv_F_spat$sign$s.Control,
   s.High = inv_F_spat$sign$s.High,
@@ -149,6 +183,9 @@ inv_F_sign_df <- data.frame(
 # View the resulting data frame
 View(inv_F_sign_df)
 
+
+#below create a "condition" column that will state which treatment is 
+#enriched for an ASV for plots
 
 # Initialize the "condition" column as an empty character vector
 inv_F_sign_df$condition <- ""
@@ -181,6 +218,8 @@ significant_asvs_indices_day1 <- c(119, 244, 192, 341, 510, 240, 428, 76, 450, 4
 
 
 significant_asvs_indices_spat <- c(333, 507, 580, 494, 656, 371, 373, 623, 227, 283, 332, 571, 662, 385, 314, 380)
+#sort ASVs from highest to lowest
+sorted_indices <- sort(significant_asvs_indices_day1, decreasing = FALSE)
 
 sorted_indices <- sort(significant_asvs_indices_spat, decreasing = FALSE)
 
@@ -192,7 +231,7 @@ print(significant_asvs_names)
 #Get pseq data
 
 pseq<- Marissa_mb2021_filtered_20240203
-pseq <- subset_samples(pseq, !Age %in% c("3 dpf", "18 dpf", "1 dpf"))
+pseq <- subset_samples(pseq, !Age %in% c("3 dpf", "18 dpf", "Spat"))
 pseq.rel <- microbiome::transform(pseq, "compositional")
 
 ps <- psmelt2(pseq) #long format
@@ -213,7 +252,6 @@ ps$condition <- ifelse(is.na(match_result), NA, inv_F_sign_df$condition[match_re
 
 View(ps)
 
-
 #formulate output dataframe - get signif asvs and log_abundance values
 #arrange = to arrange in order highest to lowest ASV#
 
@@ -229,7 +267,7 @@ str(output)
 
 
 #Colours ----
-nb.cols <- 20
+nb.cols <- 25
 mycolors <- colorRampPalette(brewer.pal(8, "Set1"))(nb.cols)
 
 custom_shapes <- c(16, 15, 18, 17, 19, 20)  # Choose from a list of available shapes (0-25) in ggplot2
@@ -240,10 +278,10 @@ output$FeatureID <- factor(output$FeatureID, levels = unique(output$FeatureID))
 
 #scatterplot signif ASVs ----
 
-ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Family.x, shape = condition)) + 
+ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Genus, shape = condition)) + 
   geom_point(size = 5) +
   theme_bw() +
-  #facet_grid(~Treatment) +
+  facet_grid(~Treatment) +
   scale_color_manual(values=mycolors) +
   scale_shape_manual(values = c("C" = 6, "H" = 17, "L" = 6, "CL" = 6, "HL" = 1)) +  # Custom shapes for each condition
   theme(
@@ -271,7 +309,7 @@ ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order, shape = Trea
     legend.position = "right",
     axis.text.x = element_text(size=7, angle=45, hjust=1)
   )
-  
+
 
 ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Order, shape = Phylum)) + 
   geom_point(size = 3) +
@@ -364,3 +402,5 @@ head(my_ASV_col)
 my_sample_col <- data.frame(sample = rep(c("Control", "Antibiotics"), c(4,2)))
 row.names(my_sample_col) <- colnames(data_subset)
 pheatmap(data_subset, annotation_row = my_gene_col, annotation_col = my_sample_col)
+
+
