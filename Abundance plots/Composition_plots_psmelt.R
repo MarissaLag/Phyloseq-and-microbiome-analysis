@@ -56,30 +56,9 @@ pseq <- subset_samples(pseq, !Age %in% c("Day 01", "Day 03", "Day 06", "Day 15")
 pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
 
 
-#Top families ----
-
-top5F.names = sort(tapply(taxa_sums(pseq), tax_table(pseq)[, "Family"], sum), TRUE)[1:5]
-
-top5F = subset_taxa(pseq, Family %in% names(top5F.names))
-
-#Top Class ----
-
-top10C.names = sort(tapply(taxa_sums(pseq), tax_table(pseq)[, "Class"], sum), TRUE)[1:10]
-
-top10C = subset_taxa(pseq, Class %in% names(top10C.names))
-
-#Top Order ----
-
-top10.names = sort(tapply(taxa_sums(pseq), tax_table(pseq)[, "Order"], sum), TRUE)[1:10]
-
-top10 = subset_taxa(pseq, Order %in% names(top10.names))
 
 
-#Top Genus ----
 
-top10G.names = sort(tapply(taxa_sums(pseq), tax_table(pseq)[, "Genus"], sum), TRUE)[1:10]
-
-top10G = subset_taxa(pseq, Genus %in% names(top10G.names))
 
 #Relative composition ----
 
@@ -87,29 +66,43 @@ top10G = subset_taxa(pseq, Genus %in% names(top10G.names))
 
 pseq.rel <- microbiome::transform(pseq, "compositional")
 
-pseq_fam <- microbiome::aggregate_rare(pseq, level = "Family", detection = 50/100, prevalence = 70/100)
+pseq_fam <- microbiome::aggregate_rare(pseq.rel, level = "Family", detection = 50/100, prevalence = 50/100)
+#pseq_fam <- microbiome::aggregate_rare(pseq.rel, level = "Family", detection = 1/100, prevalence = 70/100)
 
-pseq_phy <- microbiome::aggregate_rare(pseq, level = "Phylum", detection = 50/100, prevalence = 70/100)
+pseq_phy <- microbiome::aggregate_rare(pseq.rel, level = "Phylum", detection = 50/100, prevalence = 50/100)
+#pseq_phy <- microbiome::aggregate_rare(pseq.rel, level = "Phylum", detection = 1/100, prevalence = 70/100)
 
-pseq_gen <- microbiome::aggregate_rare(pseq, level = "Genus", detection = 50/100, prevalence = 70/100)
+pseq_gen <- microbiome::aggregate_rare(pseq.rel, level = "Genus", detection = 50/100, prevalence = 70/100)
+#pseq_phy <- microbiome::aggregate_rare(pseq.rel, level = "Genus", detection = 1/100, prevalence = 70/100)
 
-pseq.core <- core(pseq_fam, detection = .1/100, prevalence = 95/100)
+pseq.core <- core(pseq, detection = .1/100, prevalence = 90/100)
 
-pseq.rel <- microbiome::transform(pseq, "compositional")
 
-pseq.fam.rel <- microbiome::transform(pseq_fam, "compositional")
+pseq_group <- pseq.rel %>%
+  aggregate_taxa(level = "Phylum") %>%
+  transform(transform = "compositional") %>%
+  psmelt() %>%
+  group_by(Age)
 
-pseq.phy.rel <- microbiome::transform(pseq_phy, "compositional")
 
-pseq.gen.rel <- microbiome::transform(pseq_gen, "compositional")
+pseq_group <- pseq.rel %>%
+  aggregate_taxa(level = "Phylum") %>%
+  transform(transform = "clr") %>%
+  psmelt() %>%
+  group_by(Age)
 
-pseq.core <- microbiome::transform(pseq.core, "compositional")
+
+View(pseq_group)
+
+ggplot(pseq_group, aes(fill=Phylum, y=Abundance, x=Age)) + 
+  geom_bar(position="stack", stat="identity")
+
 
 #Top families relative abundance ----
 
-top5F.names = sort(tapply(taxa_sums(pseq.fam.rel), tax_table(pseq.fam.rel)[, "Family"], sum), TRUE)[1:10]
+top5F.names = sort(tapply(taxa_sums(pseq.rel), tax_table(pseq.rel)[, "Family"], sum), TRUE)[1:10]
 
-top5F = subset_taxa(pseq.fam.rel, Family %in% names(top5F.names))
+top5F = subset_taxa(pseq.rel, Family %in% names(top5F.names))
 
 #Top Genus relative abundance ----
 
@@ -131,7 +124,7 @@ top10C <- psmelt(top10C)
 
 pseq <- psmelt(pseq.rel)
 
-relative_fam <- psmelt(pseq.fam.rel)
+relative_fam <- psmelt(pseq_fam)
 
 relative_phy <- psmelt(pseq.phy.rel)
 
@@ -139,10 +132,36 @@ core <- psmelt(pseq.core)
 
 
 
-#Manipulating data ----
 
+#Manipulating data ----
+#If you plot rel abundances straight away, factors with more samples (e.g., between Age groups)
+#will look like false higher abundances. To correct for this, average samples.
+
+#look at sample numbers
+
+sample_counts <- pseq %>%
+  group_by(Age, Treatment) %>%
+  summarise(Num_Samples = n())
+
+print(sample_counts)
+
+
+#uneven sample numbers - average relative abundances by groups
+#1st create new column that contains Treat*Age information 
+
+sample_data <- pseq.rel@sam_data
+
+# Create a new column combining Age and Treatment ----
+sample_data$Age_Treatment <- paste(sample_data$Age, sample_data$Treatment, sep = "_")
+sample_data(pseq.rel) <- sample_data
+View(pseq.rel@sam_data)
+
+pseq <- psmelt(pseq.rel)
+View(pseq)
+
+#Now average relative abundance data by column "Age_Treatment"
 Avg_abundance <- top5F %>%
-  group_by(Treatment, Family) %>%
+  group_by(Treatment, Age, Family) %>%
   summarise(
     Avg_Abundance = mean(Abundance),
     SD_Abundance = sd(Abundance),
@@ -150,27 +169,30 @@ Avg_abundance <- top5F %>%
   )
 
 Avg_abundance <- pseq %>%
-  group_by(Treatment, Family) %>%
+  group_by(Age_Treatment, Phylum) %>%
   summarise(
     Avg_Abundance = mean(Abundance),
     SD_Abundance = sd(Abundance),
     .groups = 'drop'
   )
-
+View(Avg_abundance)
 
 #composition boxplots ----
 
 ggplot(Avg_abundance, aes(fill=Family, y=Avg_Abundance, x=Treatment)) + 
   geom_bar(position="dodge", stat="identity") + scale_fill_ipsum()
 
-ggplot(Avg_abundance, aes(fill=Family, y=Avg_Abundance, x=Treatment)) + 
-  geom_bar(position="stack", stat="identity") + scale_fill_brewer(palette = "Spectral") +
-
-ggplot(top5F, aes(fill=Family, y=Abundance, x=Treatment)) + 
+ggplot(Avg_abundance, aes(fill=Phylum, y=Avg_Abundance, x=Age_Treatment)) + 
   geom_bar(position="stack", stat="identity") +
-  scale_fill_brewer(palette = "Paired") +
+  scale_fill_brewer(palette = "Spectral") +
+  theme(axis.text.x = element_text(size = 11, angle = 45, hjust = 1))
+
+ggplot(pseq, aes(fill=Order, y=Abundance, x=Sample)) + 
+  geom_bar(position="stack", stat="identity") +
+  #scale_fill_brewer(palette = "Paired") +
   labs(title = "All time-points", x = "", y = "Relative abundance") +
   theme(plot.title = element_text(hjust = 0.5)) +
+  facet_wrap(~Treatment)
   
 
 ggplot(top10G, aes(fill=Genus, y=Abundance, x=Treatment)) + 
@@ -179,13 +201,17 @@ ggplot(top10G, aes(fill=Genus, y=Abundance, x=Treatment)) +
   labs(title = "All time-points", x = "", y = "Relative abundance") +
   theme(plot.title = element_text(hjust = 0.5))
 
-ggplot(relative, aes(fill=Family, y=Abundance, x=Treatment)) + 
+#if need more colours for colour theme
+new_palette <- c(brewer.pal(12, "Paired"), "orange")
+
+ggplot(core, aes(fill=Family, y=Abundance, x=Treatment)) + 
   geom_bar(position="stack", stat="identity") +
   scale_fill_brewer(palette = "Paired") +
-  labs(title = "All time-points", x = "", y = "Total abundance") +
-  theme(plot.title = element_text(hjust = 0.5))
+  labs(title = "", x = "", y = "Relative abundance") +
+  theme(plot.title = element_text(hjust = 0.5) +
+          facet_grid(~pseq$Age))
 
-ggplot(top5F, aes(fill = Family, y = Abundance, x = Treatment)) + 
+ggplot(core, aes(fill = Family, y = Abundance, x = Treatment)) + 
   geom_bar(position = "stack", stat = "identity") +
   scale_fill_brewer(palette = "Paired") +
   labs(title = "", x = "", y = "Relative abundance") +
@@ -199,7 +225,7 @@ ggplot(top5F, aes(fill = Family, y = Abundance, x = Treatment)) +
 
   
 
-ggplot(top10C, aes(fill=Class, y=Abundance, x=Treatment)) + 
+ggplot(relative_fam, aes(fill=Family, y=Abundance, x=Treatment)) + 
   geom_bar(position="stack", stat="identity") +
   scale_fill_brewer(palette = "Paired") +
   labs(title = "All time-points", x = "", y = "Relative abundance") +

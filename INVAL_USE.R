@@ -50,9 +50,14 @@ pc_FUN <- data_table_mb2021_w_Meta
 
 #if removing samples ----
 
-#for mb2021 project remove remaining day 3 samples
+#for mb2021 project remove remaining day 3 samples and T9 spat data
 
-pc_FUN <- pc_FUN[!pc_FUN$`Time-point` == "3 dpf", ] 
+pc_FUN <- pc_FUN[!pc_FUN$`Time-point` == "3 dpf", ]
+
+#Note tank mislabelled as "Day" in pc_Fun for mb2021
+pc_FUN <- pc_FUN[!pc_FUN$`Day` == "9", ] 
+
+View(pc_FUN)
 
 #Day 1 only 
 
@@ -157,7 +162,7 @@ pheatmap(inv_F)
 # Assuming p.value is the column name for p-values in the sign section
 ###signif_asvs code NOT working -> is grouping non-signif ASVs... not sure why
 View(inv_F_day1$sign)
-inv_F_day1$sign$Feature_ID <- row.names(inv_F_spat$sign)
+inv_F_day1$sign$Feature_ID <- row.names(inv_F_day1$sign)
 View(inv_F_day1$sign)
 
 View(inv_F_spat$sign)
@@ -200,11 +205,17 @@ View(inv_F_sign_df)
 
 
 #Code below for signif asvs not working**
-#significant_asvs_indices <- which(inv_F_day1$sign["p.value"] <= 0.05)
 
-#signif_asv <- which(inv_F_spat$sign$p.value <= 0.05)
+significant_asvs_indices <- which(inv_F_day1$sign["p.value"] <= 0.05)
+selected_rows <- inv_F_day1$sign[inv_F_day1$sign$p.value <= 0.05, ]
 
-#View(significant_asvs_indices)
+View(selected_rows)
+
+# selected_rows now contains only the rows where "p.value" is <= 0.05
+
+signif_asv <- which(inv_F_day1$sign$p.value <= 0.05)
+
+View(significant_asvs_indices)
 
 #instead making manual list of signif (p<0.05) ASVs
 #To extract as list of ASVs
@@ -218,6 +229,7 @@ significant_asvs_indices_day1 <- c(119, 244, 192, 341, 510, 240, 428, 76, 450, 4
 
 
 significant_asvs_indices_spat <- c(333, 507, 580, 494, 656, 371, 373, 623, 227, 283, 332, 571, 662, 385, 314, 380)
+
 #sort ASVs from highest to lowest
 sorted_indices <- sort(significant_asvs_indices_day1, decreasing = FALSE)
 
@@ -247,6 +259,10 @@ View(inv_F_sign_df)
 
 match_result <- match(ps$FeatureID, inv_F_sign_df$Feature_ID)
 
+#If have dataframe where only signif rows selected
+
+match_result2 <- match(ps$FeatureID, inv_F_sign_df$selected_rows)
+
 # Assign condition values from inv_F_sign_df to ps, handling NA values
 ps$condition <- ifelse(is.na(match_result), NA, inv_F_sign_df$condition[match_result])
 
@@ -264,11 +280,28 @@ View(output)
 
 str(output)
 
+#Try plotting ASVs that are only signif more abundant in HS and LS to make plot cleaner
 
+output <- output %>%
+  filter(condition %in% c("H", "L"))
+
+output <- output %>%
+  filter(condition %in% c("C"))
 
 #Colours ----
 nb.cols <- 25
 mycolors <- colorRampPalette(brewer.pal(8, "Set1"))(nb.cols)
+
+# Define your custom colors
+my_colors <- c("#1f78b4", "#33a02c", "#e31a1c", "#ff7f00", "#6a3d9a", 
+               "#a6cee3", "#b2df8a", "#fb9a99", "#fdbf6f", "#cab2d6",
+               "#ff33bb", "#ffcc00", "#00ffcc", "#0033ff", "#66ff33")
+
+install.packages("randomcoloR")
+library(randomcoloR)
+n <- 50
+palette <- distinctColorPalette(n)
+
 
 custom_shapes <- c(16, 15, 18, 17, 19, 20)  # Choose from a list of available shapes (0-25) in ggplot2
 
@@ -277,22 +310,27 @@ output$FeatureID <- factor(output$FeatureID, levels = unique(output$FeatureID))
 
 
 #scatterplot signif ASVs ----
+#eventually, want to add phylogenetic tree on x axis
 
-ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Genus, shape = condition)) + 
-  geom_point(size = 5) +
-  theme_bw() +
+ggplot(output, aes(x = FeatureID, y = Log_Abundance, color = Family.x, shape = condition)) + 
+  geom_point(size = 6) +
+  theme_classic() +
   facet_grid(~Treatment) +
-  scale_color_manual(values=mycolors) +
-  scale_shape_manual(values = c("C" = 6, "H" = 17, "L" = 6, "CL" = 6, "HL" = 1)) +  # Custom shapes for each condition
+  scale_color_manual(values=palette) +
+  scale_shape_manual(values = c("C" = 17, "H" = 17, "L" = 15, "CL" = 6, "HL" = 1)) +  # Custom shapes for each condition
   theme(
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     axis.title.x = element_blank(),
     axis.text.x = element_blank(),
     legend.position = "right",
-    #axis.text.x = element_text(size=7, angle=45, hjust=1),
-    legend.text = element_text(size = 7)
-  )
+    panel.background = element_rect(color = "black", fill = NA),  # Add border outline
+    legend.box.background = element_rect(color = NA),  # Remove legend border
+    legend.key = element_rect(color = NA),  # Remove border around legend values
+    legend.text = element_text(size = 11),
+    strip.text = element_text(size = 14)  # Adjust facet label font size
+  ) + labs(y = "Log Relative Abundance")
+
 
 View(output)
 

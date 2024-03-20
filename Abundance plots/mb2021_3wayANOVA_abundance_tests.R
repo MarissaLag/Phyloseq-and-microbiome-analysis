@@ -10,57 +10,66 @@ library("datarium")
 library(tidyverse)
 library(ggpubr)
 library(rstatix)
-
-setwd("~/USRA2021/mb2021/m2021_new")
+library("devtools")
+library(phyloseq)
+library(microbiome)
+library(hrbrthemes)
+library(viridis)
+library(dplyr)
+library(ggplot2)
+library(ggResidpanel)
 
 #load data
+pseq<- Marissa_mb2021_filtered_20240203
+#filter data (if needed)
+pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
+pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
 
-Data=read.csv("marissa_mb2021data_primer_use.csv")
-View(Data)
-#Data = X60_fert_Phenotype_Data_CSV
+#convert to compositional (always recommended)
+pseq.rel <- microbiome::transform(pseq, "compositional")
+
+#extract taxa you would like to test
+#For mb2021 I want to test for differences of Flavobacteriaceae, 
+#Rhodobactereae, and Vibrionaceae at family level
+
+pseq.selected <- subset_taxa(pseq.rel, Family %in% c("Vibrionaceae", "Flavobacteriaceae", "Rhodobacteraceae"))
+
+#convert to data frame
+pseq_psmelt <- psmelt(pseq.selected)
+View(pseq_psmelt)
 
 #Assumptions test ----
 #source: https://www.datanovia.com/en/lessons/anova-in-r/#assumptions
 
 #check for outliers
-Data %>% 
-  group_by() %>%
-  identify_outliers()
+outliers <- pseq_psmelt %>% 
+  group_by(Family_text) %>%
+  identify_outliers(Size)
+
+View(outliers)
 
 #check for distribution
 
 # Build the linear model
-model  <- lm(weight ~ group, data = PlantGrowth)
+model  <- lm(Abundance ~ Family, data = pseq_psmelt)
 # Create a QQ plot of residuals
 ggqqplot(residuals(model))
+resid_panel(model)
 
 #check All the points fall approximately along the reference line, for each cell. So we can assume normality of the data.
 
-#2nd assumption: Homogneity of variance assumption
-
-
-
-# Compute Shapiro-Wilk test of normality
-#Note that, if your sample size is greater than 50, the normal QQ plot is preferred because at larger sample sizes the Shapiro-Wilk test becomes very sensitive even to a minor deviation from normality.
-shapiro_test(residuals(model))
-
-#check within groups
-PlantGrowth %>%
-  group_by(group) %>%
-  shapiro_test(weight)
-
-#check the score were normally distributed (p > 0.05) for each group
-ggqqplot(PlantGrowth, "weight", facet.by = "group")
+#2nd assumption: Homogeneity of variance assumption
 
 
 
 
+###below needs editing! Code does not work yet.
 
 set.seed(123)
 #get means of groups ----
-Data %>% sample_n_by(Treatment, size = 3)
+pseq_psmelt %>% sample_n_by(Treatment, size = 3)
 
-Data %>%
+pseq_psmelt %>%
   group_by(Treatment) %>%
   get_summary_stats(Rhodobacteraceae, type = "mean_sd")
 

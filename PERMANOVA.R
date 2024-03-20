@@ -12,13 +12,17 @@ library(vegan)
 
 Marissa_MU42022_rarefied_20231016 <- readRDS("~/GitHub/Phyloseq and microbiome analysis/Marissa_MU42022_rarefied_20231016.rds")
 
-pseq <- Marissa_MU42022_rarefied_20231016
+#pseq <- Marissa_MU42022_rarefied_20231016
 
 pseq <- Marissa_mb2021_filtered_20240203
 
 #for mb2021 remove 3 dpf
 
 pseq <- subset_samples(pseq, !Age %in% "3 dpf")
+
+#compositional
+
+pseq <- microbiome::transform(pseq, "compositional")
 
 #correct family column
 
@@ -50,9 +54,10 @@ metadata <- as(sample_data(pseq), "data.frame")
 
 summary <- adonis2(pseq_bray ~ Treatment*Age*Family, data = metadata)
 
+summary
 
 #Homogeneity of dispersion test
-beta <- betadisper(pseq_bray, metadata$Family)
+beta <- betadisper(pseq_bray, metadata$Age)
 permutest(beta)
 
 ##treatment/family follows homogeneity but Age does not (p = 0.001)
