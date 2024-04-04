@@ -73,9 +73,20 @@ p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
   scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) +
   scale_fill_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) + # Matching colors for ellipses and points
   ggtitle("All time-points") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
-  geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+  #geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
 p
+
+#To add circles around time-points
+p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
+  geom_point(aes(fill = Treatment), size = 6) +
+  scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) +
+  ggtitle("All time-points") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
+  geom_encircle(aes(group = Age), expand = 0.2, color = "black", alpha = 0.5, fill = NA)  # Removed fill aesthetic mapping
+
+# Show the plot
+print(p)
 
 #1 dpf
 pseq <- Marissa_MU42022_rarefied_20231016
@@ -157,16 +168,16 @@ pseq <- subset_samples(pseq, Age %in% c("Spat"))
 pseq.rel <- microbiome::transform(pseq, "compositional")
 
 
-#note: for MU42022 no Heat treatment by Spat (lightgreen colour)
+#note: for MU42022 no Heat treatment by Spat (blue colour)
 
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
 pSpat <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
   geom_point(aes(fill = Treatment), shape = 7, size = 6) +
-  scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF")) +
-  scale_fill_manual(values = c("#F8766D", "#00BFC4", "#C77CFF")) + 
+  scale_colour_manual(values = c("#F8766D", "#C77CFF", "lightgreen")) +
+  scale_fill_manual(values = c("#F8766D", "#C77CFF", "lightgreen")) + 
   ggtitle("Spat") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom") +
   geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
 pSpat
 
