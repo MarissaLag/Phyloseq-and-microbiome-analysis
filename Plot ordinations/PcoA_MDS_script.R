@@ -17,7 +17,7 @@ library(vegan)
 
 install.packages("devtools")
 
-library("devtools")
+library("devtools") 
 
 #install source: https://www.bioconductor.org/packages/release/bioc/html/phyloseq.html
 
@@ -56,12 +56,6 @@ pseq <- readRDS("James_MU42022.rds")
 
 pseq <- Marissa_MU42022_rarefied_20231016
 
-#Create objects ----
-
-OTU = pseq@otu_table
-Tax = pseq@tax_table
-Metadata = pseq@sam_data
-Tree = pseq@phy_tree
 
 #Rarify data ----
 #Only do this if rarefication has not already been done.
@@ -102,6 +96,11 @@ print(sample_depths)
 
 
 #Removal of samples (if needed) ----
+
+#MU42022 filtering
+pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+
 
 ##Only one sample from day 3 left - remove it from analysis 
 
@@ -146,28 +145,26 @@ saveRDS(Marissa_Osyter, "~/mb2021/Marissa_Osyter.rds")  # Replace with the desir
 
 ********************************************************************************************************************************
 
+  #Create objects ----
+
+OTU = pseq@otu_table
+Tax = pseq@tax_table
+Metadata = pseq@sam_data
+Tree = pseq@phy_tree
 
 #Create pseq objects ----
 
-pseq_fam <- microbiome::aggregate_rare(pseq, level = "Family", detection = 50/100, prevalence = 70/100)
-
-pseq_phy <- microbiome::aggregate_rare(pseq, level = "Phylum", detection = 50/100, prevalence = 70/100)
-
-pseq_gen <- microbiome::aggregate_rare(pseq, level = "Genus", detection = 50/100, prevalence = 70/100)
-
 #convert to compositional data
 
-pseq.fam.rel <- microbiome::transform(pseq_fam, "compositional")
+pseq.rel <- microbiome::transform(pseq, "compositional")
 
-pseq.phy.rel <- microbiome::transform(pseq_phy, "compositional")
+pseq_fam <- microbiome::aggregate_rare(pseq.rel, level = "Family", detection = 50/100, prevalence = 70/100)
 
-pseq.gen.rel <- microbiome::transform(pseq_gen, "compositional")
+pseq_phy <- microbiome::aggregate_rare(pseq.rel, level = "Phylum", detection = 50/100, prevalence = 70/100)
 
-pseq.core <- core(pseq.fam.rel, detection = .1/100, prevalence = 90/100)
+pseq_gen <- microbiome::aggregate_rare(pseq.rel, level = "Genus", detection = 50/100, prevalence = 70/100)
 
-pseq.core <- microbiome::transform(pseq.core, "compositional")
-
-
+pseq.core <- core(pseq.rel, detection = .1/100, prevalence = 90/100)
 
 #PERMANOVA ----
 #source: https://microbiome.github.io/tutorials/PERMANOVA.html
@@ -214,15 +211,15 @@ Total                     49  16.4538 1.00000
 
 set.seed(4235421)
 
-ord <- ordinate(pseq, "MDS", "bray")
+ord <- ordinate(pseq.rel, "MDS", "bray")
 
 #plot MDS/PcoA ----
 
 #Code to order levels ----
-pseq@sam_data$Treatment <- factor(pseq@sam_data$Treatment,
+pseq.rel@sam_data$Treatment <- factor(pseq.rel@sam_data$Treatment,
                                   levels = c("Control", "Probiotics","Probiotics + HT", "High temperature", "NA"))
 
-plot_ordination(pseq, ord, color = "Treatment", shape = "Age") + geom_point(size = 4)
+plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") + geom_point(size = 4)
 
 ##change colour palette for PCOA plot
 
@@ -230,7 +227,7 @@ names(Data)[names(Data) == "treatment"] <- "Treatment"
 
 custom_color_palette <- c("#E41A1C", "#4DAF4A", "#377EB8") # Example color palette
 
-plot_ordination(pseq, ord, color = "Tank_treatment", shape = "Age") +
+plot_ordination(pseq, ord, color = "Treatment", shape = "Age") +
   geom_point(size = 4) +
   scale_color_manual(values = custom_color_palette, labels = c("Control", "High salinity", "Low salinity")) +
   scale_shape_manual(values = c("day_1" = 16, "day_18" = 17, "day_3" = 15, "spat" = 3), 

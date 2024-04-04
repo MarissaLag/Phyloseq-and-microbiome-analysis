@@ -86,7 +86,7 @@ pseq_group <- pseq.rel %>%
 
 
 pseq_group <- pseq.rel %>%
-  aggregate_taxa(level = "Phylum") %>%
+  aggregate_taxa(level = "Family") %>%
   transform(transform = "clr") %>%
   psmelt() %>%
   group_by(Age)
@@ -139,7 +139,7 @@ core <- psmelt(pseq.core)
 
 #look at sample numbers
 
-sample_counts <- pseq %>%
+sample_counts <- top5F %>%
   group_by(Age, Treatment) %>%
   summarise(Num_Samples = n())
 
@@ -187,12 +187,13 @@ ggplot(Avg_abundance, aes(fill=Phylum, y=Avg_Abundance, x=Age_Treatment)) +
   scale_fill_brewer(palette = "Spectral") +
   theme(axis.text.x = element_text(size = 11, angle = 45, hjust = 1))
 
-ggplot(pseq, aes(fill=Order, y=Abundance, x=Sample)) + 
+ggplot(Avg_abundance, aes(fill=Family, y=Avg_Abundance, x=Treatment)) + 
   geom_bar(position="stack", stat="identity") +
   #scale_fill_brewer(palette = "Paired") +
-  labs(title = "All time-points", x = "", y = "Relative abundance") +
+  labs(title = "All time-points", x = "", y = "Average relative abundance") +
   theme(plot.title = element_text(hjust = 0.5)) +
-  facet_wrap(~Treatment)
+  facet_wrap(~Age) +
+  theme(axis.text.x = element_text(size=11, angle=45, hjust=1))
   
 
 ggplot(top10G, aes(fill=Genus, y=Abundance, x=Treatment)) + 
@@ -233,7 +234,8 @@ ggplot(relative_fam, aes(fill=Family, y=Abundance, x=Treatment)) +
   facet_wrap(~Age) +
   theme(axis.text.x = element_text(size=11, angle=45, hjust=1)) +
   theme(axis.text.y = element_text(size=11)) +
-  theme(legend.text = element_text(size = 11))
+  theme(legend.text = element_text(size = 11)) +
+  theme(axis.text.x = element_text(size=11, angle=45, hjust=1))
 
 
 ggplot(top10, aes(fill=Order, y=Abundance, x=Treatment)) + 
@@ -335,3 +337,6 @@ ggplot(Avg_abundance, aes(fill=Treatment, y=Avg_Abundance, x=Treatment)) +
   theme(plot.title = element_text(hjust = 0.5)) +
   theme(axis.text.x = element_text(size=11, angle=45, hjust=1)) +
   scale_fill_manual(values=mycolors)
+
+
+#

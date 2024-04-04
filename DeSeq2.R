@@ -1,123 +1,111 @@
-#deSeq2 differential abundance analysis
-source: https://sw1.github.io/teaching/phyloseq.html
-source: https://joey711.github.io/phyloseq-extensions/DESeq2.html
+#DESeq2 test for differential species abundance test
+#Code from Elliot Scanes
 
 
-#Many issues with this code that needs to be fixed
-#attempting to run Deseq2 differential abundance analysis and/or ANCOM
+#Should I be normalizing the data beforehand???
 
 
-Marissa_mb2021_filtered_20240203 <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Marissa_mb2021_filtered_20240203.rds")
+#load phyloseq object
+pseq <- Marissa_mb2021_filtered_20240203
 
-PS <- Marissa_mb2021_filtered_20240203
+#filter samples
+pseq <- subset_samples(pseq, !Age %in% "3 dpf")
+pseq <- subset_samples(pseq, !Library_Name %in% c("T9r1", "T9r3"))
 
-PS <- subset_samples(PS, !Age %in% c("3 dpf", "Spat", "18 dpf"))
+#Select time-point
+pseq <- subset_samples(pseq, Age %in% "Spat")
+View(pseq@sam_data)
 
+#Can I look at core member? If so,
 
-install.packages("DESeq2")
+pseq<- core(pseq, detection = .1/100, prevalence = 90/100)
 
+View(pseq@otu_table)
+
+ #Install deseq
 if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
+  install.packages("BiocManager") #download deseq
 
+BiocManager::install("DESeq2") #Install deseq
+
+BiocManager::install("DESeq2", force = TRUE)
+
+BiocManager::install("GenomeInfoDb")
 BiocManager::install("DESeq2")
 
-library(phyloseq)
-library(tidyverse)
-library(ape)
-library(DESeq2)
 
-PS3 <- prune_samples(!is.na(sample_data(PS)$Treatment),PS)
-PS3 <- filter_taxa(PS3,function(x) sum(x) > 0,prune = TRUE)
+library(DESeq2) #load deseq
 
-diagdds <- phyloseq_to_deseq2(PS3, ~ Treatment)
+DeSeq <- phyloseq_to_deseq2(pseq, ~ Treatment) #convert phyloseq to deseq object
+
+DeSeq2 <- DESeq(DeSeq) #run deseq analysis
 
 
-## converting counts to integer mode
-diagdds <- DESeq(diagdds, test='Wald', fitType='parametric')
+#format for code below must be: contrast = c('factorName', 'numeratorLevel', 'denominatorLevel')
 
-res <- results(diagdds, cooksCutoff = FALSE)
-res
-
-#only compared Age Spat vs 1.dpf I think...
+res_high_vs_control <- results(DeSeq2, contrast = c("Treatment", "High salinity", "Control"))
+res_low_vs_control <- results(DeSeq2, contrast = c("Treatment", "Low salinity", "Control"))
+res_high_vs_low <- results(DeSeq2, contrast = c("Treatment", "High salinity", "Low salinity"))
 
 
-res = results(diagdds, cooksCutoff = FALSE)
-alpha = 0.01
-sigtab = res[which(res$padj < alpha), ]
-sigtab = cbind(as(sigtab, "data.frame"), as(tax_table(PS3)[rownames(sigtab), ], "matrix"))
-head(sigtab)
+** from this point it’s optional but this code helps filter the results **
 
-dim(sigtab)
+res_dat_low <- cbind(as(res_low_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_low_vs_control), ], "matrix")) #make the results a data frame
+res_dat_high <- cbind(as(res_high_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_high_vs_control), ], "matrix")) #make the results a data frame
+res_dat_high_low <- cbind(as(res_high_vs_low, "data.frame"), as(tax_table(pseq)[rownames(res_high_vs_low), ], "matrix")) #make the results a data frame
 
 
-#visualization
+alpha = 0.05 #Set alpha
+
+sigtab_high = res_dat_high[which(res_dat_high$padj < alpha), ] #filter out significant results
+sigtab_low = res_dat_low[which(res_dat_low$padj < alpha), ]
+sigtab_high_low = res_dat_high_low[which(res_dat_high_low$padj < alpha), ]
+
+#code below not working but taxa already included?
+#add the taxonomy back in
+sigtab_high = cbind(as(sigtab_high, "data.frame"), as(tax_table(pseq[rownames(sigtab_high), ], "matrix")) 
+sigtab_low = cbind(as(sigtab_low, "data.frame"), as(tax_table(pseq[rownames(sigtab_low), ], "matrix")) #add the taxonomy back in
+
+#print only the significant results                              
+sigtab_high
+sigtab_low
+sigtab_high_low
+
+
+#plotting
+#source: https://joey711.github.io/phyloseq-extensions/DESeq2.html
 
 library("ggplot2")
+library(viridis)
+library(hrbrthemes)
 theme_set(theme_bw())
-scale_fill_discrete <- function(palname = "Set1", ...) {
-  scale_fill_brewer(palette = palname, ...)
-}
+
+
 # Phylum order
-x = tapply(sigtab$log2FoldChange, sigtab$Phylum, function(x) max(x))
+x = tapply(sigtab_high$log2FoldChange, sigtab_high$Genus, function(x) max(x))
 x = sort(x, TRUE)
-sigtab$Phylum = factor(as.character(sigtab$Phylum), levels=names(x))
+sigtab$Order = factor(as.character(sigtab$Phylum), levels=names(x))
 # Genus order
-x = tapply(sigtab$log2FoldChange, sigtab$Genus, function(x) max(x))
+x = tapply(sigtab_high$log2FoldChange, sigtab_high$Genus, function(x) max(x))
 x = sort(x, TRUE)
-sigtab$Genus = factor(as.character(sigtab$Genus), levels=names(x))
-ggplot(sigtab, aes(x=Genus, y=log2FoldChange, color=Phylum)) + geom_point(size=3) + 
-  theme(axis.text.x = element_text(angle = -90, hjust = 0, vjust=0.5))
+sigtab_high$Genus = factor(as.character(sigtab_high$Genus), levels=names(x))
+
+mycolors <- c("#E69F00", "#CC79A7", "#009E73", "#56B4E9", "#F0E442", "#999999")
+mycolors <- c("#F0E442")
 
 
-#running another tutorial
-#source: https://www.yanh.org/2021/01/01/microbiome-r/#differential-abundance-analysis
-#source: https://microbiome.github.io/course_2021_radboud/differential-abundance-analysis.html#deseq2
+ggplot(sigtab_high_low, aes(x=Genus, y=log2FoldChange, color=Order)) + geom_point(size=7) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, face = "bold")) +
+  labs(title = "High salinity vs. Low salinity", x = "", y = "Log2-Fold-Change") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(panel.grid = element_blank()) +
+  scale_colour_manual(values = mycolors)
 
+  scale_color_manual(values = c("Alteromonadaceae" = "pink", "Halieaceae" = "#377EB8", "Rhodobacteraceae" = "#4DAF4A", "Saprospiraceae" = "yellow"))
 
-ps <- Marissa_mb2021_filtered_20240203 
- 
-
-sample_data(ps)$Treatment <- as.factor(sample_data(ps)$Treatment) # factorize for DESeq2
-
-ps.taxa <- tax_glom(ps, taxrank = 'Genus', NArm = FALSE)
-
-# pairwise comparison between Treatments
-ps.taxa.sub <- subset_samples(ps.taxa, Treatment %in% c("Control", "High salinity", "Low salinity"))
-
-# filter sparse features, with > 90% zeros ##NOT DONE: code below not working
-
-ps.taxa.pse.sub <- prune_taxa(rowSums(otu_table(ps.taxa.sub) == 0) < ncol(otu_table(ps.taxa.sub)) * 0.9, ps.taxa.sub)
-
-ps_ds = phyloseq_to_deseq2(ps.taxa.pse.sub, ~ body.site)
-
-
-
-
-# use alternative estimator on a condition of "every gene contains a sample with a zero"
-ds <- estimateSizeFactors(ps_ds, type="poscounts")
-ds = DESeq(ds, test="Wald", fitType="parametric")
-alpha = 0.05 
-res = results(ds, alpha=alpha)
-res = res[order(res$padj, na.last=NA), ]
-taxa_sig = rownames(res[1:20, ]) # select bottom 20 with lowest p.adj values
-ps.taxa.rel <- transform_sample_counts(ps, function(x) x/sum(x)*100)
-ps.taxa.rel.sig <- prune_taxa(taxa_sig, ps.taxa.rel)
-# Only keep gut and tongue samples
-ps.taxa.rel.sig <- prune_samples(colnames(otu_table(ps.taxa.pse.sub)), ps.taxa.rel.sig)
-
-
-
-# Agglomerates data to Genus level
-load.packages(mia)
-
-
-tse_genus <- agglomerateByRank(ps, rank = "Genus")
-tse_genus <- tax_glom(ps, taxrank = 'Genus', NArm = FALSE)
-
-# Perform clr transformation. A Pseudocount of 1 needs to be added, 
-# because the data contains zeros and the clr transformation includes a 
-# log transformation.
-tse_genus <- transformAssay(tse_genus, method = "clr", pseudocount = 1)
-
-ds2 <- DESeqDataSet(tse_genus, ~Treatment)
-
+ggplot(sigtab_high, aes(x=Family, y=log2FoldChange, color=Family)) + geom_point(size=6) + 
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 1)) +
+  labs(title = "High salinity vs. Control", x = "", y = "Log2-Fold-Change") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(panel.grid = element_blank()) +
+  scale_color_ipsum()

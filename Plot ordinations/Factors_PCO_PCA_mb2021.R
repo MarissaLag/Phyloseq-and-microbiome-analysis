@@ -10,6 +10,8 @@
 library("devtools")
 library(phyloseq)
 library(microbiome)
+library(ggalt)
+library(ggplot2)
 
 ## setwd
 setwd("C:/Users/maris/OneDrive/Documents/USRA2021/mb2021/Data")
@@ -175,18 +177,23 @@ print(p4)
 
 #Make plot for each time-point
 
-pseq<- Marissa_mb2021_filtered_20240203
+#pseq<- Marissa_mb2021_filtered_20240203
+#pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 
-pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
+pseq <- Marissa_MU42022_rarefied_20231016
+pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
 pseq.rel <- microbiome::transform(pseq, "compositional")
+
+pseq.rel <- subset_samples(pseq.rel, Age %in% "Day 01")
 
 set.seed(4235421)
 
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
 p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") + geom_point(size = 4)
-p <- p + scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF"))
+p <- p + scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF","lightgreen"))
 p <- p + ggtitle("1 dpf")
 p <- p + theme(plot.title = element_text(hjust = 0.5)) + theme(legend.position="none")
 p1 <- p + ggalt::geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)  
@@ -479,6 +486,14 @@ plot_ordination(pseq, ord, color = "Tank_treatment", shape = "Age") +
                      labels = c("Day 1", "Day 18", "Day 3", "Spat")) + theme_bw()
 
 
+
+plot_ordination(pseq, ord, color = "Tank_treatment", shape = "Age") +
+  geom_point(size = 4) +
+  ggalt::geom_encircle(aes(fill = Tank_treatment), color = "black", expand = 0.2, alpha = 0.2) +
+  scale_color_manual(values = c("#E41A1C", "#4DAF4A", "#377EB8"), 
+                     labels = c("Control", "High salinity", "Low salinity")) +
+  scale_shape_manual(values = c("day_1" = 16, "day_18" = 17, "day_3" = 15, "spat" = 3), 
+                     labels = c("Day 1", "Day 18", "Day 3", "Spat")) + theme_bw()
 
 
 

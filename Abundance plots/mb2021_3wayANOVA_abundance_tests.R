@@ -26,92 +26,92 @@ pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
 
 #convert to compositional (always recommended)
-pseq.rel <- microbiome::transform(pseq, "compositional")
+pseq <- microbiome::transform(pseq, "compositional")
 
 #extract taxa you would like to test
 #For mb2021 I want to test for differences of Flavobacteriaceae, 
 #Rhodobactereae, and Vibrionaceae at family level
 
-pseq.selected <- subset_taxa(pseq.rel, Family %in% c("Vibrionaceae", "Flavobacteriaceae", "Rhodobacteraceae"))
+pseq.selected <- subset_taxa(pseq, Family %in% c("Vibrionaceae", "Flavobacteriaceae", "Rhodobacteraceae"))
 
 #convert to data frame
-pseq_psmelt <- psmelt(pseq.selected)
+pseq_psmelt <- psmelt(pseq)
 View(pseq_psmelt)
 
-#Assumptions test ----
-#source: https://www.datanovia.com/en/lessons/anova-in-r/#assumptions
-
-#check for outliers
-outliers <- pseq_psmelt %>% 
-  group_by(Family_text) %>%
-  identify_outliers(Size)
-
-View(outliers)
-
-#check for distribution
-
-# Build the linear model
-model  <- lm(Abundance ~ Family, data = pseq_psmelt)
-# Create a QQ plot of residuals
-ggqqplot(residuals(model))
-resid_panel(model)
-
-#check All the points fall approximately along the reference line, for each cell. So we can assume normality of the data.
-
-#2nd assumption: Homogeneity of variance assumption
-
-
-
-
-###below needs editing! Code does not work yet.
-
 set.seed(123)
+
 #get means of groups ----
 pseq_psmelt %>% sample_n_by(Treatment, size = 3)
 
 pseq_psmelt %>%
-  group_by(Treatment) %>%
-  get_summary_stats(Rhodobacteraceae, type = "mean_sd")
+  group_by(Family, Treatment) %>%
+  summarise(mean_abundance = mean(Abundance, na.rm = TRUE),
+            sd_abundance = sd(Abundance, na.rm = TRUE))
 
-##results
+View(pseq_psmelt)
 
-A tibble: 3 × 5
-Treatment     variable             n  mean    sd
-<chr>         <fct>            <dbl> <dbl> <dbl>
-  1 Control       Rhodobacteraceae    18 1259   394.
-2 High salinity Rhodobacteraceae    17 1328.  391.
-3 Low salinity  Rhodobacteraceae    15 1248.  288.
+#test each seperately
+Data <- pseq_psmelt %>%
+  filter(Family == "Vibrionaceae")
 
-##Flavo
+Data <- pseq_psmelt %>%
+  filter(Family == "Flavobacteriaceae")
 
-Data %>%
-  group_by(Treatment) %>%
-  get_summary_stats(Flavobacteriaceae, type = "mean_sd")
+vibrionaceae_data <- subset(Data, Family == "Vibrionaceae", select = c("Abundance", "Treatment"))
 
-#results
+Data <- pseq_psmelt %>%
+  filter(Family == "Rhodobacteraceae")
 
-Treatment     variable              n  mean    sd
-<chr>         <fct>             <dbl> <dbl> <dbl>
-  1 Control       Flavobacteriaceae    18  539.  197.
-2 High salinity Flavobacteriaceae    17  788.  766.
-3 Low salinity  Flavobacteriaceae    15  553.  258.
+View(Data)
 
 
-#perform three-way ANOVA ----
-model <- aov(Rhodobacteraceae ~ Age * Treatment * Genetics, data=Data)
+#perform ANOVA ----
+model <- aov(Abundance ~ Treatment*sample_Family, data=Data)
+#view summary of three-way ANOVA
+summary(model)
 
 
+#Another way
+vibrionaceae_data <- subset(Data, Family == "Vibrionaceae", select = c("Abundance", "Treatment"))
+flavo_data <- subset(Data, Family == "Flavobacteriaceae", select = c("Abundance", "Treatment"))
+
+# Perform ANOVA
+anova_result <- aov(Abundance ~ Treatment, data = vibrionaceae_data)
+
+# Summarize ANOVA results
+summary(anova_result)
+
+#non-paramtric test
+#Kruskal-Wallis test
+kruskal_result <- kruskal.test(Abundance ~ Treatment, data = vibrionaceae_data)
+
+print(kruskal_result)
+
+#perform non parametric t-test on average values
+
+#compare HS and control only
+
+pseq_psmelt <- psmelt(pseq)
+
+vibrionaceae_data <- subset(pseq_psmelt, Treatment %in% c("High salinity", "Control"))
+vibrionaceae_data <- subset(vibrionaceae_data, Family == "Vibrionaceae")
+
+#Wilcoxon rank-sum test
+wilcox_test_result <- wilcox.test(Abundance ~ Treatment, data = vibrionaceae_data)
+
+print(wilcox_test_result)
+
+
+
+#if need to change variable type
 str(Data)
 
 Data$Family_Number <- as.character(Data$Family_Number)
 Data$Size <- as.numeric(Data$Size)
 
-model <- aov(Size ~ Treatment * Family_Number, data=Data)
 
 
 
-#view summary of three-way ANOVA
-summary(model)
 
 ##rhodo is signif different with Age (p = 0.00165), and genetics (0.00133)
 

@@ -7,6 +7,9 @@ library("devtools")
 library(phyloseq)
 library(microbiome)
 library(vegan)
+library(devtools)
+install_github("pmartinezarbizu/pairwiseAdonis/pairwiseAdonis") 
+library(pairwiseAdonis)
 
 #Load and name data ----
 
@@ -16,9 +19,13 @@ Marissa_MU42022_rarefied_20231016 <- readRDS("~/GitHub/Phyloseq and microbiome a
 
 pseq <- Marissa_mb2021_filtered_20240203
 
-#for mb2021 remove 3 dpf
+#for mb2021 remove 3 dpf and T9
 
 pseq <- subset_samples(pseq, !Age %in% "3 dpf")
+
+pseq <- subset_samples(pseq, Age %in% "18 dpf")
+
+pseq <- subset_samples(pseq, !Library_Name %in% c("T9r1", "T9r3"))
 
 #compositional
 
@@ -52,16 +59,20 @@ pseq_bray <- phyloseq::distance(pseq, method = "bray")
 
 metadata <- as(sample_data(pseq), "data.frame")
 
-summary <- adonis2(pseq_bray ~ Treatment*Age*Family, data = metadata)
+summary <- adonis2(pseq_bray ~ Treatment*Family, data = metadata)
 
 summary
 
+
 #Homogeneity of dispersion test
-beta <- betadisper(pseq_bray, metadata$Age)
+beta <- betadisper(pseq_bray, metadata$Treatment)
 permutest(beta)
 
 ##treatment/family follows homogeneity but Age does not (p = 0.001)
 
+#Post-Hoc
+
+pairwise.adonis(pseq_bray, phyloseq::sample_data(pseq)$Treatment)
 
 #CAP plots ----
 
@@ -143,6 +154,101 @@ cap_plot +
 
 
 
+#PERMANOVA of specific microbiota #Code below doesn't work...can't make brays similarity matrix with only Vibrio?
+
+pseq <- Marissa_mb2021_filtered_20240203
+
+#for mb2021 remove 3 dpf and T9
+
+pseq <- subset_samples(pseq, !Age %in% "3 dpf")
+
+pseq <- subset_samples(pseq, Age %in% "18 dpf")
+
+pseq <- subset_samples(pseq, !Library_Name %in% c("T9r1", "T9r3"))
+
+pseq <- microbiome::transform(pseq, "compositional")
 
 
+subset <- subset_taxa(pseq, Family=="Vibrionaceae")
+View(subset@otu_table)
+
+set.seed(452)
+
+pseq_bray <- phyloseq::distance(subset, method = "bray")
+
+metadata <- as(sample_data(subset), "data.frame")
+
+summary <- adonis2(pseq_bray ~ Treatment*Age, data = metadata)
+
+summary
+
+
+#SIMPER
+
+library(phyloseq)
+library(vegan)
+
+pseq<- Marissa_mb2021_filtered_20240203
+#filter data (if needed)
+pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
+pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
+
+pseq <- psmelt(pseq)
+
+# Define groupings for SIMPER analysis (e.g., Treatment)
+grouping <- pseq@sam_data$Treatment
+
+otu <- pseq@otu_table
+
+# Perform SIMPER analysis
+simper_result <- simper(otu, grouping)
+
+# Print the results
+print(simper_result)
+
+#test each ASV for significance
+
+# Extract OTU abundance matrix
+otu_matrix <- as.matrix(otu_table(pseq))
+
+# Transpose the OTU matrix so that ASVs are in rows and samples are in columns
+otu_matrix <- t(otu_matrix)
+
+# Perform Kruskal-Wallis test for each ASV
+kruskal_results <- apply(otu_matrix, 1, function(x) kruskal.test(x ~ grouping))
+
+# Extract p-values from the test results
+p_values <- sapply(kruskal_results, function(x) x$p.value)
+
+# Adjust p-values for multiple testing if needed (e.g., using Bonferroni correction)
+
+adjusted_p_values <- p.adjust(p_values, method = "bonferroni")
+
+# Print the results
+results <- data.frame(ASV = rownames(otu_matrix), p_value = adjusted_p_values)
+print(results)
+
+
+#different post hoc test
+#source:https://www.yanh.org/2021/01/01/microbiome-r/ 
+
+metadata <- data.frame(sample_data(ps.rarefied))
+test.adonis <- adonis(dist ~ body.site, data = metadata)
+test.adonis <- as.data.frame(test.adonis$aov.tab)
+test.adonis
+
+cbn <- combn(x=unique(metadata$body.site), m = 2)
+p <- c()
+
+for(i in 1:ncol(cbn)){
+  ps.subs <- subset_samples(ps.rarefied, body.site %in% cbn[,i])
+  metadata_sub <- data.frame(sample_data(ps.subs))
+  permanova_pairwise <- adonis(phyloseq::distance(ps.subs, method = "bray") ~ body.site, 
+                               data = metadata_sub)
+  p <- c(p, permanova_pairwise$aov.tab$`Pr(>F)`[1])
+}
+
+p.adj <- p.adjust(p, method = "BH")
+p.table <- cbind.data.frame(t(cbn), p=p, p.adj=p.adj)
+p.table
 
