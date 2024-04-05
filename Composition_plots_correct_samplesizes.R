@@ -9,13 +9,15 @@ library(dplyr)
 library(ggplot2)
 library(dplyr)
 
-pseq<- Marissa_mb2021_filtered_20240203
-pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
-pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
+#MU42022 filtering
+pseq <- Marissa_MU42022_rarefied_20231016
+pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
-#Removing T9 (spat) from mb2021 analysis
-#Family labels not correct for spat data so 9 = family 1 spat LS
-pseq <- subset_samples(pseq, !Family %in% c("9"))
+#MB2021 filtering
+pseq <- Marissa_mb2021_filtered_20240203
+pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
+pseq <- subset_samples(pseq, !Family %in% c("9")) #remove T9 spat samples
 
 
 #1st create new column that contains Treat*Age information 
