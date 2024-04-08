@@ -30,8 +30,8 @@ theme_set(theme.marissa())
 
 #Remove day 3 (only 1 sample remaining) for mb2021 project
 
-pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
-
+pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
+pseq <- subset_samples(pseq, !Family %in% c("9"))
 
 pseq <- subset_samples(pseq, Age %in% c("Spat"))
 
@@ -52,6 +52,7 @@ print(Treatment)
 Age <- unique(as.character(Metadata$Age))
 print(Age)
 
+ps <- psmelt(pseq)
 
 #Write a for loop to go through each of the Treatments one by one and combine identified core taxa into a list
 
@@ -73,6 +74,30 @@ for (n in Treatment){ # for each variable n in Treatment
 print(list_core)
 summary(list_core)
 str(list_core)
+
+# List of unique ASVs from each treatment
+# Combine all ASVs from different treatments into a single vector
+unique_list_core <- list()
+
+# Loop through each treatment
+for (i in 1:length(list_core)) {
+  # Extract ASVs unique to this treatment
+  unique_asvs <- list_core[[i]]
+  for (j in 1:length(list_core)) {
+    if (j != i) {
+      unique_asvs <- setdiff(unique_asvs, list_core[[j]])
+    }
+  }
+  # Store unique ASVs for this treatment
+  unique_list_core[[i]] <- unique_asvs
+}
+
+# Print the result
+print(unique_list_core)
+
+
+View(pseq@tax_table)
+
 
 #combine ASV data from list_core and tax data in phyloseq object
 
@@ -152,6 +177,8 @@ plot(eulerr_data, shape = "ellipse", quantities = FALSE)
 #plot ----
 mycols <- c(nonCRC="#d6e2e9", CRC="#cbf3f0", H="#fcf5c7") 
 mycols <- c(nonCRC="lightblue", CRC="lightgreen", H="violet") 
+
+mycols <- c(nonCRC="lightgreen", CRC="lightblue", H= "#F8766D") 
 
 
 #order bubbles

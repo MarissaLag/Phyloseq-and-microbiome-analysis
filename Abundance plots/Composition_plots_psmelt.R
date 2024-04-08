@@ -22,6 +22,7 @@ pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 #MB2021 filtering
 pseq <- Marissa_mb2021_filtered_20240203
 pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
+pseq <- subset_samples(pseq, !Family %in% c("9"))
 
 #set theme ----
 

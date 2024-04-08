@@ -8,6 +8,7 @@ library(viridis)
 library(dplyr)
 library(ggplot2)
 library(dplyr)
+library(RColorBrewer)
 
 #MU42022 filtering
 pseq <- Marissa_MU42022_rarefied_20231016
@@ -16,7 +17,7 @@ pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
 #MB2021 filtering
 pseq <- Marissa_mb2021_filtered_20240203
-pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
+pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
 pseq <- subset_samples(pseq, !Family %in% c("9")) #remove T9 spat samples
 
 
@@ -132,14 +133,17 @@ paired_palette <- brewer.pal(12, "Paired")
 extended_palette <- c(paired_palette, "#ff7f00", "pink", "red", "yellow", "lightgreen")  # Add a custom color to the palette
 
 # Use ggplot with the extended Paired palette
-ggplot(Avg_abundance, aes(fill = Family, y = Avg_Abundance, x = Treatment)) + 
-  geom_bar(position = "stack", stat = "identity") +
+p3 <- ggplot(Avg_abundance, aes(fill = Family, y = Avg_Abundance, x = Treatment)) + 
+  geom_bar(position = "stack", stat = "identity", colour = "black") +
   scale_fill_manual(values = extended_palette) +  # Use scale_fill_manual to specify the extended palette
-  labs(title = "Core - 1 dpf", x = "", y = "Relative abundance (%)") +
+  labs(title = "", x = "", y = "Relative abundance (%)") +
   theme(plot.title = element_text(hjust = 0.5)) +
-  theme(axis.text.x = element_text(size = 11, angle = 45, hjust = 1)) +
-  facet_wrap("Age")
-  
+  theme(axis.text.x = element_text(size = 11, angle = 45, hjust = 1, face = "bold")) +
+  facet_wrap("Age") +
+  theme(legend.title = element_text(size = 13),
+        legend.text = element_text(size = 13),
+        axis.title.x = element_text(size = 5))
+p3  
 
 
 #Vibrionaceae abundances ----
