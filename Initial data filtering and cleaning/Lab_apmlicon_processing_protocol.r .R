@@ -1,5 +1,6 @@
 # https://bioconductor.org/help/course-materials/2017/BioC2017/Day1/Workshops/Microbiome/MicrobiomeWorkflowII.html
 
+#Packages ----
 ### Downloading all the packages to process data in R
 setwd("/Users/greent/Desktop/Amplicon_Seq_data_Aug_2023/Marissa_Seqs")
 
@@ -50,6 +51,7 @@ sapply(c(.cran_packages, .bioc_packages), require, character.only = TRUE)
 
 set.seed(100)
 
+#Load seqs ----
 ####Tell R where the data is...
 miseq_path <- "Marissa_seqs/"
 list.files(miseq_path)
@@ -67,6 +69,7 @@ fnRs <- file.path(miseq_path, fnRs)
 fnFs[1:3]
 fnRs[1:3]
 
+#Seq quality ----
 #Quality of reads: Most Illumina sequencing data shows a trend of decreasing average quality towards the end of sequencing reads.
 #This only shows you the first 2. Which direction is this for? 
 plotQualityProfile(fnFs[1:8])
@@ -94,7 +97,8 @@ out <- filterAndTrim(fnFs, filtFs, truncLen=c(150),
 head(out)
 
 
-###Making ASVs
+
+#Make ASVs ----
 derepFs <- derepFastq(filtFs, verbose=TRUE)
 #derepRs <- derepFastq(filtRs, verbose=TRUE)
 # Name the derep-class objects by the sample names
@@ -112,8 +116,11 @@ dadaFs <- dada(derepFs, err=errF, multithread=TRUE)
 
 dadaFs[[1]]
 
+#Check ASVs - if many unknowns, you may want to change your trimming parameters (make them larger) to provide more info
+
 ##Still have many unique sequences - (about 1/3rd of reads unique seqs) - change to 100 or 120bp region? -> actually, after looking at taxonomy_alldata.csv, looks okay
 
+#If using both forward and reverse
 #mergers <- mergePairs(dadaFs, derepFs) 
 
 seqtabAll <- makeSequenceTable(dadaFs[!grepl("Mock", names(dadaFs))])
@@ -129,11 +136,8 @@ unname(head(taxTab))
 write.csv(taxTab, "taxonomy_alldata_2.csv")
 
 
-
-
-
-
-##### now replace the long ASV names (the actual sequences) with human-readable names####
+#ASVs to Taxa info ----
+# now replace the long ASV names (the actual sequences) with human-readable names
 #save the new names and sequences as a .fasta file in your project working directory, and save a table that shows the mapping of sequences to new ASV names
 my_otu_table <- t(as.data.frame(seqtabNoC)) #transposed (OTUs are rows) data frame. unclassing the otu_table() output avoids type/class errors later on
 ASV.seq <- as.character(unclass(row.names(my_otu_table))) #store sequences in character vector
@@ -144,9 +148,11 @@ write.table(cbind(ASV.num, ASV.seq), "sequence_ASVname_mapping.txt", sep="\t", q
 library(seqinr)
 write.fasta(sequences=as.list(ASV.seq), names=ASV.num, "16s_ASV_sequences_all.fasta") #save sequences with new names in fasta format
 
-###Try ####FOr tree 
-Object1<- cbind(ASV.num, taxTab)
 
+#Phylogenetic tree ----
+
+###Try 
+Object1<- cbind(ASV.num, taxTab)
 
 #IMPORTANT: sanity checks
 colnames(seqtabNoC) == ASV.seq #only proceed if this tests as true for all elements
@@ -159,7 +165,7 @@ row.names(taxTab) <- ASV.num
 #re-save sequence and taxonomy tables with updated names
 write.table(data.frame("row_names"=rownames(seqtabNoC),seqtabNoC),"sequence_table.16s.all_merged.txt", row.names=FALSE, quote=F, sep="\t")
 write.table(data.frame("row_names"=rownames(taxTab),taxTab),"taxonomy_table.16s_all_merged.txt", row.names=FALSE, quote=F, sep="\t")
-##################
+
 
 #### Phylogenetic tree 
 library(phangorn)
@@ -181,8 +187,7 @@ detach("package:phangorn", unload=TRUE)
 
 plot(fitGTR)
 
-### To phyloseq
-
+#RDS phyloseq object ----
  
 meta<-import_qiime_sample_data("Metadata_Marissa_only.txt")
 
@@ -196,15 +201,13 @@ ps1
 #Denman has Denman's only
 
 saveRDS(ps1, file= "Marissa_MU42022.rds")
-#####
+
 MDS<- ordinate(ps1, method = "NMDS", distance = "bray", weighted = TRUE)
 MDS_Bray<- plot_ordination(ps1, MDS, color = "Treatment")
 
 MDS1<- ordinate(ps1, method = "MDS", distance = "sor")
 MDS_Bray1<- plot_ordination(ps1, MDS1, color = "Treatment")+ theme_bw()
 
-
-#####
 
 Uni_w<- ordinate(ps1, method = "MDS", distance = "unifrac", weighted = TRUE)
 Ph_w<- plot_ordination(ps1, Uni_w, color = "Treatment") + theme_bw() + title("Unifrac weighted")
@@ -213,6 +216,15 @@ Uni_u<- ordinate(ps1, method = "MDS", distance = "unifrac", weighted = FALSE)
 Ph_u<- plot_ordination(ps1, Uni_u, color = "Treatment")
 grid.arrange(Ph_w,Ph_u,MDS_Bray, MDS_Bray1)
 
+
+#Rarefying data ----
+
+#Depending on data, may not always have to rarefy
+#if rarefication curves look good, don't rarefy. If there are one or two outliers, remove them and don't rarefy
+#Also Jadi normalizes her data as well (even if rarefied or not) with DESEq2 negative binomial dist'd model
+#see Rarify_20231011.R for details on how to check this. 
+
+#IF rarefying: Remove low freq taxa and standardize read count
 ##start pre-processing
 
 install.packages("remotes")
@@ -241,5 +253,10 @@ phyloseq_filter_prevalence()
 ######Rare_faction 
 
 Rare_10000<-rarefy_even_depth(pseq_filter, sample.size= 10000)
+
+
+
+
+
 
 
