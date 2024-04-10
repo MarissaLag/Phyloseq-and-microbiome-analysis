@@ -99,16 +99,6 @@ ps2 = prune_taxa(keepTaxa, ps1)
 
 #Also Jadi normalizes her data as well (even if rarefied or not) with DESEq2 negative binomial dist'd model
 
-Marissa_MU42022_unfiltered <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/Marissa_MU42022_unfiltered.rds")
-
-Marissa_mb2021_unfiltered <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/Marissa_mb2021_unfiltered.rds")
-
-pseq <- Marissa_mb2021_unfiltered
-
-pdf("Phyloseq and microbiome analysis/Old RDA files/rarefaction_curve.pdf")
-raref.curve <- rarecurve(ASV_table_data, ylab = "ASV Count") # Long step
-dev.off()
-
 #Check if data needs rarefying
 #Rarefication curves ----
 
@@ -131,7 +121,7 @@ head(readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")])
 
 #mb2021: Remove samples F4L18, T10r3, T9r2 (did not work at all)
 
-pseq <- subset_samples(pseq, !Sample.ID %in% c("F4L18", "T10"))
+pseq <- subset_samples(pseq, !Library_Name %in% c("F4L18", "T10r3", "T9r2"))
 
 otu.rare = otu_table(pseq)
 otu.rare = as.data.frame(otu.rare)
@@ -167,13 +157,7 @@ ps1 <- Rare
 
 #convert to compositional data
 
-pseq.fam.rel <- microbiome::transform(pseq, "compositional")
-
-pseq.phy.rel <- microbiome::transform(pseq, "compositional")
-
-pseq.gen.rel <- microbiome::transform(pseq, "compositional")
-
-pseq.core <- microbiome::transform(pseq.core, "compositional")
+pseq.rel <- microbiome::transform(pseq, "compositional")
 
 
 
@@ -189,7 +173,7 @@ pseq_gen <- microbiome::aggregate_rare(ps1, level = "Genus", detection = 50/100,
 
 set.seed(4235421)
 
-ord <- ordinate(pseq, "MDS", "bray")
+ord <- ordinate(pseq.rel, "MDS", "bray")
 
 #plot MDS/PcoA - can set "colour" and "shape" for any of your variableas
 #geompoint controls data point size on plot
@@ -200,7 +184,7 @@ plot_ordination(ps1, ord, color = "Factor") + geom_point(size = 4)
 
 plot_ordination(ps1, ord, color = "Family.1") + geom_point(size = 4)
 
-plot_ordination(pseq, ord, color = "Treatment", shape = "Age") + geom_point(size = 4)
+plot_ordination(pseq, ord, color = "Treatment", shape = "Age") + geom_point(size = 4) + facet_wrap(~Age)
 
 
 p <- plot_ordination(pseq, ord, color = "Factor") + geom_point(size = 4)

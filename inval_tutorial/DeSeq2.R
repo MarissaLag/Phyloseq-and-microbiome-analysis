@@ -40,6 +40,12 @@ DeSeq <- phyloseq_to_deseq2(pseq, ~ Treatment) #convert phyloseq to deseq object
 
 DeSeq2 <- DESeq(DeSeq) #run deseq analysis
 
+#Notes about the DESeq fxn:
+#This function performs a default analysis through the steps:
+#estimation of size factors: estimateSizeFactors #if data is rarefied this will be null (all same size)
+#estimation of dispersion: estimateDispersions
+#Negative Binomial GLM fitting and Wald statistics: nbinomWaldTest #abundance data normalization
+
 
 #format for code below must be: contrast = c('factorName', 'numeratorLevel', 'denominatorLevel')
 
