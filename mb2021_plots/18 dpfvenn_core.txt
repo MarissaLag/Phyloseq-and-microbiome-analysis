@@ -1,0 +1,13 @@
+ASV1:f__Rhodobacteraceae
+ASV13:Alteromonas
+ASV44:f__Flavobacteriaceae
+ASV92:Pseudoalteromonas
+ASV109:Synechococcus CC9902
+ASV131:Amylibacter
+ASV150:Pseudoalteromonas
+ASV189:SUP05 cluster
+ASV205:Pseudoalteromonas
+ASV257:Candidatus Actinomarina
+ASV338:f__SAR86 clade
+ASV447:OM43 clade
+ASV559:NS3a marine group

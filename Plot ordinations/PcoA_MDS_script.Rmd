@@ -1,0 +1,159 @@
+---
+title: "PcoA_MDS_script"
+author: "Marissa Wright-LaGreca"
+date: "19/07/2023"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##running network analysis on mb2021 microbiome data
+
+
+library("devtools")
+library(phyloseq)
+library(microbiome)
+
+#load data
+
+Marissa_Osyter <- readRDS("~/mb2021/Marissa_Osyter.rds")
+
+Marissa_Osyter
+
+#create objects
+
+OTU = Marissa_Osyter@otu_table
+Tax = Marissa_Osyter@tax_table
+Metadata = Marissa_Osyter@sam_data
+Tree = Marissa_Osyter@phy_tree
+
+###Network analysis
+
+install.packages("igraph")  # For network construction and analysis
+install.packages("phyloseq") # For microbiome data handling
+install.packages("ggplot2") # For data visualization
+
+library(igraph)
+library(phyloseq)
+library(ggplot2)
+library(igraph)
+
+
+##calc relative abundance
+#Assuming you have your OTU table named OTU, where rows represent taxa (species/OTUs) and columns represent samples:
+
+#Step 1: Calculate the total sum for each sample
+
+total_counts <- rowSums(OTU)
+
+#Step 2: Normalize the OTU counts to relative abundance
+
+relative_abundance <- OTU / total_counts
+
+#Step 3: Create a new data frame with the relative abundance values
+
+sp_ratio <- as.data.frame(relative_abundance)
+
+##with sp_ratio can follow this tutorial: https://rpubs.com/major159/microbnetwork
+
+library(dplyr)
+library(tibble)
+library(stringr)
+library(igraph)
+library(tidyr)
+
+Tax <- as.data.frame(Tax) %>%
+  rownames_to_column(var = "taxa")
+
+sp_ratio <- as.data.frame(sp_ratio) %>%
+  rownames_to_column(var = "taxa")
+
+sp_ratio <- sp_ratio %>% 
+  as_tibble() %>% 
+  rename_all(tolower) %>% 
+  mutate(taxa = str_replace_all(taxa, "__", "")) %>% 
+  column_to_rownames(var = "taxa")
+
+min.prevalence = 13
+incidence = sp_ratio
+incidence[incidence > 0] = 1
+sp_ratio_filtered <- sp_ratio[which(rowSums(incidence) >= min.prevalence),]
+
+sp_correl <- sp_ratio_filtered %>% 
+  t() %>% 
+  cor(method = "spearman")
+
+sp_correl[abs(sp_correl) < 0.65] = 0
+
+net_work <- graph_from_adjacency_matrix(sp_correl, mode = "lower", weighted = TRUE, diag = FALSE)
+net_work <- delete.vertices(net_work, degree(net_work) == 0)
+
+plot(net_work, vertex.label = NA, edge.width = 5, vertex.size = 10)
+
+Tax <- Tax %>% 
+  as_tibble() %>% 
+  mutate(taxa = str_replace_all(taxa, "__", ""))
+
+net_work_used <- V(net_work)$name %>% 
+  as_tibble() %>% 
+  mutate(taxa = value) %>% 
+  select(taxa)
+
+if ("taxa" %in% colnames(sp_ratio)) {
+  sp_ratio <- sp_ratio %>%
+    select(-taxa)
+}
+
+v_attr <- sp_ratio %>%
+  as_tibble(x = .) %>%
+  remove_rownames() %>%
+  rownames_to_column(var = "taxa") %>%
+  pivot_longer(-taxa, names_to = "sample_id", values_to = "ratio") %>%
+  mutate(taxa = str_replace_all(taxa, "__", "")) %>% 
+  group_by(taxa) %>% 
+  summarise(rel_abundance = sum(ratio)) %>% 
+  inner_join(net_work_used, by = "taxa") %>% 
+  inner_join(Tax, by = "taxa") %>%  
+  mutate(rel_abundance = abs(exp(rel_abundance)))
+
+network_table <- igraph::as_data_frame(net_work, 'both') ##we convert the network in data frames
+
+network_table$vertices <- network_table$vertices %>%
+  as_tibble() %>% 
+  inner_join(v_attr, by = c("name"="taxa"))  # we add our attribute in the data frames 
+
+net_work1 <- graph_from_data_frame(network_table$edges,
+                                   directed = F,
+                                   vertices = network_table$vertices) # we convert back data frames to a network
+
+##can't get the vertices to match...something wrong with the data set inputs...moving on to another network analysis
+
+##force-network analysis with a relative abundance > 0.001 - based on Elliot Scanes paper: https://link.springer.com/article/10.1186/s42523-022-00186-9#Fig3
+
+# Load the required libraries
+library(igraph)
+library(ggraph)
+library(dplyr)
+
+# Step 1: Filter ASVs with relative abundance > 0.001
+
+# Convert the otu_table object to a data.frame
+sp_ratio_df <- as.data.frame(sp_ratio)
+
+# Filter rows with relative abundance > 0.001
+filtered_sp_ratio <- sp_ratio_df %>%
+  filter(rowSums(.[-1]) > 0.001)
+
+# Step 2: Create a graph object
+# Assuming your 'filtered_sp_ratio' contains 'from' and 'to' columns for edges
+graph_data <- graph_from_data_frame(filtered_sp_ratio, directed = FALSE)
+
+# Step 3: Plot the graph using ggraph
+ggraph(graph_data, layout = "fr") +   # 'fr' is the Fruchterman-Reingold layout for force-directed visualization
+  geom_edge_link() +
+  geom_node_point() +
+  geom_node_text(aes(label = name), repel = TRUE)  # Display the ASV names with repelling to avoid overlapping
+
+# Not working - I think I understand issue - when making sp_ratio - instead of species (or family or Kingdom etc), a "OTU" code is being used... need to make sp.ratio with different x-values (names of species)
