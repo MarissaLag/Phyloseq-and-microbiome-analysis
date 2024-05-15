@@ -123,6 +123,9 @@ head(readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")])
 
 pseq <- subset_samples(pseq, !Library_Name %in% c("F4L18", "T10r3", "T9r2"))
 
+#saving filtered but not rarefied pseq object for mb2021 project
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
+
 otu.rare = otu_table(pseq)
 otu.rare = as.data.frame(otu.rare)
 sample_names = rownames(otu.rare)

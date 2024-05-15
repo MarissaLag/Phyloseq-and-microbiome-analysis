@@ -17,7 +17,8 @@ pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
 #MB2021 filtering
 pseq <- Marissa_mb2021_filtered_20240203
-pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
+pseq <- mb2021_filtered_NOT_rarefied_normalized
+pseq <- subset_samples(pseq, Age %in% c("Spat"))
 pseq <- subset_samples(pseq, !Family %in% c("9")) #remove T9 spat samples
 
 
@@ -45,7 +46,7 @@ pseq3 <- microbiome::transform(pseq, "compositional")
 
 top10F.names = sort(tapply(taxa_sums(pseq3), tax_table(pseq3)[, "Family"], sum), TRUE)[1:10]
 
-top10F = subset_taxa(pseq3, Family %in% names(top5F.names))
+top10F = subset_taxa(pseq3, Family %in% names(top10F.names))
 
 #Top 10 genera 
 top10G.names = sort(tapply(taxa_sums(pseq3), tax_table(pseq3)[, "Genus"], sum), TRUE)[1:10]
@@ -74,7 +75,7 @@ pseq_psmelt <- psmelt(top10G.core)
 
 
 #plot of rel abundaces of each sample (out of 100%)
-ggplot(pseq_psmelt, aes(fill=Family, y=Abundance, x=Sample)) + 
+ggplot(pseq_psmelt, aes(fill=Phylum, y=Abundance, x=Treatment)) + 
   geom_bar(position="stack", stat="identity") +
   #scale_fill_brewer(palette = "Paired") +
   labs(title = "All time-points", x = "", y = "Relative abundance") +
@@ -84,7 +85,7 @@ ggplot(pseq_psmelt, aes(fill=Family, y=Abundance, x=Sample)) +
 #look at sample numbers per group ----
 
 sample_counts <- pseq_psmelt %>%
-  group_by(Age_Treatment) %>%
+  group_by(Treatment) %>%
   summarise(Num_Samples = n())
 
 print(sample_counts)
@@ -111,7 +112,7 @@ View(Avg_abundance)
 
 #Make abundance out of 100%?
 Avg_abundance <- pseq_psmelt %>%
-  group_by(Age_Treatment, Family) %>%
+  group_by(Age_Treatment, Genus) %>%
   summarise(
     Avg_Abundance = mean(Abundance),
     SD_Abundance = sd(Abundance),
@@ -133,7 +134,7 @@ paired_palette <- brewer.pal(12, "Paired")
 extended_palette <- c(paired_palette, "#ff7f00", "pink", "red", "yellow", "lightgreen")  # Add a custom color to the palette
 
 # Use ggplot with the extended Paired palette
-p3 <- ggplot(Avg_abundance, aes(fill = Family, y = Avg_Abundance, x = Treatment)) + 
+p3 <- ggplot(Avg_abundance, aes(fill = Genus, y = Avg_Abundance, x = Treatment)) + 
   geom_bar(position = "stack", stat = "identity", colour = "black") +
   scale_fill_manual(values = extended_palette) +  # Use scale_fill_manual to specify the extended palette
   labs(title = "", x = "", y = "Relative abundance (%)") +
@@ -142,12 +143,13 @@ p3 <- ggplot(Avg_abundance, aes(fill = Family, y = Avg_Abundance, x = Treatment)
   facet_wrap("Age") +
   theme(legend.title = element_text(size = 13),
         legend.text = element_text(size = 13),
-        axis.title.x = element_text(size = 5))
+        axis.title.x = element_text(size = 5),
+        axis.title.y = element_text(size = 14))
 p3  
 
 
 #Vibrionaceae abundances ----
-
+pseq <- mb2021_filtered_NOT_rarefied
 pseq<- Marissa_mb2021_filtered_20240203
 pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 pseq <- subset_samples(pseq, !Family %in% c("9"))

@@ -35,6 +35,7 @@ pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
 #MB2021 filtering
 pseq <- Marissa_mb2021_filtered_20240203
+pseq <- mb2021_filtered_NOT_rarefied_normalized
 pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 
 #convert to compositional data
@@ -65,8 +66,8 @@ p_legend <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
   ggtitle("All time-points") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom") +
   geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
-p_legend
 
+p_legend
 
 p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
   geom_point(aes(fill = Treatment), size = 6) +
@@ -236,6 +237,7 @@ print(p_combined)
 #NMDS = Performs Non-metric MultiDimenstional Scaling of a sample-wise ecological distance matrix 
 #onto a user-specified number of axes, k.
 
+pseq <- mb2021_filtered_NOT_rarefied_normalized
 pseq <- Marissa_mb2021_filtered_20240203
 pseq <- subset_samples(pseq, Age %in% c("Spat"))
 pseq <- subset_samples(pseq, !Family %in% c("9"))
@@ -255,15 +257,15 @@ pseq.rel <- microbiome::transform(pseq, "compositional")
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
 
-p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Family") +
-  geom_point(aes(fill = Treatment), size = 5) +
+p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
+  geom_point(aes(fill = Treatment), size = 4) +
   scale_colour_manual(values = c("#F8766D", "#00ab41", "#1B98E0FF")) +
-  ggtitle("Spat") +
+  ggtitle("All time-points") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
 p
 
 p1 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), shape = 16, size = 6) +
+  geom_point(aes(fill = Treatment), shape = 16, size = 4) +
   scale_colour_manual(values = c("#F8766D", "#00ab41", "#1B98E0FF")) +
   ggtitle("1 dpf") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
@@ -271,14 +273,14 @@ p1
 
 
 p2 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), shape = 17, size = 6) +
+  geom_point(aes(fill = Treatment), shape = 17, size = 4) +
   scale_colour_manual(values = c("#F8766D", "#00ab41", "#1B98E0FF")) +
   ggtitle("18 dpf") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
 p2
 
 p3 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), shape = 15, size = 6) +
+  geom_point(aes(fill = Treatment), shape = 15, size = 4) +
   scale_colour_manual(values = c("#F8766D", "#00ab41", "#1B98E0FF")) + 
   ggtitle("Spat") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "none")

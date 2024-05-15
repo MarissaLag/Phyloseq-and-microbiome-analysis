@@ -12,6 +12,7 @@ devtools::install_github('microsud/microbiomeutilities')
 library(microbiomeutilities)
 
 pseq<- Marissa_mb2021_filtered_20240203
+pseq <- mb2021_filtered_NOT_rarefied_normalized
 
 
 theme.marissa <- function() {
@@ -30,7 +31,7 @@ theme_set(theme.marissa())
 
 #Remove day 3 (only 1 sample remaining) for mb2021 project
 
-pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
+pseq <- subset_samples(pseq, Age %in% c("Spat"))
 pseq <- subset_samples(pseq, !Family %in% c("9"))
 
 pseq <- subset_samples(pseq, Age %in% c("Spat"))
