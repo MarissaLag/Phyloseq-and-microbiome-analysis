@@ -30,6 +30,7 @@ theme_set(theme.marissa())
 
 #MU42022 filtering
 pseq <- Marissa_MU42022_rarefied_20231016
+pseq <- MU42022_filtered_NOT_rarefied
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
@@ -64,8 +65,8 @@ p_legend <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
   scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) +
   scale_fill_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) + # Matching colors for ellipses and points
   ggtitle("All time-points") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom") +
-  geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+  #geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
 
 p_legend
 

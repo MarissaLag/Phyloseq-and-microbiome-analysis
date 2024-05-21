@@ -17,6 +17,8 @@ pseq<- readRDS("Marissa_.rds")
 
 pseq <- Marissa_mb2021_filtered_20240203
 
+pseq <- Marissa_MU42022_unfiltered
+
 pseq <- Marissa_mb2021_unfiltered
 
 pseq
@@ -42,43 +44,52 @@ any(taxa_sums(pseq_filtered) == 0)
 
 pseq <- pseq_filtered
 
-#source for removing chloro/mito/archaea; https://mibwurrepo.github.io/R_for_Microbial_Ecology/Microbiome_tutorial_V2.html#making-a-phyloseq-object
-
 #Remove chloroplast, mito, archaea, chimera ----
 
-pseq1 <- subset_taxa(pseq,Class!="c__Chloroplast")
+pseq <- subset_taxa(pseq,Class!="c__Chloroplast")
 
-pseq2 <- subset_taxa(pseq1,Order!="o__Mitochondria")
+pseq <- subset_taxa(pseq,Order!="o__Mitochondria")
+pseq <- subset_taxa(pseq,Family!="Mitochondria")
 
-ps1 <- subset_taxa(pseq2,Kingdom!="k__Archaea")
+pseq <- subset_taxa(pseq,Kingdom!="k__Archaea")
+pseq <- subset_taxa(pseq,Kingdom!="Archaea")
 
-#chloroplast still in data under order level - remove?
+pseq <- subset_taxa(pseq,Order!="Chloroplast")
 
-pseq1 <- subset_taxa(pseq,Order!="Chloroplast")
+#Check if any chloro, ,mito, or achaeae
+tax_levels <- colnames(pseq@tax_table)
+chloroplast_archaea_mitochondria <- c("chloroplast", "archaea", "mitochondria")
 
-ps1 <- pseq1
+any_contain <- sapply(chloroplast_archaea_mitochondria, function(term) {
+  any(grepl(term, tolower(pseq@tax_table[, tax_levels]), ignore.case = TRUE))
+})
 
-rank_names(ps1)
+any(any_contain)
+
+#If true still contains bad stuff
+#if false, move on
+
+rank_names(pseq)
 
 #Remove low prev ----
 
-plot(sort(taxa_sums(x2), TRUE), type="h", ylim=c(0, 10000))
+plot(sort(taxa_sums(x1), TRUE), type="h", ylim=c(0, 10000))
 
-x1 = prune_taxa(taxa_sums(ps1) > 200, ps1) 
-x2 = prune_taxa(taxa_sums(ps1) > 500, ps1) 
-x3 = prune_taxa(taxa_sums(ps1) > 1000, ps1)
+x1 = prune_taxa(taxa_sums(pseq) > 200, pseq) 
+x2 = prune_taxa(taxa_sums(pseq) > 500, pseq) 
+x3 = prune_taxa(taxa_sums(pseq) > 1000, pseq)
 
-##using x2
+##using x2 mb2021 and x1 for MU42022
 
 library(microbiome)
-summarize_phyloseq(ps1)
+summarize_phyloseq(pseq)
 summarize_phyloseq(x2)
 
 
 *************************************************
 #rarify - removing abundance code with below code does not seem to work...not sure why. Ignore for now.
 
-sequence_abundance <- taxa_sums(ps1)
+sequence_abundance <- taxa_sums(pseq)
 
 threshold <- 0.005
 
@@ -102,7 +113,8 @@ ps2 = prune_taxa(keepTaxa, ps1)
 #Check if data needs rarefying
 #Rarefication curves ----
 
-pseq <- x2
+#pseq <- x2
+pseq <- x1
 
 #check reads
 
@@ -120,11 +132,14 @@ ggplot(readcount, aes(TotalReads)) + geom_histogram() + ggtitle("Sequencing Dept
 head(readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")])
 
 #mb2021: Remove samples F4L18, T10r3, T9r2 (did not work at all)
+#mu42022: Remove samples T15-S-1, also note, algal samples have very few reads after chloroplasts removed but we will keep them
 
+pseq <- subset_samples(pseq, !Sample.ID %in% c("T15-S-1"))
 pseq <- subset_samples(pseq, !Library_Name %in% c("F4L18", "T10r3", "T9r2"))
 
 #saving filtered but not rarefied pseq object for mb2021 project
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_NOT_rarefied.rds")
 
 otu.rare = otu_table(pseq)
 otu.rare = as.data.frame(otu.rare)
@@ -136,8 +151,10 @@ library(vegan)
 
 otu.rarecurve <- rarecurve(otu.rare, step = 10000, label = FALSE, xlim = c(0, 100000))
 
-raref.curve <- rarecurve(otu.rare, label = FALSE, ylab = "ASV Count")
+raref.curve <- rarecurve(otu.rare, label = TRUE, ylab = "ASV Count")
 
+
+#If rarefying:
 ##rarify data to make sequences an even read depth - selecting read depth of 10,000 = any samples with fewer than 10,000 total reads will be removed, all samples will be equalized to 5000 reads for Denman's samples, 10,000 for Marissa/James'
 
 Rare <-rarefy_even_depth(x2, sample.size= 3000)

@@ -241,7 +241,7 @@ library(metagMisc)
 
 #To standardize our sampling we rarefy the data. Essentially we make an arbitrary cutoff of how many samples we will examine.  We use the rarefaction, plus the list of sequences per sample to make this call (check out object "sdt" that we made earlier. In this dataset we will do 10,000. 
 
-pseq <- Denman_samples
+
 
 
 ##### Filter out low frequency and low abundance reads. 
