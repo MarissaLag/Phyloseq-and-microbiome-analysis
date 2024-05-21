@@ -8,15 +8,17 @@ library(RColorBrewer)
 library(phyloseq)
 library(microbiome)
 
-setwd("/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files")
-
-mb2021_filtered_NOT_rarefied <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
+setwd("/Users/greent/Documents/GitHub/mb2021_phyloseq/Old RDS files")
+       
+mb2021_filtered_NOT_rarefied <- readRDS("~/Documents/GitHub/mb2021_phyloseq/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
 
 pseq <- mb2021_filtered_NOT_rarefied
 #pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
 pseq <- subset_samples(pseq, Age %in% c("Spat"))
 pseq <- subset_samples(pseq, !Family %in% c("9"))
 pseq <- subset_samples(pseq, !Treatment %in% c("High salinity"))
+
+pseq <- subset_samples(pseq, !Family %in% c("9"))
 
 #correct family names
 pseq@sam_data$Family[pseq@sam_data$Family %in% c(9, 13)] <- 1
