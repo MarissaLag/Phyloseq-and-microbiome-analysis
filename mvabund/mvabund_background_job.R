@@ -76,8 +76,8 @@ run_model <- function(dat_mvabund, fact) {
   manyglm(dat_mvabund ~ Treatment * Family, family = "negative.binomial", data = fact, composition = TRUE)
 }
 
-run_anova <- function(model) {
-  anova(model, p.uni = "unadjusted")
+run_anova <- function(run_model) {
+  anova(run_model, p.uni = "unadjusted")
 }
 
 # Export necessary objects and libraries to the cluster
