@@ -76,18 +76,19 @@ run_model <- function(dat_mvabund, fact) {
   manyglm(dat_mvabund ~ Treatment * Family, family = "negative.binomial", data = fact, composition = TRUE)
 }
 
-run_anova <- function(model) {
-  anova(model, p.uni = "unadjusted")
+run_anova <- function(run_model) {
+  anova(run_model, p.uni = "unadjusted")
 }
 
 # Export necessary objects and libraries to the cluster
 clusterExport(cl, c("dat_mvabund", "fact", "run_model", "run_anova"))
 clusterEvalQ(cl, library(mvabund))
 
-# Run the model and anova in parallel
+# Run the model and ANOVA in parallel
 results <- parLapply(cl, 1:num_cores, function(x) {
   model <- run_model(dat_mvabund, fact)
-  run_anova(model)
+  anova_result <- run_anova(model)
+  return(anova_result)
 })
 
 # Stop the cluster
