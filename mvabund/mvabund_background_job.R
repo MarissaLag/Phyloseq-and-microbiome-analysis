@@ -4,14 +4,32 @@
 #Clear space
 # rm(list=ls())
 
+#Packages ----
+install.packages(tidyverse)
+install.packages(vegan)
+install.packages(mvabund)
+install.packages("tibble")
+install.packages(RColorBrewer) 
+install.packages(phyloseq)
+install.packages(microbiome)
+install.packages(parallel)
+install.packages("mvabund")
+install.packages("dada2") #changed from data2, assuming typo
+
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+
+BiocManager::install("dada2", force = TRUE)
+
 #Library ----
 library(tidyverse)
-library(vegan)
-library(dada2) 
+library(data2) #changed from dada2
 library(mvabund)
 library(RColorBrewer) 
 library(phyloseq)
+library(data2)
 library(microbiome)
+library(tibble)
 library(parallel) #to run parallel processing for manyglm fxn
 
 #Load phyloseq object ----
@@ -56,8 +74,8 @@ taxa_to_subset <- c("ASV21", "ASV34", "ASV40", "ASV42", "ASV44", "ASV48", "ASV51
 #taxa_to_subset <- taxa_to_subset[1:11]
 #taxa_to_subset <- taxa_to_subset[1:50]
 #taxa_to_subset <- taxa_to_subset[1:100]
-#taxa_to_subset <- taxa_to_subset[1:200]
-taxa_to_subset <- taxa_to_subset[1:400]
+#taxa_to_subset <- taxa_to_subset[1:200] #NOT ENOUGH TAXA
+#taxa_to_subset <- taxa_to_subset[1:400] #NOT ENOUGH TAXA
 
 
 # Spat significant ASVs (without a p-value adjustment)
@@ -90,49 +108,19 @@ ASV_data_cleaned <- pseq@otu_table
 ASV_data_cleaned <- as.data.frame(pseq@otu_table)
 #rowSums(ASV_data_cleaned)
 
+#Checking for errors in data - no NAs
+ncol(ASV_data_cleaned)
+View(ASV_data_cleaned)
+
+any(is.na(rownames(ASV_data_cleaned))) #FALSE
+anyNA(ASV_data_cleaned) #FALSE
+
 fact$numberReads <- rowSums(ASV_data_cleaned)
-dat_mvabund <- mvabund(ASV_data_cleaned)
+dat_mvabund <- mvabund(ASV_data_cleaned, row.names=1) #row.names argument inputs row names (sample info) into mvabund object
+View(dat_mvabund) 
 
-#Run manyglms ----
-# <<<<<<< Updated upstream
-# #VERY slow - ways to speed it up? Trying parallel processing
-# 
-# # Define the number of cores you want to use
-# num_cores <- detectCores() - 1  # Use one less than the total number of cores
-# 
-# # Create a cluster
-# cl <- makeCluster(num_cores)
-# 
-# # Define the model and anova functions
-# run_model <- function(dat_mvabund, fact) {
-#   manyglm(dat_mvabund ~ Treatment * Family, family = "negative.binomial", data = fact, composition = TRUE)
-# }
-# 
-# run_anova <- function(run_model) {
-#   anova(run_model, p.uni = "unadjusted")
-# }
-# 
-# # Export necessary objects and libraries to the cluster
-# clusterExport(cl, c("dat_mvabund", "fact", "run_model", "run_anova"))
-# clusterEvalQ(cl, library(mvabund))
-# 
-# # Run the model and ANOVA in parallel
-# results <- parLapply(cl, 1:num_cores, function(x) {
-#   model <- run_model(dat_mvabund, fact)
-#   anova_result <- run_anova(model)
-#   return(anova_result)
-# # })
-# 
-# # Stop the cluster
-# stopCluster(cl)
-# 
-# # Combine or analyze the results as needed
-# # Here, we're assuming that the first result is representative (if they are all the same)
-# dat_aov_unadj_Spat <- results[[1]]
-# =======
-# # note: VERY slow - ways to speed it up? Trying parallel processing
-# >>>>>>> Stashed changes
-
+#Check if converted to mvabund object properly
+is.mvabund(dat_mvabund)
 
 #### Parallel processing method (in development) ####
 # # Define the number of cores you want to use
@@ -177,20 +165,29 @@ dat_mvabund <- mvabund(ASV_data_cleaned)
 #### /END/ Parallel processing method (in development) ####
 
 
-# Standard method
+# Standard method (log number of reads)
 #dat_nb_Spat_HS <- manyglm(dat_mvabund ~ Treatment * Family + offset(log(numberReads)), family = "negative.binomial", data = fact)
 
+#State time
 Sys.time()
+
 # Standard method, setting composition argument
+#Note: Comp = TRUE may not allow for p adjustment (see pg 12: https://cran.r-project.org/web/packages/mvabund/mvabund.pdf)
 dat_nb_compositionT_Spat_LS = manyglm(dat_mvabund ~ Treatment * Family, family="negative.binomial", data = fact, composition=FALSE)
+plot(dat_nb_compositionT_Spat_LS) #check residuals to see model fit
+
 Sys.time()
 dat_aov_unadj_Spat_LS <- anova(dat_nb_compositionT_Spat_LS, p.uni = "unadjusted")
 Sys.time()
 
 dat_nb_compositionT_Spat_LS_round2 = manyglm(dat_mvabund ~ Treatment * Family, family="negative.binomial", data = fact, composition=TRUE)
-Sys.time()
+Sys.time() 
 dat_aov_unadj_Spat_LS_round2 <- anova(dat_nb_compositionT_Spat_LS_round2, p.uni = "unadjusted")
 Sys.time()
+
+#anova is taking a long time - model not converging properly?
+
+
 
 # Run ANOVA ----
 # note: need to select adjusted or unadjusted p
