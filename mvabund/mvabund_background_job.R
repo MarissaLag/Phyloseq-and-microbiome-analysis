@@ -5,21 +5,21 @@
 # rm(list=ls())
 
 #Packages ----
-install.packages(tidyverse)
-install.packages(vegan)
-install.packages(mvabund)
-install.packages("tibble")
-install.packages(RColorBrewer) 
-install.packages(phyloseq)
-install.packages(microbiome)
-install.packages(parallel)
-install.packages("mvabund")
-install.packages("dada2") #changed from data2, assuming typo
-
-if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-
-BiocManager::install("dada2", force = TRUE)
+# install.packages(tidyverse)
+# install.packages(vegan)
+# install.packages(mvabund)
+# install.packages("tibble")
+# install.packages(RColorBrewer) 
+# install.packages(phyloseq)
+# install.packages(microbiome)
+# install.packages(parallel)
+# install.packages("mvabund")
+# install.packages("dada2") #changed from data2, assuming typo
+# 
+# if (!require("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager")
+# 
+# BiocManager::install("dada2", force = TRUE)
 
 #Library ----
 library(tidyverse)
@@ -30,7 +30,7 @@ library(phyloseq)
 library(data2)
 library(microbiome)
 library(tibble)
-library(parallel) #to run parallel processing for manyglm fxn
+#library(parallel) #to run parallel processing for manyglm fxn
 
 #Load phyloseq object ----
 
@@ -39,8 +39,10 @@ current.path <- dirname(rstudioapi::getSourceEditorContext()$path)
 setwd(current.path)
 
 # User set variables
-data.FN <- "~/Documents/Marissa_Github/GitHub/mb2021_phyloseq/Old RDS files/mb2021_filtered_NOT_rarefied.rds" # MacPro (CSR)
-#data.FN <- "" # MacPro (CSR)
+# data.FN <- "~/Documents/Marissa_Github/GitHub/mb2021_phyloseq/Old RDS files/mb2021_filtered_NOT_rarefied.rds" # MacPro (CSR)
+# #data.FN <- "" # MacPro (CSR)
+
+data.FN <- "~Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds"
 
 # Load data
 mb2021_filtered_NOT_rarefied <- readRDS(data.FN)
@@ -70,7 +72,7 @@ pseq@sam_data$Family <- as.character(pseq@sam_data$Family)
 
 # Designate spat signif ASVs
 # testing
-taxa_to_subset <- c("ASV21", "ASV34", "ASV40", "ASV42", "ASV44", "ASV48", "ASV51", "ASV60", "ASV76", "ASV79", "ASV90", "ASV91", "ASV92", "ASV100", "ASV109", "ASV114", "ASV118", "ASV119", "ASV124", "ASV126", "ASV130", "ASV131", "ASV150", "ASV163", "ASV176", "ASV181", "ASV187", "ASV189", "ASV193", "ASV195", "ASV216", "ASV218", "ASV219", "ASV237", "ASV240", "ASV244", "ASV257", "ASV262", "ASV309", "ASV313", "ASV315", "ASV319", "ASV326", "ASV333", "ASV337", "ASV343", "ASV349", "ASV351", "ASV356", "ASV375", "ASV379", "ASV385", "ASV387", "ASV394", "ASV397", "ASV401", "ASV416", "ASV417", "ASV428", "ASV431", "ASV447", "ASV450", "ASV468", "ASV484", "ASV487", "ASV499", "ASV501", "ASV510", "ASV523", "ASV524", "ASV538", "ASV556", "ASV559", "ASV563", "ASV575", "ASV579", "ASV595", "ASV608", "ASV620", "ASV641", "ASV649", "ASV652", "ASV703", "ASV738", "ASV756", "ASV758", "ASV789", "ASV798", "ASV818", "ASV819", "ASV820", "ASV837", "ASV838", "ASV845", "ASV846", "ASV872", "ASV874", "ASV882", "ASV889", "ASV916", "ASV918", "ASV919", "ASV929", "ASV952", "ASV955", "ASV960", "ASV982", "ASV983", "ASV993", "ASV1005", "ASV1007", "ASV1030", "ASV1035", "ASV1036", "ASV1061", "ASV1070", "ASV1074", "ASV1078", "ASV1082", "ASV1086", "ASV1110", "ASV1111", "ASV1138", "ASV1146", "ASV1153", "ASV1170")
+#taxa_to_subset <- c("ASV21", "ASV34", "ASV40", "ASV42", "ASV44", "ASV48", "ASV51", "ASV60", "ASV76", "ASV79", "ASV90", "ASV91", "ASV92", "ASV100", "ASV109", "ASV114", "ASV118", "ASV119", "ASV124", "ASV126", "ASV130", "ASV131", "ASV150", "ASV163", "ASV176", "ASV181", "ASV187", "ASV189", "ASV193", "ASV195", "ASV216", "ASV218", "ASV219", "ASV237", "ASV240", "ASV244", "ASV257", "ASV262", "ASV309", "ASV313", "ASV315", "ASV319", "ASV326", "ASV333", "ASV337", "ASV343", "ASV349", "ASV351", "ASV356", "ASV375", "ASV379", "ASV385", "ASV387", "ASV394", "ASV397", "ASV401", "ASV416", "ASV417", "ASV428", "ASV431", "ASV447", "ASV450", "ASV468", "ASV484", "ASV487", "ASV499", "ASV501", "ASV510", "ASV523", "ASV524", "ASV538", "ASV556", "ASV559", "ASV563", "ASV575", "ASV579", "ASV595", "ASV608", "ASV620", "ASV641", "ASV649", "ASV652", "ASV703", "ASV738", "ASV756", "ASV758", "ASV789", "ASV798", "ASV818", "ASV819", "ASV820", "ASV837", "ASV838", "ASV845", "ASV846", "ASV872", "ASV874", "ASV882", "ASV889", "ASV916", "ASV918", "ASV919", "ASV929", "ASV952", "ASV955", "ASV960", "ASV982", "ASV983", "ASV993", "ASV1005", "ASV1007", "ASV1030", "ASV1035", "ASV1036", "ASV1061", "ASV1070", "ASV1074", "ASV1078", "ASV1082", "ASV1086", "ASV1110", "ASV1111", "ASV1138", "ASV1146", "ASV1153", "ASV1170")
 #taxa_to_subset <- taxa_to_subset[1:11]
 #taxa_to_subset <- taxa_to_subset[1:50]
 #taxa_to_subset <- taxa_to_subset[1:100]
@@ -90,12 +92,12 @@ taxa_to_subset <- c("ASV21", "ASV34", "ASV40", "ASV42", "ASV44", "ASV48", "ASV51
 
 # Prune taxa (optional)
 # Reporting
-print(paste0("Pruning to only retain the following taxa/ASVs: "))
-print(taxa_to_subset)
-print(paste0("There are ", length(taxa_to_subset), " taxa in this analysis"))
-
-# Prune taxa
-pseq <- prune_taxa(taxa_to_subset, pseq)
+# print(paste0("Pruning to only retain the following taxa/ASVs: "))
+# print(taxa_to_subset)
+# print(paste0("There are ", length(taxa_to_subset), " taxa in this analysis"))
+# 
+# # Prune taxa
+# pseq <- prune_taxa(taxa_to_subset, pseq)
 
 
 # Create mvabund object from phyloseq object ----
@@ -116,8 +118,9 @@ any(is.na(rownames(ASV_data_cleaned))) #FALSE
 anyNA(ASV_data_cleaned) #FALSE
 
 fact$numberReads <- rowSums(ASV_data_cleaned)
-dat_mvabund <- mvabund(ASV_data_cleaned, row.names=1) #row.names argument inputs row names (sample info) into mvabund object
-View(dat_mvabund) 
+#dat_mvabund <- mvabund(ASV_data_cleaned, row.names=1) #row.names argument inputs row names (sample info) into mvabund object
+dat_mvabund <- mvabund(ASV_data_cleaned)
+View(dat_mvabund) #Note: Check row names correct (contains sample IDs)
 
 #Check if converted to mvabund object properly
 is.mvabund(dat_mvabund)
@@ -177,12 +180,14 @@ dat_nb_compositionT_Spat_LS = manyglm(dat_mvabund ~ Treatment * Family, family="
 plot(dat_nb_compositionT_Spat_LS) #check residuals to see model fit
 
 Sys.time()
-dat_aov_unadj_Spat_LS <- anova(dat_nb_compositionT_Spat_LS, p.uni = "unadjusted")
+dat_aov_unadj_Spat_LS <- anova(dat_nb_compositionT_Spat_LS, p.uni = "unadjusted",show.time = "all", show.warning = TRUE)
 Sys.time()
 
+#composition = TRUE (round 2)
 dat_nb_compositionT_Spat_LS_round2 = manyglm(dat_mvabund ~ Treatment * Family, family="negative.binomial", data = fact, composition=TRUE)
-Sys.time() 
-dat_aov_unadj_Spat_LS_round2 <- anova(dat_nb_compositionT_Spat_LS_round2, p.uni = "unadjusted")
+Sys.time()
+plot(dat_nb_compositionT_Spat_LS_round2)
+dat_aov_unadj_Spat_LS_round2 <- anova(dat_nb_compositionT_Spat_LS_round2, p.uni = "unadjusted", show.time = "all", show.warning = TRUE)
 Sys.time()
 
 #anova is taking a long time - model not converging properly?
