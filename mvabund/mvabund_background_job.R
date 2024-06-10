@@ -4,6 +4,27 @@
 #Clear space
 # rm(list=ls())
 
+#Update (2024-06-07)
+#Jadi (author) suggested package errors may be occcuring and slowing computation time
+#for Composition = TRUE arguement
+#Suggests a package reset for the following packages: 
+
+remove.packages("mvabund")
+remove.packages("RcppGSL")
+remove.packages("Rcpp") 
+
+install.packages("Rcpp") 
+
+install.packages("RcppGSL", repos="http://cran.us.r-project.org")
+
+#packageurl <- "https://cran.r-project.org/src/contrib/Archive/RcppGSL/RcppGSL_0.3.11.tar.gz"
+#install.packages(packageurl, repos=NULL, type="source") 
+
+packageurl <- "https://cran.r-project.org/src/contrib/Archive/mvabund/mvabund_3.12.3.tar.gz"
+install.packages(packageurl, repos=NULL, type="source") 
+
+install.packages("mvabund")
+
 #Packages ----
 # install.packages(tidyverse)
 # install.packages(vegan)
@@ -23,13 +44,13 @@
 
 #Library ----
 library(tidyverse)
-library(data2) #changed from dada2
+#library(data2) #changed from dada2
 library(mvabund)
-library(RColorBrewer) 
+#library(RColorBrewer) 
 library(phyloseq)
-library(data2)
 library(microbiome)
 library(tibble)
+
 #library(parallel) #to run parallel processing for manyglm fxn
 
 #Load phyloseq object ----
@@ -70,10 +91,10 @@ pseq@sam_data$Family <- as.character(pseq@sam_data$Family)
 # Subset for specific ASVs ----
 # look at certain ASVs found to be significant but reduce treatments 
 
-# Designate spat signif ASVs
+# Designate day 1 signif ASVs
 # testing
-#taxa_to_subset <- c("ASV21", "ASV34", "ASV40", "ASV42", "ASV44", "ASV48", "ASV51", "ASV60", "ASV76", "ASV79", "ASV90", "ASV91", "ASV92", "ASV100", "ASV109", "ASV114", "ASV118", "ASV119", "ASV124", "ASV126", "ASV130", "ASV131", "ASV150", "ASV163", "ASV176", "ASV181", "ASV187", "ASV189", "ASV193", "ASV195", "ASV216", "ASV218", "ASV219", "ASV237", "ASV240", "ASV244", "ASV257", "ASV262", "ASV309", "ASV313", "ASV315", "ASV319", "ASV326", "ASV333", "ASV337", "ASV343", "ASV349", "ASV351", "ASV356", "ASV375", "ASV379", "ASV385", "ASV387", "ASV394", "ASV397", "ASV401", "ASV416", "ASV417", "ASV428", "ASV431", "ASV447", "ASV450", "ASV468", "ASV484", "ASV487", "ASV499", "ASV501", "ASV510", "ASV523", "ASV524", "ASV538", "ASV556", "ASV559", "ASV563", "ASV575", "ASV579", "ASV595", "ASV608", "ASV620", "ASV641", "ASV649", "ASV652", "ASV703", "ASV738", "ASV756", "ASV758", "ASV789", "ASV798", "ASV818", "ASV819", "ASV820", "ASV837", "ASV838", "ASV845", "ASV846", "ASV872", "ASV874", "ASV882", "ASV889", "ASV916", "ASV918", "ASV919", "ASV929", "ASV952", "ASV955", "ASV960", "ASV982", "ASV983", "ASV993", "ASV1005", "ASV1007", "ASV1030", "ASV1035", "ASV1036", "ASV1061", "ASV1070", "ASV1074", "ASV1078", "ASV1082", "ASV1086", "ASV1110", "ASV1111", "ASV1138", "ASV1146", "ASV1153", "ASV1170")
-#taxa_to_subset <- taxa_to_subset[1:11]
+taxa_to_subset <- c("ASV21", "ASV34", "ASV40", "ASV42", "ASV44", "ASV48", "ASV51", "ASV60", "ASV76", "ASV79", "ASV90", "ASV91", "ASV92", "ASV100", "ASV109", "ASV114", "ASV118", "ASV119", "ASV124", "ASV126", "ASV130", "ASV131", "ASV150", "ASV163", "ASV176", "ASV181", "ASV187", "ASV189", "ASV193", "ASV195", "ASV216", "ASV218", "ASV219", "ASV237", "ASV240", "ASV244", "ASV257", "ASV262", "ASV309", "ASV313", "ASV315", "ASV319", "ASV326", "ASV333", "ASV337", "ASV343", "ASV349", "ASV351", "ASV356", "ASV375", "ASV379", "ASV385", "ASV387", "ASV394", "ASV397", "ASV401", "ASV416", "ASV417", "ASV428", "ASV431", "ASV447", "ASV450", "ASV468", "ASV484", "ASV487", "ASV499", "ASV501", "ASV510", "ASV523", "ASV524", "ASV538", "ASV556", "ASV559", "ASV563", "ASV575", "ASV579", "ASV595", "ASV608", "ASV620", "ASV641", "ASV649", "ASV652", "ASV703", "ASV738", "ASV756", "ASV758", "ASV789", "ASV798", "ASV818", "ASV819", "ASV820", "ASV837", "ASV838", "ASV845", "ASV846", "ASV872", "ASV874", "ASV882", "ASV889", "ASV916", "ASV918", "ASV919", "ASV929", "ASV952", "ASV955", "ASV960", "ASV982", "ASV983", "ASV993", "ASV1005", "ASV1007", "ASV1030", "ASV1035", "ASV1036", "ASV1061", "ASV1070", "ASV1074", "ASV1078", "ASV1082", "ASV1086", "ASV1110", "ASV1111", "ASV1138", "ASV1146", "ASV1153", "ASV1170")
+taxa_to_subset <- taxa_to_subset[1:11]
 #taxa_to_subset <- taxa_to_subset[1:50]
 #taxa_to_subset <- taxa_to_subset[1:100]
 #taxa_to_subset <- taxa_to_subset[1:200] #NOT ENOUGH TAXA
@@ -97,7 +118,7 @@ pseq@sam_data$Family <- as.character(pseq@sam_data$Family)
 # print(paste0("There are ", length(taxa_to_subset), " taxa in this analysis"))
 # 
 # # Prune taxa
-# pseq <- prune_taxa(taxa_to_subset, pseq)
+pseq <- prune_taxa(taxa_to_subset, pseq)
 
 
 # Create mvabund object from phyloseq object ----
@@ -105,20 +126,29 @@ pseq@sam_data$Family <- as.character(pseq@sam_data$Family)
 fact1 = sample_data(pseq)
 fact = as.matrix.data.frame(fact1)
 fact = as.data.frame(fact)
+View(fact)
+
+#Make treatments into factors rather than characters
+fact$Sample.ID <- as.factor(fact$Sample.ID)
+fact$Library_Name <- as.factor(fact$Library_Name)
+fact$Treatment <- as.factor(fact$Treatment)
+fact$Family <- as.factor(fact$Family)
+fact$Age <- as.factor(fact$Age)
+
+# Reset row names to be numbered
+rownames(fact) <- NULL
 
 ASV_data_cleaned <- pseq@otu_table
 ASV_data_cleaned <- as.data.frame(pseq@otu_table)
-#rowSums(ASV_data_cleaned)
 
 #Checking for errors in data - no NAs
-ncol(ASV_data_cleaned)
-View(ASV_data_cleaned)
+dim(ASV_data_cleaned)
 
 any(is.na(rownames(ASV_data_cleaned))) #FALSE
 anyNA(ASV_data_cleaned) #FALSE
 
-fact$numberReads <- rowSums(ASV_data_cleaned)
-#dat_mvabund <- mvabund(ASV_data_cleaned, row.names=1) #row.names argument inputs row names (sample info) into mvabund object
+#fact$numberReads <- rowSums(ASV_data_cleaned)
+#dat_mvabund <- mvabund(ASV_data_cleaned, row.names=0, check.row = TRUE, check.names = TRUE, var.names = "") #row.names argument inputs row names (sample info) into mvabund object
 dat_mvabund <- mvabund(ASV_data_cleaned)
 View(dat_mvabund) #Note: Check row names correct (contains sample IDs)
 
@@ -184,10 +214,11 @@ dat_aov_unadj_Spat_LS <- anova(dat_nb_compositionT_Spat_LS, p.uni = "unadjusted"
 Sys.time()
 
 #composition = TRUE (round 2)
+#dat_nb_compositionT_Spat_LS_round2 = manyglm(dat_mvabund ~ Treatment * Family, family="negative.binomial", data = fact, composition=TRUE)
 dat_nb_compositionT_Spat_LS_round2 = manyglm(dat_mvabund ~ Treatment * Family, family="negative.binomial", data = fact, composition=TRUE)
 Sys.time()
-plot(dat_nb_compositionT_Spat_LS_round2)
-dat_aov_unadj_Spat_LS_round2 <- anova(dat_nb_compositionT_Spat_LS_round2, p.uni = "unadjusted", show.time = "all", show.warning = TRUE)
+
+dat_aov_unadj_Spat_LS_round2 <- anova(dat_nb_compositionT_Spat_LS_round2, p.uni = "unadjusted", show.time = "all")
 Sys.time()
 
 #anova is taking a long time - model not converging properly?
@@ -203,14 +234,14 @@ dat_aov_unadj_Spat_LS
 ### Result exploration #
 
 #Select alpha level----
-length(which(dat_aov_unadj_Spat$uni.p[2,] < 0.05)) # Number of ASVs affected by treatment
-length(which(dat_aov_unadj_Spat$uni.p[3,] < 0.05)) # Number of ASVs affected by family
-length(which(dat_aov_unadj_Spat$uni.p[4,] < 0.05)) # Number of ASVs affected by interaction
+length(which(dat_aov_unadj_Spat_LS_round2$uni.p[2,] < 0.05)) # Number of ASVs affected by treatment
+length(which(dat_aov_unadj_Spat_LS_round2$uni.p[3,] < 0.05)) # Number of ASVs affected by family
+length(which(dat_aov_unadj_Spat_LS_round2$uni.p[4,] < 0.05)) # Number of ASVs affected by interaction
 
 #Select ASVs that are different between factors ----
-diff_05_treat_unadj_Spat <- which(dat_aov_unadj_Spat$uni.p[2,] < 0.05) # [2] is referring to the first factor of my model , in my case "Treatment"
-diff_05_family_unadj_Spat <- which(dat_aov_unadj_Spat$uni.p[3,] < 0.05) # [3] is referring to the second factor of my model , in my case "Family" ***day time but thats wrong
-diff_05_interact_unadj_Spat <- which(dat_aov_unadj_Spat$uni.p[4,] < 0.05) # [4] is referring to the third factor of my model , in my case "interaction Treatment and Family"
+diff_05_treat_unadj_Spat <- which(dat_aov_unadj_Spat_LS_round2$uni.p[2,] < 0.05) # [2] is referring to the first factor of my model , in my case "Treatment"
+diff_05_family_unadj_Spat <- which(dat_aov_unadj_Spat_LS_round2$uni.p[3,] < 0.05) # [3] is referring to the second factor of my model , in my case "Family" ***day time but thats wrong
+diff_05_interact_unadj_Spat <- which(dat_aov_unadj_Spat_LS_round2$uni.p[4,] < 0.05) # [4] is referring to the third factor of my model , in my case "interaction Treatment and Family"
 
 #ASV names ----
 names_diff_treat_unadj_Spat <- names(diff_05_treat_unadj_Spat)

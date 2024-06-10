@@ -72,9 +72,10 @@ any(any_contain)
 rank_names(pseq)
 
 #Remove low prev ----
+#remove less than 0.5% total abundance - 5234 taxa * 0.005 = ~30 reads minimum (0.5%)
+plot(sort(taxa_sums(x3), TRUE), type="h", ylim=c(0, 10000))
 
-plot(sort(taxa_sums(x1), TRUE), type="h", ylim=c(0, 10000))
-
+x0 = prune_taxa(taxa_sums(pseq) > 30, pseq) 
 x1 = prune_taxa(taxa_sums(pseq) > 200, pseq) 
 x2 = prune_taxa(taxa_sums(pseq) > 500, pseq) 
 x3 = prune_taxa(taxa_sums(pseq) > 1000, pseq)
@@ -115,6 +116,7 @@ ps2 = prune_taxa(keepTaxa, ps1)
 
 #pseq <- x2
 pseq <- x1
+pseq <- x0
 
 #check reads
 
@@ -140,6 +142,8 @@ pseq <- subset_samples(pseq, !Library_Name %in% c("F4L18", "T10r3", "T9r2"))
 #saving filtered but not rarefied pseq object for mb2021 project
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_NOT_rarefied.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_NOT_rarefied_moreTAXA.rds")
+
 
 otu.rare = otu_table(pseq)
 otu.rare = as.data.frame(otu.rare)

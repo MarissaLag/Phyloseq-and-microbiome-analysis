@@ -12,7 +12,14 @@ pseq <- mb2021_filtered_NOT_rarefied
 
 pseq <- MU42022_filtered_NOT_rarefied
 
+pseq <- MU42022_filtered_NOT_rarefied_moreTAXA
+  
+  
 #filter samples
+
+#MU42022
+pseq <- subset_samples(pseq, !Genetics %in% "4")
+  
 pseq <- subset_samples(pseq, !Age %in% "3 dpf")
 pseq <- subset_samples(pseq, !Library_Name %in% c("T9r1", "T9r3"))
 
@@ -39,6 +46,14 @@ BiocManager::install("DESeq2", force = TRUE)
 BiocManager::install("GenomeInfoDb")
 BiocManager::install("DESeq2")
 
+#filter out probiotic (ASV7 and 18)
+taxa_to_remove <- c("ASV7", "ASV18")
+
+# Create a logical vector indicating which taxa to keep
+taxa_to_keep <- !(taxa_names(pseq) %in% taxa_to_remove)
+
+# Prune the taxa from the phyloseq object
+pseq <- prune_taxa(taxa_to_keep, pseq)
 
 library(DESeq2) #load deseq
 
@@ -61,7 +76,7 @@ res_low_vs_control <- results(DeSeq2, contrast = c("Treatment", "Low salinity", 
 
 res_PB_vs_control <- results(DeSeq2, contrast = c("Treatment", "Probiotics", "Control"))
 res_PBH_vs_control <- results(DeSeq2, contrast = c("Treatment", "Probiotics + HT", "Control"))
-res_HT_vs_control <- results(DeSeq2, contrast = c("Treatment", "High temperature", "Control"))
+#res_HT_vs_control <- results(DeSeq2, contrast = c("Treatment", "High temperature", "Control"))
 
 ** from this point it’s optional but this code helps filter the results **
 
@@ -71,7 +86,7 @@ res_dat_high <- cbind(as(res_high_vs_control, "data.frame"), as(tax_table(pseq)[
 
 res_dat_PB <- cbind(as(res_PB_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_PB_vs_control), ], "matrix")) #make the results a data frame
 res_dat_PBH <- cbind(as(res_PBH_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_PBH_vs_control), ], "matrix")) #make the results a data frame
-res_dat_HT <- cbind(as(res_HT_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_HT_vs_control), ], "matrix")) #make the results a data frame
+#res_dat_HT <- cbind(as(res_HT_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_HT_vs_control), ], "matrix")) #make the results a data frame
 
 
 alpha = 0.05 #Set alpha
@@ -82,7 +97,7 @@ sigtab_low = res_dat_low[which(res_dat_low$padj < alpha), ]
 
 sigtab_PB = res_dat_PB[which(res_dat_PB$padj < alpha), ] #filter out significant results
 sigtab_PBH = res_dat_PBH[which(res_dat_PBH$padj < alpha), ]
-sigtab_HT = res_dat_HT[which(res_dat_HT$padj < alpha), ]
+#sigtab_HT = res_dat_HT[which(res_dat_HT$padj < alpha), ]
 
 #code below not working but taxa already included?
 #add the taxonomy back in
