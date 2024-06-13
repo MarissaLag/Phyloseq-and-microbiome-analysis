@@ -12,8 +12,9 @@ pseq <- mb2021_filtered_NOT_rarefied
 
 pseq <- MU42022_filtered_NOT_rarefied
 
-pseq <- MU42022_filtered_NOT_rarefied_moreTAXA
-  
+pseq <- MU42022_filtered_NOT_rarefied_moreTAXA 
+
+pseq <- Marissa_MU42022_rare
   
 #filter samples
 
@@ -24,7 +25,7 @@ pseq <- subset_samples(pseq, !Age %in% "3 dpf")
 pseq <- subset_samples(pseq, !Library_Name %in% c("T9r1", "T9r3"))
 
 #Select time-point
-pseq <- subset_samples(pseq, Age %in% "Day 01")
+pseq <- subset_samples(pseq, Age %in% "Spat")
 pseq <- subset_samples(pseq, !Family %in% "9")
 pseq <- subset_samples(pseq, !Organism %in% "Algae")
 View(pseq@sam_data)
@@ -36,15 +37,15 @@ pseq<- core(pseq, detection = .1/100, prevalence = 90/100)
 View(pseq@otu_table)
 
  #Install deseq
-if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager") #download deseq
-
-BiocManager::install("DESeq2") #Install deseq
-
-BiocManager::install("DESeq2", force = TRUE)
-
-BiocManager::install("GenomeInfoDb")
-BiocManager::install("DESeq2")
+# if (!require("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager") #download deseq
+# 
+# BiocManager::install("DESeq2") #Install deseq
+# 
+# BiocManager::install("DESeq2", force = TRUE)
+# 
+# BiocManager::install("GenomeInfoDb")
+# BiocManager::install("DESeq2")
 
 #filter out probiotic (ASV7 and 18)
 taxa_to_remove <- c("ASV7", "ASV18")

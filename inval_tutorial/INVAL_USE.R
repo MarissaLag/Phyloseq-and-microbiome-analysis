@@ -22,7 +22,11 @@ Marissa_MU42022_rare <- readRDS("~/GitHub/mb2021_phyloseq/Marissa_MU42022_rare.r
 
 pseq <- Marissa_MU42022_rare
 
+pseq <- MU42022_filtered_NOT_rarefied #579 taxa
+
 #pseq <- Marissa_mb2021_filtered_20240203
+
+pseq <- mb2021_filtered_NOT_rarefied #1007 taxa
 
 #Load objects ----
 
@@ -38,15 +42,18 @@ Tree = pseq@phy_tree
 OTU1 = as(OTU, "matrix")
 write.csv(OTU1, file="Data_fram_1.cvs",row.names=TRUE)
 
-write.table(OTU1,file="data_table.csv",sep=",",dec = " ")
+write.table(OTU1,file="data_table_mb2021_unrarefied.csv",sep=",",dec = " ")
+
+
+
 ####Format to example data and reload below for actual test 
 
 #reload edited table
-data_table <- read.csv("data_table.csv")
+data_table <- read.csv("data_table_mb2021_unrarefied.csv")
 
-pc_FUN = read.csv("data_table.csv", header= TRUE)
+pc_FUN = read.csv("data_table_mb2021_unrarefied.csv", header= TRUE)
 
-pc_FUN <- data_table_mb2021_w_Meta
+pc_FUN <- data_table_mb2021_unrarefied
 
 #if removing samples ----
 
@@ -54,19 +61,19 @@ pc_FUN <- data_table_mb2021_w_Meta
 
 pc_FUN <- pc_FUN[!pc_FUN$`Time-point` == "3 dpf", ]
 
-#Note tank mislabelled as "Day" in pc_Fun for mb2021
-pc_FUN <- pc_FUN[!pc_FUN$`Day` == "9", ] 
+#for mb2021 project remove tank 9 from pc_Fun for mb2021
+pc_FUN <- pc_FUN[!pc_FUN$`Tank` == "9", ] 
 
 View(pc_FUN)
 
 #Day 1 only 
 
-pc_FUN <- pc_FUN[pc_FUN$'Time-point' == "1 dpf", ]
+pc_FUN <- pc_FUN[pc_FUN$'Age' == "1 dpf", ]
 
 
 #Spat only
 
-pc_FUN <- pc_FUN[pc_FUN$`Time-point` == "Spat", ]
+pc_FUN <- pc_FUN[pc_FUN$`Age` == "Spat", ]
 
 #Larvae only 
 
@@ -80,17 +87,18 @@ funi_df<- t(pc_FUN)
 
 ###make into a matrix and populate::: This tells r what is metadata and what is the actual data ... Below 5-952 are the coloumns that are the data
 
-matrix_F = pc_FUN[ ,8:366]
+#Note: sum columns add up to zero so you may get an error
+matrix_F = pc_FUN[ ,6:1012] 
 
 #mb2021
 #matrix_F = pc_FUN[ ,6:585]
 
 ### Make the equation. Saying we want to examine specific column of metadata
-time_a_F = pc_FUN$`Salinity Level`
+time_a_F = pc_FUN$`Treatment`
 
 ### Run test 
-inv_F_day1 = multipatt(matrix_F, time_a_F, func = "r.g", control = how(nperm=9999))
-results <- summary(inv_F_day1)
+inv_F_spat = multipatt(matrix_F, time_a_F, func = "r.g", control = how(nperm=9999))
+results <- summary(inv_F_spat)
 
 
 #save results
@@ -148,7 +156,7 @@ str(inv_F)
 
 View(inv_F$str)
 
-View(inv_F$sign)
+View(inv_F_day1$sign)
 
 #for some reason some rows say "NA"
 inv_F$str <- inv_F$str[rownames(inv_F$str) != "ASV384", ]
@@ -156,7 +164,7 @@ cleaned_matrix <- inv_F$str[complete.cases(inv_F$str), ]
 inv_F <-cleaned_matrix
 
 #To view all ASVs and samples
-pheatmap(inv_F)
+pheatmap(inv_F_spat)
 
 
 # Assuming p.value is the column name for p-values in the sign section
@@ -165,19 +173,18 @@ View(inv_F_day1$sign)
 inv_F_day1$sign$Feature_ID <- row.names(inv_F_day1$sign)
 View(inv_F_day1$sign)
 
-View(inv_F_spat$sign)
 inv_F_spat$sign$Feature_ID <- row.names(inv_F_spat$sign)
 View(inv_F_spat$sign)
 
 # Extract the relevant columns from the 'sign' data frame
-inv_F_sign_df <- data.frame(
+inv_F_sign_df_day1 <- data.frame(
   Feature_ID = inv_F_day1$sign$Feature_ID,
   p.value = inv_F_day1$sign$p.value,
   s.Control = inv_F_day1$sign$s.Control,
   s.High = inv_F_day1$sign$s.High,
   s.Low = inv_F_day1$sign$s.Low
 )
-inv_F_sign_df <- data.frame(
+inv_F_sign_df_spat <- data.frame(
   Feature_ID = inv_F_spat$sign$Feature_ID,
   p.value = inv_F_spat$sign$p.value,
   s.Control = inv_F_spat$sign$s.Control,
@@ -186,63 +193,77 @@ inv_F_sign_df <- data.frame(
 )
 
 # View the resulting data frame
-View(inv_F_sign_df)
+View(inv_F_sign_df_day1)
 
 
 #below create a "condition" column that will state which treatment is 
 #enriched for an ASV for plots
 
 # Initialize the "condition" column as an empty character vector
-inv_F_sign_df$condition <- ""
+inv_F_sign_df_day1$condition <- ""
+inv_F_sign_df_spat$condition <- ""
 
 # Check each row for conditions and concatenate letters accordingly
-inv_F_sign_df$condition <- ifelse(inv_F_sign_df$s.Control == 1, paste0(inv_F_sign_df$condition, "C"), inv_F_sign_df$condition)
-inv_F_sign_df$condition <- ifelse(inv_F_sign_df$s.High == 1, paste0(inv_F_sign_df$condition, "H"), inv_F_sign_df$condition)
-inv_F_sign_df$condition <- ifelse(inv_F_sign_df$s.Low == 1, paste0(inv_F_sign_df$condition, "L"), inv_F_sign_df$condition)
+inv_F_sign_df_day1$condition <- ifelse(inv_F_sign_df_day1$s.Control == 1, paste0(inv_F_sign_df_day1$condition, "C"), inv_F_sign_df_day1$condition)
+inv_F_sign_df_day1$condition <- ifelse(inv_F_sign_df_day1$s.High == 1, paste0(inv_F_sign_df_day1$condition, "H"), inv_F_sign_df_day1$condition)
+inv_F_sign_df_day1$condition <- ifelse(inv_F_sign_df_day1$s.Low == 1, paste0(inv_F_sign_df_day1$condition, "L"), inv_F_sign_df_day1$condition)
 
-View(inv_F_sign_df)
+inv_F_sign_df_spat$condition <- ifelse(inv_F_sign_df_spat$s.Control == 1, paste0(inv_F_sign_df_spat$condition, "C"), inv_F_sign_df_spat$condition)
+inv_F_sign_df_spat$condition <- ifelse(inv_F_sign_df_spat$s.High == 1, paste0(inv_F_sign_df_spat$condition, "H"), inv_F_sign_df_spat$condition)
+inv_F_sign_df_spat$condition <- ifelse(inv_F_sign_df_spat$s.Low == 1, paste0(inv_F_sign_df_spat$condition, "L"), inv_F_sign_df_spat$condition)
 
 
+#List signif ASVs ----
 
-#Code below for signif asvs not working**
+#Day 1 ASVs
+# Filter rows where p.value is less than 0.05
+significant_rows <- inv_F_sign_df_day1$sign[inv_F__df_day1$sign$p.value < 0.05, ]
 
-significant_asvs_indices <- which(inv_F_day1$sign["p.value"] <= 0.05)
-selected_rows <- inv_F_day1$sign[inv_F_day1$sign$p.value <= 0.05, ]
+# Extract the Feature_IDs from those rows
+significant_ASVs_day1 <- significant_rows$Feature_ID
 
-View(selected_rows)
+significant_ASVs_day1 <- significant_ASVs_day1[!is.na(significant_ASVs_day1)]
 
-# selected_rows now contains only the rows where "p.value" is <= 0.05
+significant_ASVs_day1 <- as.list(significant_ASVs_day1)
 
-signif_asv <- which(inv_F_day1$sign$p.value <= 0.05)
+#Spat ASVs
+significant_rows <- inv_F_spat$sign[inv_F_spat$sign$p.value < 0.05, ]
 
-View(significant_asvs_indices)
+significant_ASVs_spat <- significant_rows$Feature_ID
+
+significant_ASVs_spat <- significant_ASVs_spat[!is.na(significant_ASVs_spat)]
+
+significant_ASVs_spat <- as.list(significant_ASVs_spat)
+
+# Find common ASVs between the time points
+common_ASVs <- intersect(significant_ASVs_day1, significant_ASVs_spat)
+#mb2021: ASV42, 188, 237, 240, 1164
 
 #instead making manual list of signif (p<0.05) ASVs
 #To extract as list of ASVs
 
 #note: removed 319 (enriched in control and high sal)
 
-significant_asvs_indices_day1 <- c(119, 244, 192, 341, 510, 240, 428, 76, 450, 468,
-                                   484, 579, 385, 116, 199, 290, 54, 114, 60, 149, 339,
-                                   300, 200, 373, 326, 193, 659, 609, 318, 524, 102, 179, 
-                                   232, 38, 641, 150, 131, 92, 130, 257, 34, 499, 394)
-
-
-significant_asvs_indices_spat <- c(333, 507, 580, 494, 656, 371, 373, 623, 227, 283, 332, 571, 662, 385, 314, 380)
+# significant_asvs_indices_day1 <- c(119, 244, 192, 341, 510, 240, 428, 76, 450, 468,
+#                                    484, 579, 385, 116, 199, 290, 54, 114, 60, 149, 339,
+#                                    300, 200, 373, 326, 193, 659, 609, 318, 524, 102, 179, 
+#                                    232, 38, 641, 150, 131, 92, 130, 257, 34, 499, 394)
+# 
+# 
+# significant_asvs_indices_spat <- c(333, 507, 580, 494, 656, 371, 373, 623, 227, 283, 332, 571, 662, 385, 314, 380)
 
 #sort ASVs from highest to lowest
-sorted_indices <- sort(significant_asvs_indices_day1, decreasing = FALSE)
-
-sorted_indices <- sort(significant_asvs_indices_spat, decreasing = FALSE)
-
-
-# Prepend "ASV" to each value in the list
-significant_asvs_names <- paste("ASV", sorted_indices, sep = "")
-print(significant_asvs_names)
+# sorted_indices <- sort(significant_asvs_indices_day1, decreasing = FALSE)
+# 
+# sorted_indices <- sort(significant_asvs_indices_spat, decreasing = FALSE)
+# 
+# # Prepend "ASV" to each value in the list
+# significant_asvs_names <- paste("ASV", sorted_indices, sep = "")
+# print(significant_asvs_names)
 
 #Get pseq data
 
-pseq<- Marissa_mb2021_filtered_20240203
+pseq<- mb2021_filtered_NOT_rarefied
 pseq <- subset_samples(pseq, !Age %in% c("3 dpf", "18 dpf", "Spat"))
 pseq.rel <- microbiome::transform(pseq, "compositional")
 
