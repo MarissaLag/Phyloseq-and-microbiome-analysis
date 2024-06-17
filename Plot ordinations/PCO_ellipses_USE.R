@@ -36,6 +36,7 @@ pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
 #MB2021 filtering
 pseq <- Marissa_mb2021_filtered_20240203
+pseq <- mb2021_filtered_NOT_rarefied_moreTAXA_5percent_removal
 pseq <- mb2021_filtered_NOT_rarefied_normalized
 pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 
