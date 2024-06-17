@@ -28,6 +28,8 @@ pseq
 
 pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 
+pseq <- subset_samples(pseq, Age %in% c("Spat"))
+
 #create objects
 
 OTU = pseq@otu_table
@@ -201,7 +203,7 @@ plot_abundance(psOrd, Facet = "Genus", Color = NULL)
 #Check if data needs rarefying
 #Rarefication curves ----
 
-pseq <- x2 #903 taxa for mb2021
+pseq <- x2 #899 taxa for mb2021
 pseq <- x1
 pseq <- x0
 pseq <- ps2 #2609 taxa (filter >5%)
@@ -229,7 +231,7 @@ pseq <- subset_samples(pseq, !Library_Name %in% c("F4L18", "T10r3", "T9r2"))
 #saving filtered but not rarefied pseq object for mb2021 project
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_NOT_rarefied.rds")
-saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied_moreTAXA_5percent_removal.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filteredwSpat_only_rarefied_June2024.rds")
 
 
 otu.rare = otu_table(pseq)
@@ -248,7 +250,7 @@ raref.curve <- rarecurve(otu.rare, label = TRUE, ylab = "ASV Count")
 #If rarefying:
 ##rarify data to make sequences an even read depth - selecting read depth of 10,000 = any samples with fewer than 10,000 total reads will be removed, all samples will be equalized to 5000 reads for Denman's samples, 10,000 for Marissa/James'
 
-Rare <-rarefy_even_depth(x2, sample.size= 3000)
+Rare <-rarefy_even_depth(x2, sample.size= 18869)
 
 #Marissa/James = 17 samples removed because they contained fewer reads than `sample.size' - first 5 reads are T13-1,T13-2-2,T14-2-2,T15-S-1,T16-10-r3
 
@@ -256,15 +258,13 @@ Rare <-rarefy_even_depth(x2, sample.size= 3000)
 
 #mb2021 rarefied to 3000
 
-sample_depths <- sample_sums(pseq)
+sample_depths <- sample_sums(Rare)
 
 print(sample_depths)
 
 ##yes, all samples have 10,000 or 5,000 reads now.
 
-##rename Rare to ps1
-
-ps1 <- Rare
+pseq <- Rare
 
 #convert to compositional data
 
@@ -289,14 +289,5 @@ ord <- ordinate(pseq.rel, "MDS", "bray")
 #plot MDS/PcoA - can set "colour" and "shape" for any of your variableas
 #geompoint controls data point size on plot
 
-plot_ordination(ps1, ord, color = "Family.1", shape = "Percent.Fouled") + geom_point(size = 4) + scale_shape_binned()
-
-plot_ordination(ps1, ord, color = "Factor") + geom_point(size = 4)
-
-plot_ordination(ps1, ord, color = "Family.1") + geom_point(size = 4)
-
-plot_ordination(pseq, ord, color = "Treatment", shape = "Age") + geom_point(size = 4) + facet_wrap(~Age)
-
-
-p <- plot_ordination(pseq, ord, color = "Factor") + geom_point(size = 4)
+plot_ordination(pseq, ord, color = "Treatment", shape = "Family") + geom_point(size = 4) + scale_shape_binned()
 

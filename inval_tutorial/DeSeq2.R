@@ -16,7 +16,6 @@ pseq <- MU42022_filtered_NOT_rarefied_moreTAXA
 
 pseq <- Marissa_MU42022_rare
 
-pseq <- mb2021_filtered_NOT_rarefied_moreTAXA_5percent_removal
   
 #filter samples
 
@@ -68,6 +67,11 @@ taxa_to_keep <- !(taxa_names(pseq) %in% taxa_to_remove)
 pseq <- prune_taxa(taxa_to_keep, pseq)
 
 library(DESeq2) #load deseq
+
+#Should relative abundance be used?
+
+pseq_rel <- microbiome::transform(pseq, "compositional")
+
 
 DeSeq <- phyloseq_to_deseq2(pseq, ~ Treatment) #convert phyloseq to deseq object
 
@@ -195,9 +199,9 @@ sigtab_low$Combined_Info <- paste(sigtab_low$Family, sigtab_low$ASV, sep = ";")
 
 custom_palette <- brewer.pal(12, "Set3")
 
-custom_palette <- c( "#FFFFB3", "#8DD3C7", "#FB8072", "#FDB462",
+custom_palette <- c(  "#8DD3C7", "#FFFFB3", "#BEBADA","#CCEBC5", "#FB8072", "#FDB462",
                     "#80B1D3", "#B3DE69", "#FCCDE5", 
-                    "#D9D9D9", "#BC80BD", "#CCEBC5", "#FFED6F", "#BEBADA")
+                    "#D9D9D9", "#BC80BD", "#FFED6F")
 
 
 custom_palette <- c(  "#a6cee3", "#b2df8a", "#fdbf6f", "#ff7f00", "#e31a1c","#6a3d9a", 
@@ -212,13 +216,13 @@ custom_palette <- c("#33a02c", "#a6cee3","#ffcc00", "brown", "#cab2d6", "#ff7f00
 ggplot(sigtab_low, aes(x = reorder(Combined_Info, log2FoldChange), y = log2FoldChange, fill = Class)) +
   geom_bar(stat = "identity", color = "black") +
   coord_flip() +
-  labs(title = "Spat - Significant ASVs - High salinity vs Control", 
+  labs(title = "1 dpf - Significant Core ASVs - Low salinity vs Control", 
        x = "Genus; ASV", 
        y = "Log2 Fold Change") +
   theme(panel.grid.major = element_blank(),   # Remove major gridlines
         panel.grid.minor = element_blank(),   # Remove minor gridlines
         axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 6),
+        axis.text.y = element_text(size = 10),
         plot.title = element_text(hjust = 0.5)) +
   scale_fill_manual(values = custom_palette)
 

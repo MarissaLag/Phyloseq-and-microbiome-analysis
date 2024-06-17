@@ -19,11 +19,13 @@ Marissa_MU42022_rarefied_20231016 <- readRDS("~/GitHub/Phyloseq and microbiome a
 
 pseq <- Marissa_mb2021_filtered_20240203
 
+pseq <- mb2021_filtered_NOT_rarefied
+
 #for mb2021 remove 3 dpf and T9
 
-pseq <- subset_samples(pseq, !Age %in% "3 dpf")
+pseq <- subset_samples(pseq, !Family %in% "9")
 
-pseq <- subset_samples(pseq, Age %in% "18 dpf")
+pseq <- subset_samples(pseq, Age %in% "Spat")
 
 pseq <- subset_samples(pseq, !Library_Name %in% c("T9r1", "T9r3"))
 
@@ -65,7 +67,7 @@ summary
 
 
 #Homogeneity of dispersion test
-beta <- betadisper(pseq_bray, metadata$Treatment)
+beta <- betadisper(pseq_bray, metadata$Family)
 permutest(beta)
 
 ##treatment/family follows homogeneity but Age does not (p = 0.001)
