@@ -68,7 +68,7 @@ pseq <- prune_taxa(taxa_to_keep, pseq)
 
 library(DESeq2) #load deseq
 
-#Should relative abundance be used?
+#Should relative abundance be used? Get error when I try
 
 pseq_rel <- microbiome::transform(pseq, "compositional")
 
@@ -125,11 +125,6 @@ sigtab_low = res_dat_low[which(res_dat_low$padj < alpha), ]
 sigtab_PB = res_dat_PB[which(res_dat_PB$padj < alpha), ] #filter out significant results
 sigtab_PBH = res_dat_PBH[which(res_dat_PBH$padj < alpha), ]
 #sigtab_HT = res_dat_HT[which(res_dat_HT$padj < alpha), ]
-
-#code below not working but taxa already included?
-#add the taxonomy back in
-sigtab_high = cbind(as(sigtab_high, "data.frame"), as(tax_table(pseq[rownames(sigtab_high), ], "matrix")) 
-sigtab_low = cbind(as(sigtab_low, "data.frame"), as(tax_table(pseq[rownames(sigtab_low), ], "matrix")) 
 
 #print only the significant results                              
 sigtab_high
@@ -199,8 +194,8 @@ sigtab_low$Combined_Info <- paste(sigtab_low$Family, sigtab_low$ASV, sep = ";")
 
 custom_palette <- brewer.pal(12, "Set3")
 
-custom_palette <- c(  "#8DD3C7", "#FFFFB3", "#BEBADA","#CCEBC5", "#FB8072", "#FDB462",
-                    "#80B1D3", "#B3DE69", "#FCCDE5", 
+custom_palette <- c(  "#FFFFB3", "#BEBADA", "#B3DE69","#FB8072","#FDB462","#CCEBC5",   
+                    "#80B1D3", "#B3DE69", "#8DD3C7", "#FCCDE5", 
                     "#D9D9D9", "#BC80BD", "#FFED6F")
 
 
@@ -216,8 +211,36 @@ custom_palette <- c("#33a02c", "#a6cee3","#ffcc00", "brown", "#cab2d6", "#ff7f00
 ggplot(sigtab_low, aes(x = reorder(Combined_Info, log2FoldChange), y = log2FoldChange, fill = Class)) +
   geom_bar(stat = "identity", color = "black") +
   coord_flip() +
-  labs(title = "1 dpf - Significant Core ASVs - Low salinity vs Control", 
+  labs(title = "1 dpf - Significant ASVs - Low salinity vs Control", 
        x = "Genus; ASV", 
+       y = "Log2 Fold Change") +
+  theme(panel.grid.major = element_blank(),   # Remove major gridlines
+        panel.grid.minor = element_blank(),   # Remove minor gridlines
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 7),
+        plot.title = element_text(hjust = 0.5)) +
+  scale_fill_manual(values = custom_palette)
+
+#Filter out ASVs shared between HS and LS
+
+# Identify the shared ASVs
+shared_asvs <- intersect(sigtab_high$ASV, sigtab_low$ASV)
+
+# Filter out the shared ASVs from both datasets
+sigtab_high_filtered <- sigtab_high %>%
+  filter(!ASV %in% shared_asvs)
+
+sigtab_low_filtered <- sigtab_low %>%
+  filter(!ASV %in% shared_asvs)
+
+head(sigtab_high_filtered)
+head(sigtab_low_filtered)
+
+ggplot(sigtab_low_filtered, aes(x = reorder(Combined_Info, log2FoldChange), y = log2FoldChange, fill = Class)) +
+  geom_bar(stat = "identity", color = "black") +
+  coord_flip() +
+  labs(title = "1 dpf - Significant ASVs - Low salinity vs Control", 
+       x = "Family; ASV", 
        y = "Log2 Fold Change") +
   theme(panel.grid.major = element_blank(),   # Remove major gridlines
         panel.grid.minor = element_blank(),   # Remove minor gridlines
@@ -225,4 +248,30 @@ ggplot(sigtab_low, aes(x = reorder(Combined_Info, log2FoldChange), y = log2FoldC
         axis.text.y = element_text(size = 10),
         plot.title = element_text(hjust = 0.5)) +
   scale_fill_manual(values = custom_palette)
+
+
+#Graph certain ASVs
+
+library(ggplot2)
+library(dplyr)
+
+psmelt <- psmelt(pseq)
+
+# Assuming psmelt is already loaded in your environment
+# Filter for ASV40
+asv40_data <- psmelt %>%
+  filter(OTU == "ASV40")
+
+# Create the box plot
+ggplot(asv40_data, aes(x = Treatment, y = Abundance)) +
+  geom_boxplot(fill = "skyblue", color = "black") +
+  labs(title = "Average Abundance of ASV40 by Treatment",
+       x = "Treatment",
+       y = "Abundance") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 12)) +
+  facet_wrap(~Age)
+
 

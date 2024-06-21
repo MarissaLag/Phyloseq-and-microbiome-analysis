@@ -25,7 +25,7 @@ pseq <- mb2021_filtered_NOT_rarefied
 
 pseq <- subset_samples(pseq, !Family %in% "9")
 
-pseq <- subset_samples(pseq, Age %in% "Spat")
+pseq <- subset_samples(pseq, Age %in% "1 dpf")
 
 pseq <- subset_samples(pseq, !Library_Name %in% c("T9r1", "T9r3"))
 
