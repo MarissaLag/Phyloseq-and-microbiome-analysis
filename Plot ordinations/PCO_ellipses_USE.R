@@ -39,6 +39,7 @@ pseq <- Marissa_mb2021_filtered_20240203
 pseq <- mb2021_filtered_NOT_rarefied_moreTAXA_5percent_removal
 pseq <- mb2021_filtered_NOT_rarefied_normalized
 pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
+pseq <- subset_samples(pseq, !Family %in% c("9"))
 
 #convert to compositional data
 
@@ -54,6 +55,7 @@ set.seed(4235421)
 #info on geom_encircle
 ?ggalt::geom_encircle
 
+#MU42022 ----
 #All time-points
 pseq <- Marissa_MU42022_rarefied_20231016
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
@@ -240,11 +242,11 @@ print(p_combined)
 #onto a user-specified number of axes, k.
 
 pseq <- mb2021_filtered_NOT_rarefied_normalized
-pseq <- Marissa_mb2021_filtered_20240203
+#pseq <- Marissa_mb2021_filtered_20240203
 pseq <- subset_samples(pseq, Age %in% c("Spat"))
 pseq <- subset_samples(pseq, !Family %in% c("9"))
 
-pseq <- subset_samples(pseq, !Family %in% c("1"))
+#pseq <- subset_samples(pseq, !Family %in% c("1"))
 
 #correct family column for mb2021
 
@@ -260,36 +262,49 @@ ord <- ordinate(pseq.rel, "MDS", "bray")
 
 
 p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), size = 4) +
-  scale_colour_manual(values = c("#F8766D", "#00ab41", "#1B98E0FF")) +
+  geom_point(aes(fill = Treatment), size = 5) +
+  ggforce::geom_mark_ellipse(aes(color = Treatment)) +
+  scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) +
   ggtitle("All time-points") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom") +
+  xlim(-0.6, 0.4) +
+  ylim(-0.4, 0.35)
+
 p
 
-p1 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), shape = 16, size = 4) +
-  scale_colour_manual(values = c("#F8766D", "#00ab41", "#1B98E0FF")) +
+p1 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
+  geom_point(aes(fill = Treatment), shape = 16, size = 5) +
+  ggforce::geom_mark_ellipse(aes(color = Treatment)) +
+  scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) +
   ggtitle("1 dpf") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
+  xlim(-0.35, 0.4) +
+  ylim(-0.4, 0.3)
 p1
 
 
-p2 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), shape = 17, size = 4) +
-  scale_colour_manual(values = c("#F8766D", "#00ab41", "#1B98E0FF")) +
+p2 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
+  geom_point(aes(fill = Treatment), shape = 17, size = 5) +
+  ggforce::geom_mark_ellipse(aes(color = Treatment)) +
+  scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) +
   ggtitle("18 dpf") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
+  ylim(-0.3, 0.5) +
+  xlim(-0.4, 0.7)
 p2
 
-p3 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), shape = 15, size = 4) +
-  scale_colour_manual(values = c("#F8766D", "#00ab41", "#1B98E0FF")) + 
+p3 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
+  geom_point(aes(fill = Treatment), shape = 15, size = 5) +
+  ggforce::geom_mark_ellipse(aes(color = Treatment)) +
+  scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) + 
   ggtitle("Spat") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
+  ylim(-0.3, 0.3) +
+  xlim(-0.45, 0.3)
 p3
 
 
-grid.arrange(p1, p2, p3, p, ncol = 2)
+grid.arrange(p, p1, p2, p3, ncol = 2)
 
 ggarrange(p, p1, p2, p3, nrow = 2, ncol =2, common.legend = TRUE, legend="bottom")
 

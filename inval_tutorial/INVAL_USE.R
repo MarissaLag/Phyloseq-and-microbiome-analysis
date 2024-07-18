@@ -20,7 +20,7 @@ library(RColorBrewer)
 
 Marissa_MU42022_rare <- readRDS("~/GitHub/mb2021_phyloseq/Marissa_MU42022_rare.rds")
 
-pseq <- Marissa_MU42022_rare
+pseq <- Marissa_MU42022_rare_nochloro
 
 pseq <- MU42022_filtered_NOT_rarefied #579 taxa
 
@@ -53,9 +53,14 @@ data_table <- read.csv("data_table_mb2021_unrarefied.csv")
 
 pc_FUN = read.csv("data_table_mb2021_unrarefied.csv", header= TRUE)
 
-pc_FUN <- data_table_mb2021_unrarefied
+#pc_FUN <- data_table_mb2021_unrarefied
+
+pc_FUN <- data_table_MU_2022_rarefied
 
 #if removing samples ----
+
+#for MU42022, remove PB on day 01
+pc_FUN <- pc_FUN[, !colnames(pc_FUN) %in% c("ASV7", "ASV18")]
 
 #for mb2021 project remove remaining day 3 samples and T9 spat data
 
@@ -68,12 +73,15 @@ View(pc_FUN)
 
 #Day 1 only 
 
-pc_FUN <- pc_FUN[pc_FUN$'Age' == "1 dpf", ]
-
+pc_FUN <- pc_FUN[pc_FUN$'Age' == "Day 01", ]
 
 #Spat only
 
 pc_FUN <- pc_FUN[pc_FUN$`Age` == "Spat", ]
+
+#If present, filter NAs in column 1
+
+pc_FUN <- pc_FUN[-1, ]
 
 #Larvae only 
 
@@ -83,18 +91,18 @@ pc_FUN <- data_table[data_table$Age %in% c("Day 01", "Day 03", "Day 06", "Day 15
 ####Test ASVs ----
 
 #Inverse data
-funi_df<- t(pc_FUN)
+funi_df<- t(pc_FUN) 
 
 ###make into a matrix and populate::: This tells r what is metadata and what is the actual data ... Below 5-952 are the coloumns that are the data
 
 #Note: sum columns add up to zero so you may get an error
-matrix_F = pc_FUN[ ,6:1012] 
+#matrix_F = pc_FUN[ ,6:1012] 
 
 #mb2021
-#matrix_F = pc_FUN[ ,6:585]
+matrix_F = pc_FUN[ ,7:350]
 
 ### Make the equation. Saying we want to examine specific column of metadata
-time_a_F = pc_FUN$`Treatment`
+time_a_F = pc_FUN$Treatment
 
 ### Run test 
 inv_F_spat = multipatt(matrix_F, time_a_F, func = "r.g", control = how(nperm=9999))

@@ -307,5 +307,75 @@ ggplot(ps_filtered_treatment, aes(x = FeatureID, y = sqrt_diff_abundance, fill =
 
 
 
+#Select ASVs ----
 
+#unrarefied
+pseq <- Marissa_MU42022_rare_nochloro
+pseq <- subset_samples(pseq, !Genetics %in% "4")
+pseq <- subset_samples(pseq, !Organism %in% "Algae")
+pseq <- subset_samples(pseq, Age %in% "Spat")
+
+pseq <- microbiome::transform(pseq, "compositional")
+
+pseq <-psmelt(pseq)
+
+#Inval ASVs different at spat stage MU42022, rarefied data
+#PB
+ASV_list_PB <- pseq %>%
+  filter(OTU %in% c("ASV69", "ASV128")) 
+
+ASV_list_PBH <- filter(pseq, OTU %in% c("ASV68", "ASV109", "ASV116", "ASV174", "ASV208", "ASV241", "ASV338"))
+
+ASV_list_PB_PBH <- filter(pseq, OTU %in% c("ASV3", "ASV88", "ASV201")
+                      
+#Calculate means
+average_abundance_PB <- ASV_list_PB %>%
+  group_by(OTU, Treatment, Family, Class, Genus) %>%
+  summarise(mean_abundance = mean(Abundance, na.rm = TRUE))
+
+#if want to group PB and PNH together
+average_abundance_PB_PBH <- ASV_list_PB_PBH %>%
+  # Combine treatments "Probiotics" and "Probiotics + HT" into a single category
+  mutate(Treatment_Group = ifelse(Treatment %in% c("Probiotics", "Probiotics + HT"), "Probiotics_Group", Treatment)) %>%
+  # Group by the new treatment category along with OTU, Family, Class, and Genus
+  group_by(OTU, Treatment_Group, Family, Class, Genus) %>%
+  # Calculate the mean abundance
+  summarise(mean_abundance = mean(Abundance, na.rm = TRUE))
+
+
+# Pivot the data to wide format
+average_abundance_wide_PB <- average_abundance_PB %>%
+  pivot_wider(names_from = Treatment, values_from = mean_abundance)
+
+# Calculate log2-fold changes
+epsilon <- 1e-9  # Small constant to avoid division by zero
+average_abundance_wide_PB <- average_abundance_wide_PB %>%
+  mutate(
+    log2FC_Probiotics_vs_Control = log2((`Probiotics` + epsilon) / (`Control` + epsilon))
+    #,log2FC_Probiotics_HT_vs_Control = log2((`Probiotics + HT` + epsilon) / (`Control` + epsilon))
+  )
+
+#plot 
+
+custom_palette <- c(  "#8DD3C7","#B3DE69","#FB8072","#FDB462","#CCEBC5", "#FFFFB3", "#BEBADA",    
+                      "#80B1D3", "#B3DE69", "#8DD3C7", "#FCCDE5", 
+                      "#D9D9D9", "#BC80BD", "#FFED6F")
+
+
+library(ggplot2)
+
+ggplot(average_abundance_wide_PB, aes(x = OTU, y = log2FC_Probiotics_vs_Control, fill = Family)) +
+  geom_col(color = "black") +  # Add black border around bars
+  scale_fill_manual(values = custom_palette) +  # Set custom colors for the fill
+  geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
+  labs(title = "PB/PBH vs Control - Spat",
+       x = "",
+       y = "Log-Fold Change in Relative Abundance") +
+  theme_bw() +
+  coord_flip() +
+  theme(panel.grid.major = element_blank(),  # Remove major gridlines
+        panel.grid.minor = element_blank(),  # Remove minor gridlines
+        axis.text.x = element_text(angle = 0, hjust = 1, size = 9),
+        axis.text.y = element_text(angle = 0, hjust = 1, size = 9)) 
+#+ ylim(0, 2.1)
 
