@@ -11,8 +11,8 @@ library(dplyr)
 library(RColorBrewer)
 
 #MU42022 filtering
-pseq <- Marissa_MU42022_rarefied_20231016
-pseq <- MU42022_filtered_NOT_rarefied
+pseq <- Marissa_MU42022_rare_nochloro
+#pseq <- MU42022_filtered_NOT_rarefied
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 

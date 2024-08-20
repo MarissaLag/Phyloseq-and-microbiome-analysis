@@ -320,4 +320,111 @@ ggplot(Alii_data, aes(x = Treatment, y = Abundance)) +
         axis.text.y = element_text(size = 12)) +
   facet_wrap(~OTU)
 
+#Normalize data for figures ---- 
+#Data normalisation using DESeq2:
+#counts divided by sample-specific size factors determined by median ratio of gene counts relative to geometric mean per gene
+
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager") #download deseq
+
+BiocManager::install("DESeq2") #Install deseq
+
+BiocManager::install("DESeq2", force = TRUE)
+
+BiocManager::install("GenomeInfoDb")
+BiocManager::install("DESeq2")
+
+library(DESeq2)
+library(phyloseq)
+
+
+pseq <- MU42022_filtered_NOT_rarefied
+pseq <- mb2021_filtered_NOT_rarefied
+#how to pick which factors to use?? Checked, does not matter which factors you use, will normalize the same. 
+#need to remove NAs (algae)
+DeSeq <- phyloseq_to_deseq2(pseq, ~ Age) #convert phyloseq to deseq object
+
+DeSeq2 <- DESeq(DeSeq)
+
+fact1 = sample_data(pseq)
+fact = as.matrix.data.frame(fact1)
+fact = as.data.frame(fact)
+
+count1 = otu_table(pseq)
+count = as.matrix.data.frame(count1)
+count = as.data.frame(count)
+
+# # two-way analysis with 2 levels each (treatment + time)
+# # countData = ASV counts with samples in columns  
+# # colData = Sample meta data (factors, etc)  
+# # design = the right hand side of a GLM formula
+
+ASV_deseq <- DESeqDataSetFromMatrix(countData = t(count),
+                                    colData = fact,
+                                    design = ~ Age)
+
+# positive counts normalisaton (accounts for zero-inflation)
+ASV_deseq <- estimateSizeFactors(DeSeq2, type = "poscounts")
+sizeFactors(ASV_deseq)
+
+# size-factor corrected data are calculated by dividing the raw counts by the sample size factor and adding 0.5 to correct for the zeros
+ASV_deseq_norm <- sapply(row.names(ASV_deseq), function(x){
+  plotCounts(ASV_deseq, x, "Age", returnData = TRUE, normalized = TRUE)$count
+  
+})
+rownames(ASV_deseq_norm) <- colnames(ASV_deseq)
+
+# remove the addition of 0.5 to all entries
+ASV_deseq_norm <- ASV_deseq_norm - 0.5
+ASV_deseq_norm[1:10, 1:10]
+
+# make dataset with integers
+ASV_deseq_norm <- round(ASV_deseq_norm)
+ASV_deseq_norm[1:10, 1:10]
+
+View(ASV_deseq_norm)
+
+# check for zeros across all samples (produced by normalisation)
+dim(ASV_deseq_norm[, colSums(ASV_deseq_norm) == 0]) # 0
+
+# check singletons
+dim(ASV_deseq_norm[, colSums(ASV_deseq_norm) == 1])
+
+#save normalised table
+write.csv(ASV_deseq_norm, "~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files//normalised_ASV_table_mb2021_Age.csv")
+
+#Make new pseq object with normalized ASV table
+mb2021_filtered_NOT_rarefied <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
+
+#Check format
+View(pseq@otu_table)
+View(normalised_ASV_table_mb2021_Age)
+
+#correct to make forst column as row names
+
+normalised_ASV_table_mb2021_Age <- as.data.frame(normalised_ASV_table_mb2021_Age)
+
+rownames(normalised_ASV_table_mb2021_Age) <- normalised_ASV_table_mb2021_Age[, 1]
+
+# Remove the first column from the data frame
+normalised_ASV_table_MU42022 <- normalised_ASV_table_MU42022[, -1]
+
+# Create a new otu_table object
+new_otu_table <- otu_table(normalised_ASV_table_MU42022, taxa_are_rows = FALSE)
+View(new_otu_table)
+str(new_otu_table)
+# Replace the old OTU table with the new one
+#otu_table(mb2021_filtered_NOT_rarefied) <- new_otu_table
+otu_table(MU42022_filtered_NOT_rarefied) <- new_otu_table
+
+#If giving error that sample names do not match
+# Extract the sample names from new_otu_table
+new_sample_names <- sample_names(new_otu_table)
+
+# Verify the replacement
+View(mb2021_filtered_NOT_rarefied@otu_table)
+#Save as different RDS file
+saveRDS(mb2021_filtered_NOT_rarefied, file = "mb2021_filtered_NOT_rarefied_normalized.rds")
+
+
 
