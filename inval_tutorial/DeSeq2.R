@@ -22,7 +22,7 @@ pseq <- Marissa_MU42022_rare_nochloro
 #MU42022
 pseq <- subset_samples(pseq, !Genetics %in% "4")
   
-pseq <- subset_samples(pseq, Age %in% "Spat")
+pseq <- subset_samples(pseq, Age %in% "1 dpf")
 pseq <- subset_samples(pseq, !Library_Name %in% c("T9r1", "T9r3"))
 
 pseq <- subset_samples(pseq, Age %in% "Day 15")
@@ -39,7 +39,7 @@ pseq@sam_data$Family[pseq@sam_data$Family %in% c(12, 16)] <- 4
 pseq@sam_data$Family <- as.factor(pseq@sam_data$Family)
 
 
-#Can I look at core member? If so,
+#Core
 
 pseq<- core(pseq, detection = .1/100, prevalence = 90/100)
 
@@ -191,8 +191,8 @@ sigtab_PBH <- rownames_to_column(sigtab_PBH, var = "ASV")
 sigtab_HT <- rownames_to_column(sigtab_HT, var = "ASV")
 
 #Want family identity info on bar graph too (but colouring is too much) so making a new column 
-sigtab_high$Combined_Info <- paste(sigtab_high$Family, sigtab_high$ASV, sep = ";")
-sigtab_low$Combined_Info <- paste(sigtab_low$Family, sigtab_low$ASV, sep = ";")
+sigtab_high$Combined_Info <- paste(sigtab_high$Genus, sigtab_high$ASV, sep = ";")
+sigtab_low$Combined_Info <- paste(sigtab_low$Genus, sigtab_low$ASV, sep = ";")
 
 sigtab_PB$Combined_Info <- paste(sigtab_PB$Genus, sigtab_PB$ASV, sep = ";")
 sigtab_PBH$Combined_Info <- paste(sigtab_PBH$Genus, sigtab_PBH$ASV, sep = ";")
@@ -200,34 +200,39 @@ sigtab_HT$Combined_Info <- paste(sigtab_HT$Genus, sigtab_HT$ASV, sep = ";")
 
 custom_palette <- brewer.pal(12, "Set3")
 
-custom_palette <- c(  "#FFFFB3", "#BEBADA", "#B3DE69","#FB8072","#FDB462","#CCEBC5",   
-                    "#80B1D3", "#B3DE69", "#8DD3C7", "#FCCDE5", 
-                    "#D9D9D9", "#BC80BD", "#FFED6F")
+custom_palette_low <- c(  "#FFFFB3", "#6a3d9a", "#00ffcc","green", "#BEBADA", "brown", "#80B1D3","#FDB462","#CCEBC5","red","#FFED6F", "#B3DE69","#FB8072", "#80B1D3",   
+                    "yellow", "#8DD3C7", "#FCCDE5", 
+                    "red", "#BC80BD", "#FFED6F", "#ff7f00", "#a6cee3","#ffcc00" )
+
+custom_palette <- c(  "#FFFFB3", "#00ffcc","#BEBADA", "brown", "#B3DE69","#FB8072", "#80B1D3","#FDB462","#CCEBC5",   
+                      "yellow", "#8DD3C7", "#FCCDE5", 
+                      "red", "#BC80BD", "#FFED6F", "#ff7f00", "#a6cee3","#ffcc00" )
 
 
-custom_palette <- c("#a6cee3", "#b2df8a","#66ff33","#ff7f00","#fb9a99",  "#fdbf6f", "#ff7f00", "#e31a1c","#6a3d9a", 
-              "#fdbf6f", "#cab2d6","#ff33bb", "#ffcc00", "#00ffcc" )
+
+custom_palette <- c("#a6cee3", "#b2df8a","#ff7f00","#fb9a99",  "#fdbf6f","#e31a1c" ,"lightyellow","#6a3d9a", 
+              "#fdbf6f", "#cab2d6","brown", "#ffcc00", "#00ffcc", "grey", "skyblue3", "#66ff33" )
 
 
 custom_palette <- c("#33a02c", "#a6cee3","#ffcc00", "brown", "#cab2d6", "#ff7f00", "#b2df8a", "#e31a1c","#6a3d9a", 
-                     "#fb9a99","#ff33bb", "#00ffcc", "#66ff33")
+                     "#fb9a99","#ff33bb", "#00ffcc", "#66ff33", "#a6cee3", "#b2df8a","#66ff33","#ff7f00","#fb9a99",  "#fdbf6f", "#ff7f00", "#e31a1c","#6a3d9a", 
+                    "#fdbf6f", "#cab2d6","#ff33bb", "#ffcc00", "#00ffcc")
 
 
 
-ggplot(sigtab_HT, aes(x = reorder(Combined_Info, log2FoldChange), y = log2FoldChange, fill = Class)) +
+ggplot(sigtab_low, aes(x = reorder(Combined_Info, log2FoldChange), y = log2FoldChange, fill = Family)) +
   geom_bar(stat = "identity", color = "black") +
   coord_flip() +
-  labs(title = "15 dpf - Significant ASVs - HT vs Control", 
+  labs(title = "", 
        x = "Genus; ASV", 
        y = "Log2 Fold Change") +
+  theme_bw() +
   theme(panel.grid.major = element_blank(),   # Remove major gridlines
         panel.grid.minor = element_blank(),   # Remove minor gridlines
         axis.text.x = element_text(size = 10),
         axis.text.y = element_text(size = 10),
         plot.title = element_text(hjust = 0.5)) +
-  scale_fill_manual(values = custom_palette)
-
-
+  scale_fill_manual(values = custom_palette_low)
 
 #Filter out ASVs shared between HS and LS
 

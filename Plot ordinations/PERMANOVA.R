@@ -21,6 +21,8 @@ pseq <- Marissa_mb2021_filtered_20240203
 
 pseq <- mb2021_filtered_NOT_rarefied
 
+pseq <- mb2021_filtered_NOT_rarefied_normalized
+
 #for mb2021 remove 3 dpf and T9
 
 pseq <- subset_samples(pseq, !Family %in% "9")
@@ -46,6 +48,22 @@ print(pseq@sam_data$Family)
 View(pseq@sam_data) 
 
 
+
+#look at data
+
+p <- plot_landscape(pseq, method = "NMDS", distance = "bray", col = "Treatment", size = 3)
+print(p)
+
+#remove ASVs that have zero abundance in your subset of data
+
+otu_table <- phyloseq::otu_table(pseq)
+otu_matrix <- as(otu_table, "matrix")
+taxa_to_keep <- rowSums(otu_matrix) > 0
+otu_table_filtered <- otu_table[taxa_to_keep, ]
+pseq_filtered <- phyloseq::otu_table(otu_table_filtered, taxa_are_rows = TRUE)
+pseq <- merge_phyloseq(pseq, pseq_filtered)
+
+
 #Create objects ----
 
 OTU = pseq@otu_table
@@ -53,11 +71,15 @@ Tax = pseq@tax_table
 Metadata = pseq@sam_data
 Tree = pseq@phy_tree
 
+#make treatment a factor
+
+Metadata$Treatment <- as.character(Metadata$Treatment)
+
 #PERMAOVA
 #source: https://deneflab.github.io/MicrobeMiseq/demos/mothur_2_phyloseq.html#permanova
 set.seed(452)
 
-pseq_bray <- phyloseq::distance(pseq, method = "bray")
+pseq_bray <- phyloseq::distance(pseq, method = "bray", weighted = TRUE)
 
 metadata <- as(sample_data(pseq), "data.frame")
 
@@ -66,31 +88,59 @@ summary <- adonis2(pseq_bray ~ Treatment*Family, data = metadata)
 summary
 
 
+
+
 #Homogeneity of dispersion test
-beta <- betadisper(pseq_bray, metadata$Family)
+beta <- betadisper(pseq_bray, metadata$Treatment)
 permutest(beta)
 
 ##treatment/family follows homogeneity but Age does not (p = 0.001)
 
 #Post-Hoc
 
-pairwise.adonis(pseq_bray, phyloseq::sample_data(pseq)$Treatment)
+pairwise.adonis(pseq_bray, phyloseq::sample_data(pseq)$Family)
+
+pairwise.adonis(pseq_bray, Metadata$Treatment)
+
+#getting weird results for some of the pairwise tests....trying Tukeys instead
+
+pseq_bray <- phyloseq::distance(pseq, method = "bray")
+
+# Extract metadata and create a data frame
+metadata <- as(sample_data(pseq), "data.frame")
+
+# Calculate beta diversity dispersion
+bd <- betadisper(pseq_bray, metadata$Treatment)
+
+# Perform ANOVA using aov
+bd_aov <- aov(bd$distances ~ metadata$Treatment) 
+
+# Perform Tukey's HSD post-hoc test
+tukey_result <- TukeyHSD(bd_aov)
+
+# View results
+print(tukey_result)
+
+
+#Because odd pairwise tests (apparently because not there are not enough permutations to run a comparison)
+#Trying a Negative Binomial generalized linear model or MANOVA (assumes data is normal)
+
+
+
+
+
 
 #CAP plots ----
 
 pseq <- Marissa_mb2021_filtered_20240203
 
-#for mb2021 remove 3 dpf
-
-pseq <- subset_samples(pseq, !Age %in% "3 dpf")
-pseq_bray <- phyloseq::distance(pseq, method = "bray")
 
 # CAP ordinate
 cap_ord <- ordinate(
   physeq = pseq, 
   method = "CAP",
   distance = pseq_bray,
-  formula = ~Age 
+  formula = ~Treatment
 )
 
 # CAP plot
@@ -100,7 +150,7 @@ cap_plot <- plot_ordination(
   color = "Treatment", 
   axes = c(1,2)
 ) + 
-  aes(shape = Age) + 
+  aes(shape = Treatment) + 
   geom_point(aes(colour = Treatment), alpha = 0.4, size = 4) + 
   #geom_point(colour = "grey90", size = 3) + 
   scale_color_manual(values = c("#a65628", "red", "#ffae19", "#4daf4a", 
@@ -151,38 +201,6 @@ cap_plot +
   ) +
   facet_wrap(~Age)
 
-##need to find code for pairwise comparison
-
-
-
-
-#PERMANOVA of specific microbiota #Code below doesn't work...can't make brays similarity matrix with only Vibrio?
-
-pseq <- Marissa_mb2021_filtered_20240203
-
-#for mb2021 remove 3 dpf and T9
-
-pseq <- subset_samples(pseq, !Age %in% "3 dpf")
-
-pseq <- subset_samples(pseq, Age %in% "18 dpf")
-
-pseq <- subset_samples(pseq, !Library_Name %in% c("T9r1", "T9r3"))
-
-pseq <- microbiome::transform(pseq, "compositional")
-
-
-subset <- subset_taxa(pseq, Family=="Vibrionaceae")
-View(subset@otu_table)
-
-set.seed(452)
-
-pseq_bray <- phyloseq::distance(subset, method = "bray")
-
-metadata <- as(sample_data(subset), "data.frame")
-
-summary <- adonis2(pseq_bray ~ Treatment*Age, data = metadata)
-
-summary
 
 
 #SIMPER
@@ -229,28 +247,4 @@ adjusted_p_values <- p.adjust(p_values, method = "bonferroni")
 # Print the results
 results <- data.frame(ASV = rownames(otu_matrix), p_value = adjusted_p_values)
 print(results)
-
-
-#different post hoc test
-#source:https://www.yanh.org/2021/01/01/microbiome-r/ 
-
-metadata <- data.frame(sample_data(ps.rarefied))
-test.adonis <- adonis(dist ~ body.site, data = metadata)
-test.adonis <- as.data.frame(test.adonis$aov.tab)
-test.adonis
-
-cbn <- combn(x=unique(metadata$body.site), m = 2)
-p <- c()
-
-for(i in 1:ncol(cbn)){
-  ps.subs <- subset_samples(ps.rarefied, body.site %in% cbn[,i])
-  metadata_sub <- data.frame(sample_data(ps.subs))
-  permanova_pairwise <- adonis(phyloseq::distance(ps.subs, method = "bray") ~ body.site, 
-                               data = metadata_sub)
-  p <- c(p, permanova_pairwise$aov.tab$`Pr(>F)`[1])
-}
-
-p.adj <- p.adjust(p, method = "BH")
-p.table <- cbind.data.frame(t(cbn), p=p, p.adj=p.adj)
-p.table
 
