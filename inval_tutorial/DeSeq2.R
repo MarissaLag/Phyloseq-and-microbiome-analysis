@@ -4,6 +4,8 @@
 
 #Should I be normalizing the data beforehand???
 
+library(phyloseq)
+library(microbiome)
 
 #load phyloseq object
 pseq <- Marissa_mb2021_filtered_20240203
@@ -41,7 +43,7 @@ pseq@sam_data$Family <- as.factor(pseq@sam_data$Family)
 
 #Core
 
-pseq<- core(pseq, detection = .1/100, prevalence = 90/100)
+pseq <- core(pseq, detection = .1/100, prevalence = 90/100)
 
 View(pseq@otu_table)
 

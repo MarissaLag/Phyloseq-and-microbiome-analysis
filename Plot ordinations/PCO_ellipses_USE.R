@@ -262,51 +262,66 @@ ord <- ordinate(pseq.rel, "MDS", "bray")
 
 
 p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), size = 5) +
+  geom_point(aes(fill = Treatment), size = 6) +
   ggforce::geom_mark_ellipse(aes(color = Treatment)) +
   scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) +
   ggtitle("All time-points") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom",
+        axis.text.x = element_text(size = 13, face = "bold"),
+        axis.text.y = element_text(size = 13, face = "bold")) +
   xlim(-0.6, 0.4) +
   ylim(-0.4, 0.35)
 
 p
 
 p1 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
-  geom_point(aes(fill = Treatment), shape = 16, size = 5) +
+  geom_point(aes(fill = Treatment), shape = 16, size = 6) +
   ggforce::geom_mark_ellipse(aes(color = Treatment)) +
   scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) +
-  ggtitle("1 dpf") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
+  #ggtitle("1 dpf") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none",
+        axis.text.x = element_text(size = 13, face = "bold"),
+        axis.text.y = element_text(size = 13, face = "bold"),
+        strip.text = element_text(size = 13, face = "bold")) +
   xlim(-0.35, 0.4) +
-  ylim(-0.4, 0.3)
+  ylim(-0.4, 0.3) +
+  facet_wrap(~Age)
 p1
 
 
 p2 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
-  geom_point(aes(fill = Treatment), shape = 17, size = 5) +
+  geom_point(aes(fill = Treatment), shape = 17, size = 6) +
   ggforce::geom_mark_ellipse(aes(color = Treatment)) +
   scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) +
-  ggtitle("18 dpf") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
-  ylim(-0.3, 0.5) +
-  xlim(-0.4, 0.7)
+  #ggtitle("18 dpf") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none",
+        axis.text.x = element_text(size = 13, face = "bold"),
+        axis.text.y = element_text(size = 13, face = "bold"),
+        strip.text = element_text(size = 13, face = "bold")) +
+  ylim(-0.3, 0.55) +
+  xlim(-0.5, 0.75) +
+  facet_wrap(~Age)
 p2
 
 p3 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
-  geom_point(aes(fill = Treatment), shape = 15, size = 5) +
+  geom_point(aes(fill = Treatment), shape = 15, size = 6) +
   ggforce::geom_mark_ellipse(aes(color = Treatment)) +
   scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) + 
-  ggtitle("Spat") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
+  #ggtitle("Spat") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none",
+        axis.text.x = element_text(size = 13, face = "bold"),
+        axis.text.y = element_text(size = 13, face = "bold"),
+        strip.text = element_text(size = 13, face = "bold")) +
   ylim(-0.3, 0.3) +
-  xlim(-0.45, 0.3)
+  xlim(-0.45, 0.3) +
+  facet_wrap(~Age) 
+  
 p3
 
 
-grid.arrange(p, p1, p2, p3, ncol = 2)
+ggarrange(p1, p2, p3, nrow = 1, ncol =3)
 
-ggarrange(p, p1, p2, p3, nrow = 2, ncol =2, common.legend = TRUE, legend="bottom")
+ggarrange(p1, p2, p3, nrow = 1, ncol =3, common.legend = TRUE, legend="bottom")
 
 #extract legend
 #https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
