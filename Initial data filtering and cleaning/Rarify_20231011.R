@@ -83,15 +83,17 @@ table(tax_table(pseq)[, "Phylum"], exclude = NULL)
 
 #Remove low prev ----
 #remove less than 0.5% total abundance - 5234 taxa * 0.005 = ~30 reads minimum (0.5%)
-plot(sort(taxa_sums(x2), TRUE), type="h", ylim=c(0, 10000))
+plot(sort(taxa_sums(x1), TRUE), type="h", ylim=c(0, 10000))
 # 
 # x0 = prune_taxa(taxa_sums(pseq) > 30, pseq) 
 x1 = prune_taxa(taxa_sums(pseq) > 200, pseq) 
 x2 = prune_taxa(taxa_sums(pseq) > 500, pseq) 
-# x3 = prune_taxa(taxa_sums(pseq) > 1000, pseq)
+x3 = prune_taxa(taxa_sums(pseq) > 1000, pseq)
 
 summarize_phyloseq(pseq)
 summarize_phyloseq(x2)
+
+pseq <- x1
 
 ##using x2 mb2021 and x1 for MU42022
 
@@ -222,6 +224,8 @@ ggplot(readcount, aes(TotalReads)) + geom_histogram() + ggtitle("Sequencing Dept
 
 head(readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")])
 
+readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")]
+
 #mb2021: Remove samples F4L18, T10r3, T9r2 (did not work at all)
 #mu42022: Remove samples T15-S-1, also note, algal samples have very few reads after chloroplasts removed but we will keep them
 
@@ -230,7 +234,7 @@ pseq <- subset_samples(pseq, !Library_Name %in% c("F4L18", "T10r3", "T9r2"))
 
 #saving filtered but not rarefied pseq object for mb2021 project
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
-saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_NOT_rarefied.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_Oct92024.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filteredwSpat_only_rarefied_June2024.rds")
 
 
@@ -242,7 +246,7 @@ sample_names = rownames(otu.rare)
 # we will use vegan rarecurve 
 library(vegan)
 
-otu.rarecurve <- rarecurve(otu.rare, step = 10000, label = TRUE, xlim = c(0, 100000))
+otu.rarecurve <- rarecurve(otu.rare, step = 10000, label = TRUE, xlim = c(0, 10000))
 
 raref.curve <- rarecurve(otu.rare, label = TRUE, ylab = "ASV Count")
 
@@ -250,7 +254,7 @@ raref.curve <- rarecurve(otu.rare, label = TRUE, ylab = "ASV Count")
 #If rarefying:
 ##rarify data to make sequences an even read depth - selecting read depth of 10,000 = any samples with fewer than 10,000 total reads will be removed, all samples will be equalized to 5000 reads for Denman's samples, 10,000 for Marissa/James'
 
-Rare <-rarefy_even_depth(x2, sample.size= 18869)
+Rare <-rarefy_even_depth(pseq, sample.size= 5128)
 
 #Marissa/James = 17 samples removed because they contained fewer reads than `sample.size' - first 5 reads are T13-1,T13-2-2,T14-2-2,T15-S-1,T16-10-r3
 

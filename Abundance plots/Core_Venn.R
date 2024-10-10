@@ -13,7 +13,7 @@ library(microbiomeutilities)
 
 pseq<- Marissa_mb2021_filtered_20240203
 pseq <- mb2021_filtered_NOT_rarefied_normalized
-pseq <- Marissa_MU42022_rare_nochloro 
+pseq <- MU42022_filtered_Oct92024
 
 theme.marissa <- function() {
   theme_classic(base_size = 14) +
@@ -186,7 +186,11 @@ mycols <- c(nonCRC="lightblue", CRC="lightgreen", H="violet")
 mycols <- c(nonCRC="lightgreen", CRC="lightblue", H= "#F8766D") 
 mycols <- c(nonCRC="lightgreen", CRC="lightblue", H= "#F8766D") 
 mycols <- c("grey", "lightgreen", "skyblue", "#F8766D")
-mycols <- c("grey", "lightgreen", "skyblue")
+
+mycols <- c("grey", "orange", "cornflowerblue", "#3CB371")
+
+mycols <- c("grey", "cornflowerblue", "#3CB371", "orange")
+mycols <- c("grey", "cornflowerblue", "#3CB371")
 
 #order bubbles
 #list_core <- list_core[c("High salinity", "Low salinity", "Control")]  # Change the order as needed

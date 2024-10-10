@@ -13,21 +13,24 @@ library(pairwiseAdonis)
 
 #Load and name data ----
 
-Marissa_MU42022_rarefied_20231016 <- readRDS("~/GitHub/Phyloseq and microbiome analysis/Marissa_MU42022_rarefied_20231016.rds")
+pseq <- MU42022_filtered_Oct92024
 
-#pseq <- Marissa_MU42022_rarefied_20231016
+#MU42022 - remove F4 and algal sample
 
-pseq <- Marissa_mb2021_filtered_20240203
+pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
-pseq <- mb2021_filtered_NOT_rarefied
-
-pseq <- mb2021_filtered_NOT_rarefied_normalized
+# pseq <- Marissa_mb2021_filtered_20240203
+# 
+# pseq <- mb2021_filtered_NOT_rarefied
+# 
+# pseq <- mb2021_filtered_NOT_rarefied_normalized
 
 #for mb2021 remove 3 dpf and T9
 
 pseq <- subset_samples(pseq, !Family %in% "9")
 
-pseq <- subset_samples(pseq, Age %in% "1 dpf")
+pseq <- subset_samples(pseq, Age %in% "Day 01")
 
 pseq <- subset_samples(pseq, !Library_Name %in% c("T9r1", "T9r3"))
 
@@ -37,7 +40,7 @@ pseq <- microbiome::transform(pseq, "compositional")
 
 #correct family column
 
-# Replace values according to your mapping
+# Replace values according to your mapping - mb2021
 pseq@sam_data$Family <- ifelse(pseq@sam_data$Family %in% c(9, 13), "1",
                                ifelse(pseq@sam_data$Family %in% c(10, 14), "2",
                                       ifelse(pseq@sam_data$Family %in% c(11, 15), "3",
@@ -54,15 +57,6 @@ View(pseq@sam_data)
 p <- plot_landscape(pseq, method = "NMDS", distance = "bray", col = "Treatment", size = 3)
 print(p)
 
-#remove ASVs that have zero abundance in your subset of data
-
-otu_table <- phyloseq::otu_table(pseq)
-otu_matrix <- as(otu_table, "matrix")
-taxa_to_keep <- rowSums(otu_matrix) > 0
-otu_table_filtered <- otu_table[taxa_to_keep, ]
-pseq_filtered <- phyloseq::otu_table(otu_table_filtered, taxa_are_rows = TRUE)
-pseq <- merge_phyloseq(pseq, pseq_filtered)
-
 
 #Create objects ----
 
@@ -77,54 +71,39 @@ Metadata$Treatment <- as.character(Metadata$Treatment)
 
 #PERMAOVA
 #source: https://deneflab.github.io/MicrobeMiseq/demos/mothur_2_phyloseq.html#permanova
+pseq <- MU42022_filtered_Oct92024
+pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+pseq <- subset_samples(pseq, !Treatment %in% c("High temperature"))
+pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+pseq <- subset_samples(pseq, Age %in% "Day 01")
+
 set.seed(452)
 
 pseq_bray <- phyloseq::distance(pseq, method = "bray", weighted = TRUE)
 
 metadata <- as(sample_data(pseq), "data.frame")
 
-summary <- adonis2(pseq_bray ~ Treatment*Family, data = metadata)
+summary <- adonis2(pseq_bray ~ Treatment*Genetics*Age, data = metadata)
 
 summary
 
 
-
-
 #Homogeneity of dispersion test
-beta <- betadisper(pseq_bray, metadata$Treatment)
+beta <- betadisper(pseq_bray, metadata$Age)
 permutest(beta)
 
 ##treatment/family follows homogeneity but Age does not (p = 0.001)
 
 #Post-Hoc
 
-pairwise.adonis(pseq_bray, phyloseq::sample_data(pseq)$Family)
+pairwise.adonis(pseq_bray, phyloseq::sample_data(pseq)$Treatment)
 
 pairwise.adonis(pseq_bray, Metadata$Treatment)
 
-#getting weird results for some of the pairwise tests....trying Tukeys instead
-
-pseq_bray <- phyloseq::distance(pseq, method = "bray")
-
-# Extract metadata and create a data frame
-metadata <- as(sample_data(pseq), "data.frame")
-
-# Calculate beta diversity dispersion
-bd <- betadisper(pseq_bray, metadata$Treatment)
-
-# Perform ANOVA using aov
-bd_aov <- aov(bd$distances ~ metadata$Treatment) 
-
-# Perform Tukey's HSD post-hoc test
-tukey_result <- TukeyHSD(bd_aov)
-
-# View results
-print(tukey_result)
-
+#Cannot do Tukey's post hoc test on permanova (must be anova)
 
 #Because odd pairwise tests (apparently because not there are not enough permutations to run a comparison)
 #Trying a Negative Binomial generalized linear model or MANOVA (assumes data is normal)
-
 
 
 
