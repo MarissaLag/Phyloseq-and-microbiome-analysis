@@ -15,7 +15,7 @@ library(randomcoloR)
 
 Marissa_MU42022_rare <- readRDS("~/GitHub/mb2021_phyloseq/Marissa_MU42022_rare.rds")
 
-pseq <- Marissa_MU42022_rare
+pseq <- MU42022_filtered_Oct92024
 
 pseq <- MU42022_filtered_NOT_rarefied #579 taxa
 
@@ -31,16 +31,16 @@ OTU = pseq@otu_table
 OTU1 = as(OTU, "matrix")
 write.csv(OTU1, file="Data_fram_1.cvs",row.names=TRUE)
 
-write.table(OTU1,file="data_table_mb2021_unrarefied_normalized.csv",sep=",",dec = " ")
+write.table(OTU1,file="data_table_MU42022_oct2024.csv",sep=",",dec = " ")
 
 ####Format to example data and reload below for actual test (add metadata)
 
 #reload edited table
-data_table <- read.csv("data_table_mb2021_unrarefied_normalized.csv")
+data_table <- read.csv("data_table_MU42022_oct2024.csv")
 
 pc_FUN = read.csv("data_table_mb2021_unrarefied.csv", header= TRUE)
 
-pc_FUN <- data_table_mb2021_unrarefied_normalized
+pc_FUN <- data_table
 
 #if removing samples ----
 
@@ -48,8 +48,12 @@ pc_FUN <- data_table_mb2021_unrarefied_normalized
 #pc_FUN <- pc_FUN[!pc_FUN$`Time-point` == "3 dpf", ]
 pc_FUN <- pc_FUN[!pc_FUN$`Tank` == "9", ] 
 
+#MU42022 filtering
+pc_FUN <- pc_FUN[!pc_FUN$Genetics == "4", ] 
+pc_FUN <- na.omit(pc_FUN)
+
 #Day 1 only 
-pc_FUN <- pc_FUN[pc_FUN$'Age' == "1 dpf", ]
+pc_FUN <- pc_FUN[pc_FUN$'Age' == "Day 15", ]
 #Spat only
 pc_FUN <- pc_FUN[pc_FUN$`Age` == "Spat", ]
 
@@ -64,14 +68,16 @@ funi_df<- t(pc_FUN)
 
 dim(pc_FUN)
 
-matrix_F = pc_FUN[ ,6:1012] 
+matrix_F = pc_FUN[ ,8:586] 
+
+View(matrix_F)
 
 #mb2021
 #matrix_F = pc_FUN[ ,6:585]
 
 ### Make the equation. Saying we want to examine specific column of metadata
 #Note: has difficulty testing with more than one factor at a time
-time_a_F = pc_FUN$`Treatment`
+time_a_F = pc_FUN$Treatment
 
 ### Run test 
 inv_F_day1 = multipatt(matrix_F, time_a_F, func = "r.g", control = how(nperm=9999))
@@ -79,6 +85,77 @@ results <- summary(inv_F_day1)
 
 inv_F_spat = multipatt(matrix_F, time_a_F, func = "r.g", control = how(nperm=9999))
 results <- summary(inv_F_spat)
+
+#No good way to extract signif ASVs, just do it manually
+# Subset the matrix for the selected ASVs from `inv_F_day1`
+selected_asvs_day1 <- c("ASV531", "ASV27", "ASV17", "ASV323", "ASV172", "ASV397", "ASV85", "ASV316", "ASV87", "ASV135", 
+                   "ASV30", "ASV235", "ASV105", "ASV7", "ASV18", "ASV345")
+
+selected_asvs_spat <- c("ASV444", "ASV471", "ASV69", "ASV613", "ASV262", 
+                        "ASV11", "ASV198", "ASV201", "ASV241", "ASV174", 
+                        "ASV254", "ASV68", "ASV49", "ASV233", "ASV109", 
+                        "ASV395", "ASV747", "ASV221", "ASV153", "ASV360", 
+                        "ASV88", "ASV178")
+
+
+significant_ASVs_spat <- data.frame(
+  ASV = c("ASV444", "ASV471", "ASV69", "ASV613", "ASV262", 
+          "ASV11", "ASV198", "ASV201", "ASV241", "ASV174", 
+          "ASV254", "ASV68", "ASV49", "ASV233", "ASV109", 
+          "ASV395", "ASV747", "ASV221", "ASV153", "ASV360", 
+          "ASV88", "ASV178"),
+  Treatment_significant = c("Control", "Probiotics", "Probiotics", 
+                            "Probiotics", "Probiotics", "Probiotics", 
+                            "Probiotics", "Probiotics", "Probiotics + HT", 
+                            "Probiotics + HT", "Probiotics + HT", 
+                            "Probiotics + HT", "Probiotics + HT", 
+                            "Probiotics + HT", "Probiotics + HT", 
+                            "Probiotics + HT", "Probiotics + HT", 
+                            "Control + Probiotics", "Control + Probiotics", "Control + Probiotics",
+                            "Probiotics + Probiotics + HT", "Probiotics + Probiotics + HT")
+                        )
+
+pseq <- psmelt(pseq)
+
+# pseq_ASVs <- pseq %>%
+#   filter(Age == "Spat", OTU %in% selected_ASVs_spat) %>%
+#   group_by(Treatment,OTU,Age) %>%
+#   summarise(avg_abundance = mean(Abundance),
+#             std_abundance = sd(Abundance))
+# 
+# pseq_ASVs <- pseq_ASVs %>%
+#   left_join(significant_ASVs_spat, by = c("OTU" = "ASV"))
+# 
+# pseq_ASVs_control <- pseq_ASVs %>%
+#   filter(Treatment_significant == "Control")
+# 
+# pseq_ASVs_PB <- pseq_ASVs %>%
+#   filter(Treatment_significant == "Probiotics")
+# 
+# pseq_ASVs_PBH <- pseq_ASVs %>%
+#   filter(Treatment_significant == "Probiotics + HT")
+# 
+# pseq_ASVs_PB_PBH <- pseq_ASVs %>%
+#   filter(Treatment_significant == "Probiotics + Probiotics + HT")
+# 
+# 
+# ggplot(pseq_ASVs_PB_PBH, aes(x = OTU, y = avg_abundance, fill = Treatment)) +
+#   geom_bar(stat = "identity", position = position_dodge(), ) +
+#   scale_colour_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) +
+#   scale_fill_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) +
+#   geom_errorbar(aes(ymin = avg_abundance - std_abundance, 
+#                     ymax = avg_abundance + std_abundance),
+#                 color = "black", 
+#                 position = position_dodge(0.9), width = 0.2) +  # Error bars
+#   labs(title = "Spat",
+#        x = "Operational Taxonomic Unit (OTU)",
+#        y = "Average Abundance") +
+#   theme_bw() +  
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1),
+#         panel.grid.major = element_blank(), 
+#         panel.grid.minor = element_blank())  
+
+
 
 #Column ("condition") stating which treatment is signif ----
 
@@ -90,14 +167,18 @@ inv_F_spat$sign$Feature_ID <- row.names(inv_F_spat$sign)
 View(inv_F_spat$sign)
 
 # Extract the relevant columns from the 'sign' data frame
-#Assigns a 1 if assoicated with a group or zero if not
+#Assigns a 1 if associated with a group or zero if not
+
 inv_F_sign_df_day1 <- data.frame(
   Feature_ID = inv_F_day1$sign$Feature_ID,
   p.value = inv_F_day1$sign$p.value,
   s.Control = inv_F_day1$sign$s.Control,
-  s.High = inv_F_day1$sign$s.High,
-  s.Low = inv_F_day1$sign$s.Low
+  s.High.temperature = inv_F_day1$sign$s.High.temperature,
+  s.Probiotics = inv_F_day1$sign$s.Probiotics,
+  s.Probiotics.+.HT = inv_F_day1$sign$s.Probiotics.+.HT,
+  s.Probiotics.+.HT = inv_F_day1$sign$s.Probiotics.+.HT
 )
+
 inv_F_sign_df_spat <- data.frame(
   Feature_ID = inv_F_spat$sign$Feature_ID,
   p.value = inv_F_spat$sign$p.value,
@@ -105,6 +186,22 @@ inv_F_sign_df_spat <- data.frame(
   s.High = inv_F_spat$sign$s.High,
   s.Low = inv_F_spat$sign$s.Low
 )
+
+
+# inv_F_sign_df_day1 <- data.frame(
+#   Feature_ID = inv_F_day1$sign$Feature_ID,
+#   p.value = inv_F_day1$sign$p.value,
+#   s.Control = inv_F_day1$sign$s.Control,
+#   s.High = inv_F_day1$sign$s.High,
+#   s.Low = inv_F_day1$sign$s.Low
+# )
+# inv_F_sign_df_spat <- data.frame(
+#   Feature_ID = inv_F_spat$sign$Feature_ID,
+#   p.value = inv_F_spat$sign$p.value,
+#   s.Control = inv_F_spat$sign$s.Control,
+#   s.High = inv_F_spat$sign$s.High,
+#   s.Low = inv_F_spat$sign$s.Low
+# )
 
 
 #below create a "condition" column that will state which treatment is signficant
