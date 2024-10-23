@@ -53,12 +53,12 @@ set.seed(100)
 
 #Load seqs ----
 ####Tell R where the data is...
-miseq_path <- "R1:R2fastq_files/"
+miseq_path <- "R1R2_SMK_2024/"
 list.files(miseq_path)
 
 # Sort ensures forward/reverse reads are in same order. notice the pattern (two different reads, Forward and Reverse)
-fnFs <- sort(list.files(miseq_path, pattern="_R1.fastq"))
-fnRs <- sort(list.files(miseq_path, pattern="_R2.fastq"))
+fnFs <- sort(list.files(miseq_path, pattern="_R1_001.fastq"))
+fnRs <- sort(list.files(miseq_path, pattern="_R2_001.fastq"))
 #fnFs <- sort(list.files(miseq_path, pattern="_R1_001.fastq"))
 #fnRs <- sort(list.files(miseq_path, pattern="_R2_001.fastq"))
 # Extract sample names, assuming filenames have format: SAMPLENAME_XXX.fastq
@@ -74,19 +74,24 @@ fnRs[1:3]
 #Seq quality ----
 #Quality of reads: Most Illumina sequencing data shows a trend of decreasing average quality towards the end of sequencing reads.
 #This only shows you the first 2. Which direction is this for? 
-plotQualityProfile(fnFs[1:8])
+plotQualityProfile(fnFs[1:10])
 
-plotQualityProfile(fnRs[1:8])
+plotQualityProfile(fnRs[50:59])
 
 #for mb2021 - forward reads good, reverse good (above QS of 30) until 200bp - may want to remove reverse
-####Quality for Reverse is bad. So we are only doing the Forward 
+####Quality for Reverse is bad. So we are only doing the Forward - MU42022
 
 filt_path <- file.path(miseq_path, "filtered") # Place filtered files in filtered/ subdirectory
 if(!file_test("-d", filt_path)) dir.create(filt_path)
 filtFs <- file.path(filt_path, paste0(sampleNames, "_F_filt.fastq.gz"))
 filtRs <- file.path(filt_path, paste0(sampleNames, "_R_filt.fastq.gz"))
 
-#### We can use this data top say where within the sequence to trim the data. "Here, the forward reads maintain high quality throughout, while the quality of the reverse reads drops significantly at about position 160. Therefore, we choose to truncate the forward reads at position 200, and the reverse reads at position 160. We also choose to trim the first 25 nucleotides of each read based on empirical observations across many Illumina datasets that these base positions are particularly likely to contain pathological errors."
+#### We can use this data top say where within the sequence to trim the data. "Here, the forward reads maintain high quality throughout, 
+#while the quality of the reverse reads drops significantly at about position 160. 
+#Therefore, we choose to truncate the forward reads at position 200, and the reverse reads at position 160. 
+#We also choose to trim the first 25 nucleotides of each read based on empirical observations across many Illumina datasets 
+#that these base positions are particularly likely to contain pathological errors."
+
 length(fnFs)
 length(fnRs)
 filt_path <- file.path(miseq_path, "filtered") # Place filtered files in filtered/ subdirectory
@@ -94,28 +99,64 @@ if(!file_test("-d", filt_path)) dir.create(filt_path)
 filtFs <- file.path(filt_path, paste0(sampleNames, "_F_filt.fastq.gz"))
 filtRs <- file.path(filt_path, paste0(sampleNames, "_R_filt.fastq.gz"))
 
-out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(150, 200),
+out <- filterAndTrim(fnFs, filtFs, fnRs, filtRs, truncLen=c(250, 180),
                       maxEE=c(2,2), truncQ=2, rm.phix=TRUE, trimLeft = 10,
                      compress=TRUE, multithread=TRUE) # On Windows set multithread=FALSE
 head(out)
 
+#Plot quality again
 
+plotQualityProfile(filtFs[148:149])
+
+plotQualityProfile(filtRs[70:80])
 
 #Make ASVs ----
 derepFs <- derepFastq(filtFs, verbose=TRUE)
-#derepRs <- derepFastq(filtRs, verbose=TRUE)
+derepRs <- derepFastq(filtRs, verbose=TRUE)
+
+#If getting error "files do not exist" from above, run this code:
+file_check <- file.exists(filtFs) 
+false_indices <- which(!file_check)
+missing_files <- filtFs[false_indices]
+print(missing_files)
+#SMK project- samples: F3-NPC-PCR and F3-PC-PCR had no reads so were removed
+
+filtFs_cleaned <- filtFs %>%
+  setdiff(c("R1R2_SMK_2024//filtered/F3-NPC-PCR_F_filt.fastq.gz", 
+            "R1R2_SMK_2024//filtered/F4-PC-PCR_F_filt.fastq.gz"))
+
+filtRs_cleaned <- filtRs %>%
+  setdiff(c("R1R2_SMK_2024//filtered/F3-NPC-PCR_R_filt.fastq.gz", 
+            "R1R2_SMK_2024//filtered/F4-PC-PCR_R_filt.fastq.gz"))
+
+#rename to original file and run code from above:
+filtFs <- filtFs_cleaned
+filtRs <- filtRs_cleaned
+
 # Name the derep-class objects by the sample names
 names(derepFs) <- sampleNames
-#names(derepRs) <- sampleNames
+names(derepRs) <- sampleNames
 
+#If removed any files (no reads) will have to update sampleNames object so lengths match
+sampleNames_new <- sampleNames %>%
+  setdiff(c("F3-NPC-PCR", 
+            "F4-PC-PCR"))
+
+sampleNames <- sampleNames_new
+
+#learn error rates - long step
 errF <- learnErrors(filtFs, multithread=TRUE)
 
-#errR <- learnErrors(filtRs, multithread=TRUE)
+#Got this message: Warning message:
+#In browseURL(paste0("http://127.0.0.1:", port, "/library/", pkgname,  :
+#closing unused connection 3 (R1R2_SMK_2024//filtered/120_F_filt.fastq.gz)
+
+errR <- learnErrors(filtRs, multithread=TRUE)
  
-#plotErrors(errR)
+plotErrors(errF)
 
 dadaFs <- dada(derepFs, err=errF, multithread=TRUE)
-#dadaRs <- dada(derepRs, err=errR, multithread=TRUE)
+dadaRs <- dada(derepRs, err=errR, multithread=TRUE)
 
 dadaFs[[1]]
 
@@ -124,19 +165,20 @@ dadaFs[[1]]
 ##Still have many unique sequences - (about 1/3rd of reads unique seqs) - change to 100 or 120bp region? -> actually, after looking at taxonomy_alldata.csv, looks okay
 
 #If using both forward and reverse
-#mergers <- mergePairs(dadaFs, derepFs) 
+mergers <- mergePairs(dadaFs, derepFs, dadaRs, derepRs) 
 
 seqtabAll <- makeSequenceTable(dadaFs[!grepl("Mock", names(dadaFs))])
 table(nchar(getSequences(seqtabAll)))
 
 seqtabNoC <- removeBimeraDenovo(seqtabAll)
 
+#SMK2024 project - using newest SILVA database (138.2 versus 138.1)
 fastaRef <- "./silva_nr99_v138.1_train_set.fa"
 
 taxTab <- assignTaxonomy(seqtabNoC, refFasta = fastaRef, multithread=TRUE)
 unname(head(taxTab))
 
-write.csv(taxTab, "taxonomy_alldata_2.csv")
+write.csv(taxTab, "taxonomy_alldata_2_SMK.csv")
 
 
 #ASVs to Taxa info ----
@@ -146,10 +188,11 @@ my_otu_table <- t(as.data.frame(seqtabNoC)) #transposed (OTUs are rows) data fra
 ASV.seq <- as.character(unclass(row.names(my_otu_table))) #store sequences in character vector
 ASV.num <- paste0("ASV", seq(ASV.seq), sep='') #create new names
 
-write.table(cbind(ASV.num, ASV.seq), "sequence_ASVname_mapping.txt", sep="\t", quote=F, row.names=F, col.names=F)
+write.table(cbind(ASV.num, ASV.seq), "sequence_ASVname_mapping_SMK.txt", sep="\t", quote=F, row.names=F, col.names=F)
 
 library(seqinr)
-write.fasta(sequences=as.list(ASV.seq), names=ASV.num, "16s_ASV_sequences_all.fasta") #save sequences with new names in fasta format
+write.fasta(sequences=as.list(ASV.seq), names=ASV.num, "16s_ASV_sequences_all_SMK.fasta") #save sequences with new names in fasta format
+
 
 
 #Phylogenetic tree ----
@@ -158,21 +201,31 @@ write.fasta(sequences=as.list(ASV.seq), names=ASV.num, "16s_ASV_sequences_all.fa
 Object1<- cbind(ASV.num, taxTab)
 
 #IMPORTANT: sanity checks
-colnames(seqtabNoC) == ASV.seq #only proceed if this tests as true for all elements
-row.names(taxTab) == ASV.seq #only proceed if this tests as true for all elements
+colnames(seqtabNoC) == ASV.seq #only proceed if this tests as true for all elements -true
+row.names(taxTab) == ASV.seq #only proceed if this tests as true for all elements -true
 
 #rename your ASVs in the taxonomy table and sequence table objects
 colnames(seqtabNoC) <- ASV.num
 row.names(taxTab) <- ASV.num
 
 #re-save sequence and taxonomy tables with updated names
-write.table(data.frame("row_names"=rownames(seqtabNoC),seqtabNoC),"sequence_table.16s.all_merged.txt", row.names=FALSE, quote=F, sep="\t")
-write.table(data.frame("row_names"=rownames(taxTab),taxTab),"taxonomy_table.16s_all_merged.txt", row.names=FALSE, quote=F, sep="\t")
+write.table(data.frame("row_names"=rownames(seqtabNoC),seqtabNoC),"sequence_table.16s.all_merged_SMK.txt", row.names=FALSE, quote=F, sep="\t")
+write.table(data.frame("row_names"=rownames(taxTab),taxTab),"taxonomy_table.16s_all_merged_SMK.txt", row.names=FALSE, quote=F, sep="\t")
 
 
 #### Phylogenetic tree 
 library(phangorn)
-Fast1<- readDNAStringSet(file= "./16s_ASV_sequences.fasta",format = "fasta")
+
+install.packages("BiocManager")
+BiocManager::install("Biostrings")
+detach("package:Rsamtools", unload = TRUE)
+detach("package:GenomicRanges", unload = TRUE)
+# Repeat for other packages as necessary
+BiocManager::install("S4Vectors")
+
+library(Biostrings)
+
+Fast1<- readDNAStringSet(file= "./16s_ASV_sequences_SMK.fasta",format = "fasta")
 
 seqs <- getSequences(Fast1)
 names(Fast1) <- seqs # This propagates to the tip labels of the tree
@@ -192,7 +245,9 @@ plot(fitGTR)
 
 #RDS phyloseq object ----
  
-meta<-import_qiime_sample_data("Metadata_Marissa_only.txt")
+meta<-import_qiime_sample_data("Meta_all.txt")
+
+meta <- Meta_all
 
 ps <- phyloseq(otu_table(seqtabNoC, taxa_are_rows=FALSE), tax_table(taxTab))
 
@@ -203,7 +258,7 @@ ps1
 #Marissa_MU42022 has marissa's samples only
 #Denman has Denman's only
 
-saveRDS(ps1, file= "Marissa_MU42022.rds")
+saveRDS(ps1, file= "SMK_2024.rds")
 
 MDS<- ordinate(ps1, method = "NMDS", distance = "bray", weighted = TRUE)
 MDS_Bray<- plot_ordination(ps1, MDS, color = "Treatment")
