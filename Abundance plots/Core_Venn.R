@@ -13,7 +13,7 @@ library(microbiomeutilities)
 
 pseq<- Marissa_mb2021_filtered_20240203
 pseq <- mb2021_filtered_NOT_rarefied_normalized
-
+pseq <- MU42022_filtered_Oct92024
 
 theme.marissa <- function() {
   theme_classic(base_size = 14) +
@@ -29,12 +29,11 @@ theme.marissa <- function() {
 
 theme_set(theme.marissa())
 
-#Remove day 3 (only 1 sample remaining) for mb2021 project
-
-pseq <- subset_samples(pseq, Age %in% c("Spat"))
-pseq <- subset_samples(pseq, !Family %in% c("9"))
-
-pseq <- subset_samples(pseq, Age %in% c("Spat"))
+#Remove samples
+pseq <- subset_samples(pseq, Age %in% c("Spat")) #select timepoint
+#pseq <- subset_samples(pseq, !Genetics %in% c("9")) #mb2021 project
+pseq <- subset_samples(pseq, !Organism %in% "Algae") #MU42022 project
+pseq <- subset_samples(pseq, !Genetics %in% "4") #MU42022 project
 
 
 OTU = pseq@otu_table
@@ -44,7 +43,12 @@ Tree = pseq@phy_tree
 
 #Compositional ----
 
-pseq.rel <- microbiome::transform(pseq, "compositional")
+pseq <- microbiome::transform(pseq, "compositional")
+
+#MU42022 project - filter out probiotic on day 1
+taxa_to_remove <- c("ASV7", "ASV18")
+taxa_to_keep <- !(taxa_names(pseq) %in% taxa_to_remove)
+pseq <- prune_taxa(taxa_to_keep, pseq)
 
 #Get variable to analyze
 Treatment <- unique(as.character(Metadata$Treatment))
@@ -62,7 +66,7 @@ list_core <- c() # an empty object to store information
 for (n in Treatment){ # for each variable n in Treatment
   #print(paste0("Identifying Core Taxa for ", n))
   
-  ps.sub <- subset_samples(pseq.rel, Treatment == n) # Choose sample from DiseaseState by n
+  ps.sub <- subset_samples(pseq, Treatment == n) # Choose sample from DiseaseState by n
   
   core_m <- core_members(ps.sub, # ps.sub is phyloseq selected with only samples from g 
                          detection = 0.001, # 0.001 in atleast 90% samples 
@@ -180,16 +184,20 @@ mycols <- c(nonCRC="#d6e2e9", CRC="#cbf3f0", H="#fcf5c7")
 mycols <- c(nonCRC="lightblue", CRC="lightgreen", H="violet") 
 
 mycols <- c(nonCRC="lightgreen", CRC="lightblue", H= "#F8766D") 
+mycols <- c(nonCRC="lightgreen", CRC="lightblue", H= "#F8766D") 
+mycols <- c("grey", "lightgreen", "skyblue", "#F8766D")
 
+mycols <- c("grey", "orange", "cornflowerblue", "#3CB371")
+
+mycols <- c("grey", "cornflowerblue", "#3CB371", "orange")
+mycols <- c("grey", "cornflowerblue", "#3CB371")
 
 #order bubbles
-list_core <- list_core[c("High salinity", "Low salinity", "Control")]  # Change the order as needed
+#list_core <- list_core[c("High salinity", "Low salinity", "Control")]  # Change the order as needed
+list_core <- list_core[c("Control", "Probiotics", "Probiotics + HT", "High temperature")]  # Change the order as needed
 
 # Plot the Venn diagram with the updated order of sets
 plot(venn(list_core), fills = mycols)
-
-plot(venn(list_core),
-     fills = mycols)
 
 plot(list_core,
      fills = list(fill = c("red", "steelblue4"), alpha = 0.5),

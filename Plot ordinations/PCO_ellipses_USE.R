@@ -29,15 +29,17 @@ theme_set(theme.marissa())
 #load RDS and filter if needed ----
 
 #MU42022 filtering
-pseq <- Marissa_MU42022_rarefied_20231016
+pseq <- MU42022_filtered_Oct92024
 pseq <- MU42022_filtered_NOT_rarefied
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
 #MB2021 filtering
 pseq <- Marissa_mb2021_filtered_20240203
+pseq <- mb2021_filtered_NOT_rarefied_moreTAXA_5percent_removal
 pseq <- mb2021_filtered_NOT_rarefied_normalized
-pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
+pseq <- subset_samples(pseq, !Age %in% c("Spat"))
+pseq <- subset_samples(pseq, !Family %in% c("9"))
 
 #convert to compositional data
 
@@ -53,6 +55,7 @@ set.seed(4235421)
 #info on geom_encircle
 ?ggalt::geom_encircle
 
+#MU42022 ----
 #All time-points
 pseq <- Marissa_MU42022_rarefied_20231016
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
@@ -91,103 +94,130 @@ p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
 print(p)
 
 #1 dpf
-pseq <- Marissa_MU42022_rarefied_20231016
+#important to note that the PB sequence was not removed
+pseq <- MU42022_filtered_Oct92024
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
-pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+#pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+pseq <- subset_samples(pseq, !Treatment %in% c("High temperature")) #Add/remove "orange" if HT included
 pseq <- subset_samples(pseq, Age %in% c("Day 01"))
 pseq.rel <- microbiome::transform(pseq, "compositional")
 
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
-p1 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), size = 6) +
-  scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) +
-  scale_fill_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) + # Matching colors for ellipses and points
-  ggtitle("1 dpf") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
-  geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
+p1 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
+  geom_point(aes(fill = Treatment), size = 6, shape = 16) +
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "#3CB371")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) + # Matching colors for ellipses and points
+  ggtitle("Day 1") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+  #geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
 p1
 
 #3 dpf
-pseq <- Marissa_MU42022_rarefied_20231016
+pseq <- MU42022_filtered_Oct92024
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
-pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+#pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+pseq <- subset_samples(pseq, !Treatment %in% c("High temperature"))
 pseq <- subset_samples(pseq, Age %in% c("Day 03"))
 pseq.rel <- microbiome::transform(pseq, "compositional")
 
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
 p3 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment),  shape = 24, size = 6) +
-  scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) +
-  scale_fill_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) + 
-  ggtitle("3 dpf") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
-  geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
+  geom_point(aes(fill = Treatment), size = 6, shape = 24) +
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "#3CB371")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) + # Matching colors for ellipses and points
+  ggtitle("Day 3") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+#geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
 p3
 
+
 #6 dpf
-pseq <- Marissa_MU42022_rarefied_20231016
+pseq <- MU42022_filtered_Oct92024
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
-pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+#pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+pseq <- subset_samples(pseq, !Treatment %in% c("High temperature"))
 pseq <- subset_samples(pseq, Age %in% c("Day 06"))
 pseq.rel <- microbiome::transform(pseq, "compositional")
 
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
 p6 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), shape = 22, size = 6) +
-  scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) +
-  scale_fill_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) + 
-  ggtitle("6 dpf") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
-  geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
+  geom_point(aes(fill = Treatment), size = 6, shape = 22) +
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "#3CB371")) +
+  scale_fill_manual(values = c("darkgrey",  "cornflowerblue", "#3CB371")) + # Matching colors for ellipses and points
+  ggtitle("Day 6") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+
 p6
 
 #15 dpf
-pseq <- Marissa_MU42022_rarefied_20231016
+pseq <- MU42022_filtered_Oct92024
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+pseq <- subset_samples(pseq, !Treatment %in% c("High temperature"))
 pseq <- subset_samples(pseq, Age %in% c("Day 15"))
 pseq.rel <- microbiome::transform(pseq, "compositional")
 
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
 p15 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), shape = 3, size = 6) +
-  scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) +
-  scale_fill_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) + 
-  ggtitle("15 dpf") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none") +
-  geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
+  geom_point(aes(fill = Treatment), size = 6, shape = 3) +
+  scale_colour_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) + # Matching colors for ellipses and points
+  ggtitle("Day 15") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+
 p15
 
 #Spat
-pseq <- Marissa_MU42022_rarefied_20231016
+pseq <- MU42022_filtered_Oct92024
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
-pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+#pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 pseq <- subset_samples(pseq, Age %in% c("Spat"))
+pseq@sam_data$Genetics <- as.factor(pseq@sam_data$Genetics)
 pseq.rel <- microbiome::transform(pseq, "compositional")
-
 
 #note: for MU42022 no Heat treatment by Spat (blue colour)
 
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
-pSpat <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), shape = 7, size = 6) +
-  scale_colour_manual(values = c("#F8766D", "#C77CFF", "lightgreen")) +
-  scale_fill_manual(values = c("#F8766D", "#C77CFF", "lightgreen")) + 
+pSpat <- plot_ordination(pseq.rel, ord, color = "Treatment") +
+  geom_point(aes(fill = Treatment), size = 6, shape = 7) +
+  scale_colour_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) + # Matching colors for ellipses and points
   ggtitle("Spat") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom") +
-  geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+
 pSpat
+
+# pSpat <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Genetics", label = "Genetics") +
+#   geom_point(aes(fill = Treatment), size = 9) +
+#   scale_colour_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) +
+#   scale_fill_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) + # Matching colors for ellipses and points
+#   ggtitle("Spat") +
+#   theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+
+
 
 #arrange PCO plots -----
 
-grid.arrange(p1, p3, p6, p15, pSpat, p, ncol = 3)
+grid.arrange(p1, p3, p6, p15, pSpat, ncol = 3)
 
-ggarrange(p1, p3, p6, p15, pSpat, p, ncol = 6, common.legend = TRUE, legend="bottom")
+ggarrange(p1, p3, p6, p15, pSpat, nrow = 2, common.legend = TRUE, legend="bottom")
+
+# Arrange all plots, removing legends from all except the last plot (pSpat)
+ggarrange(p1 + theme(legend.position = "none"), 
+          p3 + theme(legend.position = "none"),
+          p6 + theme(legend.position = "none"),
+          p15 + theme(legend.position = "none"),
+          pSpat,  # Use pSpat as the source of the common legend
+          ncol = 3,  # Set 3 columns to make sure all plots fit
+          nrow = 2,  # Specify 2 rows to make the layout balanced
+          common.legend = TRUE, 
+          legend = "bottom")
+
 
 #extract legend
 #https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
@@ -239,11 +269,11 @@ print(p_combined)
 #onto a user-specified number of axes, k.
 
 pseq <- mb2021_filtered_NOT_rarefied_normalized
-pseq <- Marissa_mb2021_filtered_20240203
+#pseq <- Marissa_mb2021_filtered_20240203
 pseq <- subset_samples(pseq, Age %in% c("Spat"))
 pseq <- subset_samples(pseq, !Family %in% c("9"))
 
-pseq <- subset_samples(pseq, !Family %in% c("1"))
+#pseq <- subset_samples(pseq, !Family %in% c("1"))
 
 #correct family column for mb2021
 
@@ -259,38 +289,66 @@ ord <- ordinate(pseq.rel, "MDS", "bray")
 
 
 p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), size = 4) +
-  scale_colour_manual(values = c("#F8766D", "#00ab41", "#1B98E0FF")) +
+  geom_point(aes(fill = Treatment), size = 6) +
+  ggforce::geom_mark_ellipse(aes(color = Treatment)) +
+  scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) +
   ggtitle("All time-points") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom",
+        axis.text.x = element_text(size = 13, face = "bold"),
+        axis.text.y = element_text(size = 13, face = "bold")) +
+  xlim(-0.6, 0.4) +
+  ylim(-0.4, 0.35)
+
 p
 
-p1 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), shape = 16, size = 4) +
-  scale_colour_manual(values = c("#F8766D", "#00ab41", "#1B98E0FF")) +
-  ggtitle("1 dpf") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+p1 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
+  geom_point(aes(fill = Treatment), shape = 16, size = 6) +
+  ggforce::geom_mark_ellipse(aes(color = Treatment)) +
+  scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) +
+  #ggtitle("1 dpf") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none",
+        axis.text.x = element_text(size = 13, face = "bold"),
+        axis.text.y = element_text(size = 13, face = "bold"),
+        strip.text = element_text(size = 13, face = "bold")) +
+  xlim(-0.35, 0.4) +
+  ylim(-0.4, 0.3) +
+  facet_wrap(~Age)
 p1
 
 
-p2 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), shape = 17, size = 4) +
-  scale_colour_manual(values = c("#F8766D", "#00ab41", "#1B98E0FF")) +
-  ggtitle("18 dpf") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+p2 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
+  geom_point(aes(fill = Treatment), shape = 17, size = 6) +
+  ggforce::geom_mark_ellipse(aes(color = Treatment)) +
+  scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) +
+  #ggtitle("18 dpf") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none",
+        axis.text.x = element_text(size = 13, face = "bold"),
+        axis.text.y = element_text(size = 13, face = "bold"),
+        strip.text = element_text(size = 13, face = "bold")) +
+  ylim(-0.3, 0.55) +
+  xlim(-0.5, 0.75) +
+  facet_wrap(~Age)
 p2
 
-p3 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), shape = 15, size = 4) +
-  scale_colour_manual(values = c("#F8766D", "#00ab41", "#1B98E0FF")) + 
-  ggtitle("Spat") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+p3 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
+  geom_point(aes(fill = Treatment), shape = 15, size = 6) +
+  ggforce::geom_mark_ellipse(aes(color = Treatment)) +
+  scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) + 
+  #ggtitle("Spat") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "none",
+        axis.text.x = element_text(size = 13, face = "bold"),
+        axis.text.y = element_text(size = 13, face = "bold"),
+        strip.text = element_text(size = 13, face = "bold")) +
+  ylim(-0.3, 0.3) +
+  xlim(-0.45, 0.3) +
+  facet_wrap(~Age) 
+  
 p3
 
 
-grid.arrange(p1, p2, p3, p, ncol = 2)
+ggarrange(p1, p2, p3, nrow = 1, ncol =3)
 
-ggarrange(p, p1, p2, p3, nrow = 2, ncol =2, common.legend = TRUE, legend="bottom")
+ggarrange(p1, p2, p3, nrow = 1, ncol =3, common.legend = TRUE, legend="bottom")
 
 #extract legend
 #https://github.com/hadley/ggplot2/wiki/Share-a-legend-between-two-ggplot2-graphs
