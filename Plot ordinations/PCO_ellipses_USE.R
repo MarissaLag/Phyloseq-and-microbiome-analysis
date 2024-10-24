@@ -30,13 +30,13 @@ theme_set(theme.marissa())
 
 #MU42022 filtering
 pseq <- MU42022_filtered_Oct92024
-pseq <- MU42022_filtered_NOT_rarefied
+#pseq <- MU42022_filtered_NOT_rarefied
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
 
 #MB2021 filtering
 pseq <- Marissa_mb2021_filtered_20240203
-pseq <- mb2021_filtered_NOT_rarefied_moreTAXA_5percent_removal
 pseq <- mb2021_filtered_NOT_rarefied_normalized
 pseq <- subset_samples(pseq, !Age %in% c("Spat"))
 pseq <- subset_samples(pseq, !Family %in% c("9"))
@@ -106,8 +106,8 @@ ord <- ordinate(pseq.rel, "MDS", "bray")
 
 p1 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
   geom_point(aes(fill = Treatment), size = 6, shape = 16) +
-  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "#3CB371")) +
-  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) + # Matching colors for ellipses and points
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + # Matching colors for ellipses and points
   ggtitle("Day 1") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
   #geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
@@ -125,8 +125,8 @@ ord <- ordinate(pseq.rel, "MDS", "bray")
 
 p3 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
   geom_point(aes(fill = Treatment), size = 6, shape = 24) +
-  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "#3CB371")) +
-  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) + # Matching colors for ellipses and points
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + # Matching colors for ellipses and points
   ggtitle("Day 3") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
 #geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
@@ -145,8 +145,8 @@ ord <- ordinate(pseq.rel, "MDS", "bray")
 
 p6 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
   geom_point(aes(fill = Treatment), size = 6, shape = 22) +
-  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "#3CB371")) +
-  scale_fill_manual(values = c("darkgrey",  "cornflowerblue", "#3CB371")) + # Matching colors for ellipses and points
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey",  "cornflowerblue", "orange")) + # Matching colors for ellipses and points
   ggtitle("Day 6") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
 
@@ -164,8 +164,8 @@ ord <- ordinate(pseq.rel, "MDS", "bray")
 
 p15 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
   geom_point(aes(fill = Treatment), size = 6, shape = 3) +
-  scale_colour_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) +
-  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) + # Matching colors for ellipses and points
+  scale_colour_manual(values = c("darkgrey", "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + # Matching colors for ellipses and points
   ggtitle("Day 15") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
 
@@ -185,19 +185,19 @@ ord <- ordinate(pseq.rel, "MDS", "bray")
 
 pSpat <- plot_ordination(pseq.rel, ord, color = "Treatment") +
   geom_point(aes(fill = Treatment), size = 6, shape = 7) +
-  scale_colour_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) +
-  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) + # Matching colors for ellipses and points
+  scale_colour_manual(values = c("darkgrey", "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + # Matching colors for ellipses and points
   ggtitle("Spat") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
 
 pSpat
 
-# pSpat <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Genetics", label = "Genetics") +
-#   geom_point(aes(fill = Treatment), size = 9) +
-#   scale_colour_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) +
-#   scale_fill_manual(values = c("darkgrey", "cornflowerblue", "#3CB371")) + # Matching colors for ellipses and points
-#   ggtitle("Spat") +
-#   theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+pSpat <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Genetics", label = "Genetics") +
+  geom_point(aes(fill = Treatment), size = 6) +
+  scale_colour_manual(values = c("darkgrey", "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + # Matching colors for ellipses and points
+  ggtitle("Spat") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
 
 
 

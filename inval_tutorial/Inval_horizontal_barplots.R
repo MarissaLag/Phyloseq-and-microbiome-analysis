@@ -407,7 +407,7 @@ ggplot(ps_filtered_treatment, aes(x = FeatureID, y = sqrt_diff_abundance, fill =
 #Select ASVs ----
 
 #unrarefied
-pseq <- Marissa_MU42022_rare_nochloro
+pseq <- MU42022_filtered_Oct92024
 pseq <- subset_samples(pseq, !Genetics %in% "4")
 pseq <- subset_samples(pseq, !Organism %in% "Algae")
 pseq <- subset_samples(pseq, Age %in% "Spat")
@@ -419,7 +419,7 @@ pseq <-psmelt(pseq)
 #Inval ASVs different at spat stage MU42022, rarefied data
 #PB
 ASV_list_PB <- pseq %>%
-  filter(OTU %in% c("ASV69", "ASV128")) 
+  filter(OTU %in% c("ASV3")) 
 
 ASV_list_PBH <- filter(pseq, OTU %in% c("ASV68", "ASV109", "ASV116", "ASV174", "ASV208", "ASV241", "ASV338"))
 
@@ -430,7 +430,7 @@ average_abundance_PB <- ASV_list_PB %>%
   group_by(OTU, Treatment, Family, Class, Genus) %>%
   summarise(mean_abundance = mean(Abundance, na.rm = TRUE))
 
-#if want to group PB and PNH together
+#if want to group PB and PBH together
 average_abundance_PB_PBH <- ASV_list_PB_PBH %>%
   # Combine treatments "Probiotics" and "Probiotics + HT" into a single category
   mutate(Treatment_Group = ifelse(Treatment %in% c("Probiotics", "Probiotics + HT"), "Probiotics_Group", Treatment)) %>%
@@ -461,7 +461,7 @@ custom_palette <- c(  "#8DD3C7","#B3DE69","#FB8072","#FDB462","#CCEBC5", "#FFFFB
 
 library(ggplot2)
 
-ggplot(average_abundance_wide_PB, aes(x = OTU, y = log2FC_Probiotics_vs_Control, fill = Family)) +
+ggplot(average_abundance_PB, aes(x = Treatment, y = mean_abundance, fill = Family)) +
   geom_col(color = "black") +  # Add black border around bars
   scale_fill_manual(values = custom_palette) +  # Set custom colors for the fill
   geom_hline(yintercept = 0, linetype = "dashed", color = "black") +
@@ -473,6 +473,6 @@ ggplot(average_abundance_wide_PB, aes(x = OTU, y = log2FC_Probiotics_vs_Control,
   theme(panel.grid.major = element_blank(),  # Remove major gridlines
         panel.grid.minor = element_blank(),  # Remove minor gridlines
         axis.text.x = element_text(angle = 0, hjust = 1, size = 9),
-        axis.text.y = element_text(angle = 0, hjust = 1, size = 9)) 
+        axis.text.y = element_text(angle = 0, hjust = 1, size = 9))
 #+ ylim(0, 2.1)
 

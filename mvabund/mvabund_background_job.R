@@ -50,6 +50,9 @@ library(mvabund)
 library(phyloseq)
 library(microbiome)
 library(tibble)
+library(ggplot2)
+library(reshape2)
+
 
 #library(parallel) #to run parallel processing for manyglm fxn
 
@@ -64,25 +67,37 @@ setwd(current.path)
 # #data.FN <- "" # MacPro (CSR)
 
 data.FN <- "~Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds"
+data.FN <- "~Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_NOT_rarefied.rds"
 
 # Load data
-mb2021_filtered_NOT_rarefied <- readRDS(data.FN)
+# mb2021_filtered_NOT_rarefied <- readRDS(data.FN)
+
+MU42022_filtered_NOT_rarefied <- readRDS(data.FN)
 
 # Rename as per tutorial
-pseq <- mb2021_filtered_NOT_rarefied
+pseq <- MU42022_filtered_NOT_rarefied
+pseq <- MU42022_filtered_Oct92024
+pseq <- MU42022_spat_unrarefied
 
 # Subset samples ----
+#mb2021 project
 pseq <- subset_samples(pseq, Age %in% c("1 dpf"))   # retain only 1 DPF samples
 #pseq <- subset_samples(pseq, Age %in% c("Spat"))
 #pseq <- subset_samples(pseq, !Family %in% c("9"))
 #pseq <- subset_samples(pseq, !Treatment %in% c("Low salinity"))
 
+#MU42022 project
+pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
+pseq <- subset_samples(pseq, Age %in% c("Spat"))
+
 # Agglomerating family names
-pseq@sam_data$Family[pseq@sam_data$Family %in% c(9, 13)]  <- 1
-pseq@sam_data$Family[pseq@sam_data$Family %in% c(10, 14)] <- 2
-pseq@sam_data$Family[pseq@sam_data$Family %in% c(11, 15)] <- 3
-pseq@sam_data$Family[pseq@sam_data$Family %in% c(12, 16)] <- 4
-pseq@sam_data$Family <- as.character(pseq@sam_data$Family)
+# pseq@sam_data$Family[pseq@sam_data$Family %in% c(9, 13)]  <- 1
+# pseq@sam_data$Family[pseq@sam_data$Family %in% c(10, 14)] <- 2
+# pseq@sam_data$Family[pseq@sam_data$Family %in% c(11, 15)] <- 3
+# pseq@sam_data$Family[pseq@sam_data$Family %in% c(12, 16)] <- 4
+# pseq@sam_data$Family <- as.character(pseq@sam_data$Family)
 
 # Subset option for agglomerated family names
 #pseq <- subset_samples(pseq, !Family %in% c("1"))
@@ -120,6 +135,9 @@ taxa_to_subset <- taxa_to_subset[1:11]
 # # Prune taxa
 pseq <- prune_taxa(taxa_to_subset, pseq)
 
+#Use relative abundance? = Does not help with zero-inflation
+#pseq <- microbiome::transform(pseq, "compositional")
+
 
 # Create mvabund object from phyloseq object ----
    # note: not sure why but metadata must first be transformed into matrix then data frame to convert properly
@@ -132,7 +150,7 @@ View(fact)
 fact$Sample.ID <- as.factor(fact$Sample.ID)
 fact$Library_Name <- as.factor(fact$Library_Name)
 fact$Treatment <- as.factor(fact$Treatment)
-fact$Family <- as.factor(fact$Family)
+fact$Genetics <- as.factor(fact$Genetics)
 fact$Age <- as.factor(fact$Age)
 
 # Reset row names to be numbered
@@ -140,6 +158,9 @@ rownames(fact) <- NULL
 
 ASV_data_cleaned <- pseq@otu_table
 ASV_data_cleaned <- as.data.frame(pseq@otu_table)
+
+#Remove ASVs with sum of zero across all samples
+ASV_data_cleaned <- ASV_data_cleaned[, colSums(ASV_data_cleaned) > 0]
 
 #Checking for errors in data - no NAs
 dim(ASV_data_cleaned)
@@ -197,17 +218,77 @@ is.mvabund(dat_mvabund)
 # dat_aov_unadj_Spat <- results[[1]]
 #### /END/ Parallel processing method (in development) ####
 
+ASV_data_cleaned <- as.data.frame(pseq@otu_table)
+rowSums(ASV_data_cleaned)
+fact$numberReads <- rowSums(ASV_data_cleaned)
+dat_mvabund <- mvabund(ASV_data_cleaned)
 
 # Standard method (log number of reads)
-#dat_nb_Spat_HS <- manyglm(dat_mvabund ~ Treatment * Family + offset(log(numberReads)), family = "negative.binomial", data = fact)
-
+Mod_log <- manyglm(dat_mvabund ~ Treatment * Genetics + offset(log(numberReads)), family = "negative.binomial", data = fact)
+plot(Mod_log)
+summary(Mod_log)
 #State time
 Sys.time()
 
 # Standard method, setting composition argument
 #Note: Comp = TRUE may not allow for p adjustment (see pg 12: https://cran.r-project.org/web/packages/mvabund/mvabund.pdf)
-dat_nb_compositionT_Spat_LS = manyglm(dat_mvabund ~ Treatment * Family, family="negative.binomial", data = fact, composition=FALSE)
+dat_nb_compositionT_Spat_LS = manyglm(dat_mvabund ~ Treatment * Genetics, family="negative.binomial", data = fact, composition=TRUE, show.warning = TRUE)
+dat_nb_Spat_LS = manyglm(dat_mvabund ~ Treatment * Genetics, family="negative.binomial", data = fact, composition=FALSE)
 plot(dat_nb_compositionT_Spat_LS) #check residuals to see model fit
+
+summary(dat_nb_Spat_LS)
+plot(dat_nb_Spat_LS)
+
+# Standardized residuals
+std_resid <- residuals(dat_nb_compositionT_Spat_LS, type = "standardized")
+hist(std_resid, main = "Histogram of Standardized Residuals")
+
+# Checking for patterns in residuals
+plot(fitted(dat_nb_compositionT_Spat_LS), std_resid, 
+     xlab = "Fitted values", ylab = "Standardized Residuals")
+abline(h = 0, col = "red")
+
+
+#Visualize data some more
+
+#Histograms for subset of ASVs
+# Step 1: Create a 'SampleID' column from the row names
+ASV_subset$SampleID <- rownames(ASV_subset)
+
+# Step 2: Melt the data into long format
+ASV_long <- melt(ASV_subset, id.vars = "SampleID")
+
+# Step 3: Check the first few rows to confirm the transformation
+head(ASV_long)
+
+# Create histograms for each ASV
+ggplot(ASV_long, aes(x = value)) +
+  geom_histogram(binwidth = 10, fill = "skyblue", color = "black") +
+  facet_wrap(~variable, scales = "free") +
+  labs(title = "Distribution of ASV Abundances", x = "Abundance", y = "Frequency") +
+  theme_minimal()
+
+# Count number of zeros per ASV
+zero_counts <- colSums(ASV_data_cleaned == 0)
+
+# Bar plot of zero counts per ASV
+zero_df <- data.frame(ASV = names(zero_counts), ZeroCount = zero_counts)
+ggplot(zero_df, aes(x = ASV, y = ZeroCount)) +
+  geom_bar(stat = "identity", fill = "lightcoral") +
+  labs(title = "Number of Zeros in Each ASV", x = "ASV", y = "Zero Count") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#Density plots
+ASV_long_nonzero <- ASV_long[ASV_long$value > 0, ]
+ggplot(ASV_long_nonzero, aes(x = value)) +
+  geom_density(fill = "lightgreen", alpha = 0.5) +
+  facet_wrap(~variable, scales = "free") +
+  labs(title = "Density Plot of ASV Abundances (Non-Zero Values)", x = "Abundance", y = "Density") +
+  theme_minimal()
+
+
+
+
 
 Sys.time()
 dat_aov_unadj_Spat_LS <- anova(dat_nb_compositionT_Spat_LS, p.uni = "unadjusted",show.time = "all", show.warning = TRUE)
@@ -222,6 +303,16 @@ dat_aov_unadj_Spat_LS_round2 <- anova(dat_nb_compositionT_Spat_LS_round2, p.uni 
 Sys.time()
 
 #anova is taking a long time - model not converging properly?
+
+#Try a zero-inflated model: To handle zeros which may be causing model to not converge
+install.packages("glmmTMB")
+library(glmmTMB)
+zinb_model <- glmmTMB(dat_mvabund ~ Treatment * Genetics, 
+                      data = fact, 
+                      family = nbinom2, 
+                      ziformula = ~ 1) 
+
+
 
 
 

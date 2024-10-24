@@ -16,11 +16,12 @@ pseq <- MU42022_filtered_Oct92024
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
+pseq <- subset_samples(pseq, Age %in% c("Spat"))
 
 #MB2021 filtering
 pseq <- Marissa_mb2021_filtered_20240203
 pseq <- mb2021_filtered_NOT_rarefied_normalized
-pseq <- subset_samples(pseq, Age %in% c("Spat"))
+pseq <- subset_samples(pseq, Age %in% c("Day 01"))
 pseq <- subset_samples(pseq, !Family %in% c("9")) #remove T9 spat samples
 
 
@@ -114,7 +115,7 @@ View(Avg_abundance)
 
 #Make abundance out of 100%?
 Avg_abundance <- pseq_psmelt %>%
-  group_by(Age_Treatment, Family) %>%
+  group_by(Age_Treatment, Genus) %>%
   summarise(
     Avg_Abundance = mean(Abundance),
     SD_Abundance = sd(Abundance),
@@ -136,7 +137,7 @@ paired_palette <- brewer.pal(12, "Paired")
 extended_palette <- c(paired_palette, "#ff7f00", "pink", "red", "yellow", "lightgreen")  # Add a custom color to the palette
 
 # Use ggplot with the extended Paired palette
-p3 <- ggplot(Avg_abundance, aes(fill = Family, y = Avg_Abundance, x = Treatment)) + 
+p3 <- ggplot(Avg_abundance, aes(fill = Genus, y = Avg_Abundance, x = Treatment)) + 
   geom_bar(position = "stack", stat = "identity", colour = "black") +
   scale_fill_manual(values = extended_palette) +  # Use scale_fill_manual to specify the extended palette
   labs(title = "", x = "", y = "Relative abundance (%)") +

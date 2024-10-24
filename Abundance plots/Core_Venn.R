@@ -5,11 +5,12 @@
 
 install.packages("eulerr")
 install.packages("microbiomeutilities")
+devtools::install_github('microsud/microbiomeutilities')
 
 library(eulerr)
 library(microbiome)
-devtools::install_github('microsud/microbiomeutilities')
 library(microbiomeutilities)
+library(Venndiagram)
 
 pseq<- Marissa_mb2021_filtered_20240203
 pseq <- mb2021_filtered_NOT_rarefied_normalized
@@ -30,11 +31,12 @@ theme.marissa <- function() {
 theme_set(theme.marissa())
 
 #Remove samples
-pseq <- subset_samples(pseq, Age %in% c("Spat")) #select timepoint
+pseq <- MU42022_filtered_Oct92024
+pseq <- subset_samples(pseq, Age %in% c("Day 01")) #select timepoint
 #pseq <- subset_samples(pseq, !Genetics %in% c("9")) #mb2021 project
 pseq <- subset_samples(pseq, !Organism %in% "Algae") #MU42022 project
 pseq <- subset_samples(pseq, !Genetics %in% "4") #MU42022 project
-
+pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
 
 OTU = pseq@otu_table
 Tax = pseq@tax_table
@@ -46,9 +48,9 @@ Tree = pseq@phy_tree
 pseq <- microbiome::transform(pseq, "compositional")
 
 #MU42022 project - filter out probiotic on day 1
-taxa_to_remove <- c("ASV7", "ASV18")
-taxa_to_keep <- !(taxa_names(pseq) %in% taxa_to_remove)
-pseq <- prune_taxa(taxa_to_keep, pseq)
+# taxa_to_remove <- c("ASV7", "ASV18")
+# taxa_to_keep <- !(taxa_names(pseq) %in% taxa_to_remove)
+# pseq <- prune_taxa(taxa_to_keep, pseq)
 
 #Get variable to analyze
 Treatment <- unique(as.character(Metadata$Treatment))
@@ -187,9 +189,9 @@ mycols <- c(nonCRC="lightgreen", CRC="lightblue", H= "#F8766D")
 mycols <- c(nonCRC="lightgreen", CRC="lightblue", H= "#F8766D") 
 mycols <- c("grey", "lightgreen", "skyblue", "#F8766D")
 
-mycols <- c("grey", "orange", "cornflowerblue", "#3CB371")
+mycols <- c("grey", "orange", "skyblue2", "#3CB371")
 
-mycols <- c("grey", "cornflowerblue", "#3CB371", "orange")
+mycols <- c("grey", "skyblue", "orange")
 mycols <- c("grey", "cornflowerblue", "#3CB371")
 
 #order bubbles
@@ -197,7 +199,7 @@ mycols <- c("grey", "cornflowerblue", "#3CB371")
 list_core <- list_core[c("Control", "Probiotics", "Probiotics + HT", "High temperature")]  # Change the order as needed
 
 # Plot the Venn diagram with the updated order of sets
-plot(venn(list_core), fills = mycols)
+plot(venn(list_core), fills = mycols, font = 12)
 
 plot(list_core,
      fills = list(fill = c("red", "steelblue4"), alpha = 0.5),

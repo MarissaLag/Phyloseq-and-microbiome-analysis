@@ -24,7 +24,12 @@ pseq <- Marissa_mb2021_unfiltered
 
 pseq
 
-#removing day 3 right away
+#removing samples
+
+pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
+pseq <- subset_samples(pseq, Age %in% c("Spat"))
 
 pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 
@@ -97,7 +102,6 @@ pseq <- x1
 
 ##using x2 mb2021 and x1 for MU42022
 
-
 #Removing low prevalent taxa
 
 #rarify - removing abundance code with below code does not seem to work...not sure why. Ignore for now.
@@ -117,8 +121,7 @@ plyr::ddply(prevdf, "Phylum", function(df1){cbind(mean(df1$Prevalence),sum(df1$P
 #mb2021: Armatimonsdota and Sumerlaetoa only in one sample so will remove
 #mb2021: Entotheonella, Gemmatimondota, Patescibacteria only in 4, 5, and 3 samples so will remove
 # Define phyla to filter
-filterPhyla = c("Armatimonadota", "Entotheonellaeota", "Gemmatimonadota", "Latescibacterota",
-                "Patescibacteria", "Sumerlaeota")
+filterPhyla = c("Acidobacteriota", "Chloroflexi")
 # Filter entries with unidentified Phylum.
 ps1 = subset_taxa(pseq, !Phylum %in% filterPhyla)
 ps1
@@ -236,6 +239,7 @@ pseq <- subset_samples(pseq, !Library_Name %in% c("F4L18", "T10r3", "T9r2"))
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_Oct92024.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filteredwSpat_only_rarefied_June2024.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_spat_unrarefied.rds")
 
 
 otu.rare = otu_table(pseq)
