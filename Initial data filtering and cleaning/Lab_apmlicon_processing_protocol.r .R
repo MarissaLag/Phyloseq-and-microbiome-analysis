@@ -247,12 +247,15 @@ plot(fitGTR)
  
 meta<-import_qiime_sample_data("Meta_all.txt")
 
-meta <- Meta_all
-
 ps <- phyloseq(otu_table(seqtabNoC, taxa_are_rows=FALSE), tax_table(taxTab))
 
 ps1 <-merge_phyloseq(ps,meta)
 ps1
+
+#Remove Na columns in dataframe
+sample_data_df <- data.frame(sample_data(ps1))
+sample_data_df <- sample_data_df[, !grepl("^X", colnames(sample_data_df))]
+sample_data(ps1) <- sample_data(sample_data_df)
 
 ##MDJ.rds has James and Marissa's samples only
 #Marissa_MU42022 has marissa's samples only
