@@ -10,6 +10,7 @@ BiocManager::install("microbiome")
 library("devtools")
 library(phyloseq)
 library(microbiome)
+library(phyloseq)
 
 
 #Load un-rarefied data ----
@@ -23,6 +24,20 @@ pseq <- Marissa_MU42022_unfiltered
 pseq <- Marissa_mb2021_unfiltered
 
 pseq
+
+
+#SMK project - seperate into different RDS objects
+# Subset the data for each project
+SMK_Sam <- subset_samples(SMK_2024, Project == "Sam")
+SMK_Marissa <- subset_samples(SMK_2024, Project == "PB2023")
+SMK_Korrina <- subset_samples(SMK_2024, Project == "Korrina")
+
+# Save each subset as an .rds file
+saveRDS(SMK_Sam, "SMK_Sam.rds")
+saveRDS(SMK_Marissa, "PB2023.rds")
+saveRDS(SMK_Korrina, "SMK_Korrina.rds")
+
+pseq <- SMK_Marissa
 
 #removing samples
 
@@ -88,17 +103,17 @@ table(tax_table(pseq)[, "Phylum"], exclude = NULL)
 
 #Remove low prev ----
 #remove less than 0.5% total abundance - 5234 taxa * 0.005 = ~30 reads minimum (0.5%)
-plot(sort(taxa_sums(x1), TRUE), type="h", ylim=c(0, 10000))
+plot(sort(taxa_sums(x2), TRUE), type="h", ylim=c(0, 10000))
 # 
 # x0 = prune_taxa(taxa_sums(pseq) > 30, pseq) 
 x1 = prune_taxa(taxa_sums(pseq) > 200, pseq) 
-x2 = prune_taxa(taxa_sums(pseq) > 500, pseq) 
+x2 = prune_taxa(taxa_sums(pseq) > 500, pseq) #use for PB2023
 x3 = prune_taxa(taxa_sums(pseq) > 1000, pseq)
 
 summarize_phyloseq(pseq)
 summarize_phyloseq(x2)
 
-pseq <- x1
+pseq <- x2
 
 ##using x2 mb2021 and x1 for MU42022
 
@@ -106,7 +121,7 @@ pseq <- x1
 
 #rarify - removing abundance code with below code does not seem to work...not sure why. Ignore for now.
 
-  #Compute prevalence of each feature, store as data.frame
+#Compute prevalence of each feature, store as data.frame
 prevdf = apply(X = otu_table(pseq),
                MARGIN = ifelse(taxa_are_rows(pseq), yes = 1, no = 2),
                FUN = function(x){sum(x > 0)})
@@ -153,25 +168,6 @@ length(get_taxa_unique(ps3, taxonomic.rank = "Genus"))
 ps3 = tax_glom(ps2, "Genus", NArm = TRUE)
 #362 - since hardly different, will skip this
 
-
-#Or see how agglormerating impacts your tree
-h1 = 0.4
-ps4 = tip_glom(ps2, h = h1)
-
-multiPlotTitleTextSize = 15
-p2tree = plot_tree(ps2, method = "treeonly",
-                   ladderize = "left",
-                   title = "Before Agglomeration") +
-  theme(plot.title = element_text(size = multiPlotTitleTextSize))
-p3tree = plot_tree(ps3, method = "treeonly",
-                   ladderize = "left", title = "By Genus") +
-  theme(plot.title = element_text(size = multiPlotTitleTextSize))
-p4tree = plot_tree(ps4, method = "treeonly",
-                   ladderize = "left", title = "By Height") +
-  theme(plot.title = element_text(size = multiPlotTitleTextSize))
-
-# group plots together
-grid.arrange(nrow = 1, p2tree, p3tree, p4tree)
 
 
 #Abundance transformations
@@ -225,14 +221,15 @@ setnames(readcount, "rn", "SampleID")
 
 ggplot(readcount, aes(TotalReads)) + geom_histogram() + ggtitle("Sequencing Depth")
 
-head(readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")])
+View(readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")])
 
 readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")]
 
 #mb2021: Remove samples F4L18, T10r3, T9r2 (did not work at all)
 #mu42022: Remove samples T15-S-1, also note, algal samples have very few reads after chloroplasts removed but we will keep them
+#PB2023: Remove T7-2-S (<200 reads)
 
-pseq <- subset_samples(pseq, !Sample.ID %in% c("T15-S-1"))
+pseq <- subset_samples(pseq, !Sample.ID %in% c("T7-2-S"))
 pseq <- subset_samples(pseq, !Library_Name %in% c("F4L18", "T10r3", "T9r2"))
 
 #saving filtered but not rarefied pseq object for mb2021 project
@@ -253,6 +250,91 @@ library(vegan)
 otu.rarecurve <- rarecurve(otu.rare, step = 10000, label = TRUE, xlim = c(0, 10000))
 
 raref.curve <- rarecurve(otu.rare, label = TRUE, ylab = "ASV Count")
+
+#If not rarefying - DESeq2 transformation ----
+#counts divided by sample-specific size factors determined by median ratio of gene counts relative to geometric mean per gene
+
+if (!require("BiocManager", quietly = TRUE))
+  install.packages("BiocManager") #download deseq
+
+BiocManager::install("DESeq2") #Install deseq
+
+BiocManager::install("DESeq2", force = TRUE)
+
+BiocManager::install("GenomeInfoDb")
+BiocManager::install("DESeq2")
+
+library(DESeq2)
+library(phyloseq)
+
+DeSeq <- phyloseq_to_deseq2(pseq, ~ Treatment) #convert phyloseq to deseq object
+
+DeSeq2 <- DESeq(DeSeq)
+
+# # countData = ASV counts with samples in columns  
+# # colData = Sample meta data (factors, etc)  
+# # design = the right hand side of a GLM formula
+
+ASV_deseq <- DESeqDataSetFromMatrix(countData = t(),
+                                    colData = fact2,
+                                    design = ~ Treatment)
+
+# positive counts normalisaton (accounts for zero-inflation)
+ASV_deseq <- estimateSizeFactors(DeSeq, type = "poscounts")
+sizeFactors(ASV_deseq)
+
+# size-factor corrected data are calculated by dividing the raw counts by the sample size factor and adding 0.5 to correct for the zeros
+ASV_deseq_norm <- sapply(row.names(ASV_deseq), function(x){
+  plotCounts(ASV_deseq, x, "Day", returnData = TRUE, normalized = TRUE)$count
+  
+})
+rownames(ASV_deseq_norm) <- colnames(ASV_deseq)
+
+# remove the addition of 0.5 to all entries
+ASV_deseq_norm <- ASV_deseq_norm - 0.5
+ASV_deseq_norm[1:10, 1:10]
+
+# make dataset with integers
+ASV_deseq_norm <- round(ASV_deseq_norm)
+ASV_deseq_norm[1:10, 1:10]
+
+View(ASV_deseq_norm)
+
+# check for zeros across all samples (produced by normalisation)
+dim(ASV_deseq_norm[, colSums(ASV_deseq_norm) == 0]) # 0
+
+# check singletons
+dim(ASV_deseq_norm[, colSums(ASV_deseq_norm) == 1])
+
+#save normalised table
+write.csv(ASV_deseq_norm, "~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files//normalised_ASV_table.csv")
+
+#Make new pseq object with normalized ASV table
+mb2021_filtered_NOT_rarefied <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
+
+#Check format
+View(mb2021_filtered_NOT_rarefied@otu_table)
+View(normalised_ASV_table)
+
+#correct to make forst column as row names
+
+normalised_ASV_table <- as.data.frame(normalised_ASV_table)
+
+rownames(normalised_ASV_table) <- normalised_ASV_table[, 1]
+
+# Remove the first column from the data frame
+normalised_ASV_table <- normalised_ASV_table[, -1]
+
+# Create a new otu_table object
+new_otu_table <- otu_table(normalised_ASV_table, taxa_are_rows = FALSE)
+
+# Replace the old OTU table with the new one
+otu_table(mb2021_filtered_NOT_rarefied) <- new_otu_table
+
+# Verify the replacement
+View(mb2021_filtered_NOT_rarefied@otu_table)
+#Save as different RDS file
+saveRDS(mb2021_filtered_NOT_rarefied, file = "mb2021_filtered_NOT_rarefied_normalized.rds")
 
 
 #If rarefying:
