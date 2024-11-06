@@ -14,15 +14,19 @@ pseq2 <- MU42022_filtered_Oct92024
 pseq2 <- psmelt(pseq2) 
 head(pseq2)
 
+pseq <- PB2023_spat_not_rarefied_normalized
+pseq <- psmelt(pseq)
+
+
 #Merge ASV seq with metadata
 #'MU42022_sequence_ASVname_mapping'
-colnames(MU42022_sequence_ASVname_mapping) <- c("ASV", "Sequence")
+colnames(sequence_ASVname_mapping_SMK) <- c("ASV", "Sequence")
 
-head(pseq2@tax_table)
-head(MU42022_sequence_ASVname_mapping)
+head(pseq@tax_table)
+head(sequence_ASVname_mapping_SMK)
 
 # Merge the ASV table with the sequence data based on ASV number
-merged_data <- merge(pseq2, MU42022_sequence_ASVname_mapping, by.x = "OTU", by.y = "ASV", all.x = TRUE)
+merged_data <- merge(pseq, sequence_ASVname_mapping_SMK, by.x = "OTU", by.y = "ASV", all.x = TRUE)
 View(merged_data)
 str(merged_data)
 
@@ -71,6 +75,10 @@ plot(tree, main = "Phylogenetic Tree", cex = 0.35)  # Adjust cex as needed
 highlighted_ASVs_red <- c("ASV11", "ASV88", "ASV198", "ASV178", "ASV201", "ASV471", "ASV613")
 highlighted_ASVs_blue <- c("ASV7", "ASV18")
 
+#PB2023
+highlighted_ASVs_red <- c("ASV190")
+highlighted_ASVs_blue <- c("ASV227")
+
 # Get the tip labels
 tip_labels <- tree$tip.label
 
@@ -91,7 +99,7 @@ tip_labels <- tree$tip.label
 new_tip_labels <- ifelse(tip_labels %in% c(highlighted_ASVs_red, highlighted_ASVs_blue), tip_labels, NA)
 
 # Plot the tree without labels
-plot(tree, main = "Phylogenetic Tree", cex = 0.35, show.tip.label = FALSE)
+plot(tree, main = "Phylogenetic Tree", cex = 0.4, show.tip.label = FALSE)
 
 # Add colored labels for selected ASVs
 p <- for (i in seq_along(tip_labels)) {
@@ -201,8 +209,10 @@ print(msa_plot + ggtitle("Phylogenetic Tree with MSA Overlay"))
 #citation for 89% similarity: 
 #Buchan A, Gonzalez JM, Moran MA. 2005. Overview of the marine Roseobacter lineage. Appl. Environ. Microbiol. 71:5665–5677. 10.1128/AEM.71.10.5665-5677.2005. 
 
-# Step 1: Extract ASV558 sequence from the data frame
-asv558_sequence <- rhodobacteraceae_data$Sequence[rhodobacteraceae_data$OTU == "ASV558"][1]
+# Step 1: Extract ASV558 (MU42022) or ASV230 (PB2023) sequence from the data frame
+# asv558_sequence <- rhodobacteraceae_data$Sequence[rhodobacteraceae_data$OTU == "ASV558"][1]
+
+asv230_sequence <- rhodobacteraceae_data$Sequence[rhodobacteraceae_data$OTU == "ASV230"][1]
 
 # Install and load Biostrings package if not already installed
 if (!requireNamespace("Biostrings", quietly = TRUE)) {
@@ -217,14 +227,14 @@ names(sequences) <- unique(rhodobacteraceae_data$OTU)  # Assign ASV names to the
 
 dna_sequences <- DNAStringSet(sequences)
 
-ref_seq <- dna_sequences[["ASV558"]]
+ref_seq <- dna_sequences[["ASV230"]]
 
 # Initialize a vector to store results
 roseobacter_matches <- list()
 
 for (i in names(dna_sequences)) {
   # Skip if the current sequence is ASV558 itself
-  if (i == "ASV558") next
+  if (i == "ASV230") next
   
   # Perform global pairwise alignment between ASV558 and the current sequence
   alignment <- pairwiseAlignment(ref_seq, dna_sequences[[i]], type = "global")
@@ -245,7 +255,7 @@ print(roseobacter_matches)
 names(roseobacter_matches)
 
 # Add ASV558 to the results if you want to include it explicitly
-roseobacter_matches[["ASV558"]] <- ref_seq
+roseobacter_matches[["ASV230"]] <- ref_seq
 
 # Check the results
 print(roseobacter_matches)
@@ -283,8 +293,8 @@ dist_matrix <- dist.ml(aligned_phyDat)
 tree <- NJ(dist_matrix)
 plot(tree, main = "Roseobacter - Phylogenetic Tree", cex = 0.5)  # Adjust cex as needed
 
-highlighted_ASVs_red <- c("ASV11", "ASV88", "ASV198", "ASV178", "ASV201", "ASV471", "ASV613")
-highlighted_ASVs_blue <- c("ASV7", "ASV18")
+# highlighted_ASVs_red <- c("ASV11", "ASV88", "ASV198", "ASV178", "ASV201", "ASV471", "ASV613")
+# highlighted_ASVs_blue <- c("ASV7", "ASV18")
 
 # Get the tip labels
 tip_labels <- tree$tip.label
@@ -358,7 +368,8 @@ library(pheatmap)
 
 # Filter and aggregate data for Roseobacter ASVs at the spat stage
 roseobacter_spat_summary <- roseobacter_df %>%
-  filter(OTU %in% names(roseobacter_matches), Age == "Spat", !Genetics == "4") %>%
+  filter(OTU %in% names(roseobacter_matches), !Treatment %in% c("James", "Continuous Probiotics"))  %>%
+  #filter(OTU %in% names(roseobacter_matches), Age == "Spat", !Genetics == "4") %>%
   select(OTU, Treatment, Abundance) %>%
   group_by(OTU, Treatment) %>%
   summarise(Total_Abundance = sum(Abundance), .groups = 'drop') %>%
@@ -430,26 +441,66 @@ pheatmap(
 
 
 #Boxplots ----
+# roseobacter_spat<- rhodobacteraceae_data %>%
+#   filter(OTU %in% names(roseobacter_matches), Age == "Spat", !Genetics == "4")
+
 roseobacter_spat<- rhodobacteraceae_data %>%
-  filter(OTU %in% names(roseobacter_matches), Age == "Spat", !Genetics == "4")
+   filter(OTU %in% names(roseobacter_matches), !Treatment %in% c("James", "Continuous Probiotics"))
+  
+
+# Calculate average and standard deviation of Abundance for each OTU across treatment groups
+roseobacter_stats <- roseobacter_spat %>%
+  group_by(OTU, Treatment) %>%
+  summarise(
+    Average_Abundance = mean(Abundance, na.rm = TRUE),
+    Std_Abundance = sd(Abundance, na.rm = TRUE),
+    .groups = 'drop'  # Drop grouping after summarising
+  )
 
 library(RColorBrewer)
 
 library(viridis)  # For gradient color palettes
 
 # Create a stacked bar plot of ASV abundance by Treatment with no gridlines and a gradient color palette
-ggplot(roseobacter_spat, aes(x = Treatment, y = Abundance, fill = OTU)) +
+ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, fill = OTU)) +
   geom_bar(stat = "identity", position = "stack") +  # Change position to "stack"
   labs(title = "",
        x = "",  
-       y = "Total Abundance") +
-  scale_fill_viridis_d(option = "F", direction = -1) +  # Use Viridis palette; adjust option for different colors
+       y = "Total Average Abundance") +
+  scale_fill_viridis_d(option = "F", direction = 1) +  # Use Viridis palette; adjust option for different colors
   theme_bw() +
   theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size = 12),
         legend.position = "none",
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 
+ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, fill = OTU)) +
+  geom_bar(stat = "identity", position = "dodge", colour = "black") +  # Use position "dodge" for separate bars
+  geom_errorbar(aes(ymin = Average_Abundance - Std_Abundance, 
+                    ymax = Average_Abundance + Std_Abundance), 
+                width = 0.2, position = position_dodge(0.9)) +  # Add error bars
+  labs(title = "Average Abundance of OTUs Across Treatments",
+       x = "",  
+       y = "Average Abundance") +
+  scale_fill_viridis_d(option = "F", direction = 1) +  # Use Viridis palette
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size = 12),
+        legend.position = "none",  # Remove the legend
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+#scatter plot
+ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, color = OTU)) +
+  geom_jitter(width = 0.2, height = 0, size = 7, alpha = 0.7) + 
+  geom_text(aes(label = OTU), vjust = -0.5, size = 3) + 
+  labs(title = "",
+       x = "",  
+       y = "Average Abundance") +
+  scale_color_viridis_d(option = "F", direction = 1) +  # Use Viridis palette for colors
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size = 12),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
 
 
 

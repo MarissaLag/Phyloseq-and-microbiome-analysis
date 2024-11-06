@@ -38,17 +38,16 @@ saveRDS(SMK_Marissa, "PB2023.rds")
 saveRDS(SMK_Korrina, "SMK_Korrina.rds")
 
 pseq <- SMK_Marissa
+pseq@sam_data
 
 #removing samples
+# pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+# pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+# pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
+# pseq <- subset_samples(pseq, Age %in% c("Spat"))
 
-pseq <- subset_samples(pseq, !Genetics %in% c("4"))
-pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
-pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
-pseq <- subset_samples(pseq, Age %in% c("Spat"))
-
-pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
-
-pseq <- subset_samples(pseq, Age %in% c("Spat"))
+pseq <- subset_samples(pseq, Day %in% c("Spat"))
+pseq_day1 <- subset_samples(pseq, Day %in% c("Day 01"))
 
 #create objects
 
@@ -107,7 +106,7 @@ plot(sort(taxa_sums(x2), TRUE), type="h", ylim=c(0, 10000))
 # 
 # x0 = prune_taxa(taxa_sums(pseq) > 30, pseq) 
 x1 = prune_taxa(taxa_sums(pseq) > 200, pseq) 
-x2 = prune_taxa(taxa_sums(pseq) > 500, pseq) #use for PB2023
+x2 = prune_taxa(taxa_sums(pseq) > 300, pseq) #use for PB2023 spat
 x3 = prune_taxa(taxa_sums(pseq) > 1000, pseq)
 
 summarize_phyloseq(pseq)
@@ -231,6 +230,7 @@ readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")]
 
 pseq <- subset_samples(pseq, !Sample.ID %in% c("T7-2-S"))
 pseq <- subset_samples(pseq, !Library_Name %in% c("F4L18", "T10r3", "T9r2"))
+pseq <- subset_samples(pseq, SampleID != "T7-2-S")
 
 #saving filtered but not rarefied pseq object for mb2021 project
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
@@ -307,10 +307,10 @@ dim(ASV_deseq_norm[, colSums(ASV_deseq_norm) == 0]) # 0
 dim(ASV_deseq_norm[, colSums(ASV_deseq_norm) == 1])
 
 #save normalised table
-write.csv(ASV_deseq_norm, "~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files//normalised_ASV_table.csv")
+write.csv(ASV_deseq_norm, "~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files//normalised_ASV_table_PB2023.csv")
 
 #Make new pseq object with normalized ASV table
-mb2021_filtered_NOT_rarefied <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
+#PB2023_spat_not_rarefied_normalized <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/PB2023_spat_not_rarefied_normalized.rds")
 
 #Check format
 View(mb2021_filtered_NOT_rarefied@otu_table)
@@ -318,23 +318,21 @@ View(normalised_ASV_table)
 
 #correct to make forst column as row names
 
-normalised_ASV_table <- as.data.frame(normalised_ASV_table)
+normalised_ASV_table <- as.data.frame(ASV_deseq_norm)
 
 rownames(normalised_ASV_table) <- normalised_ASV_table[, 1]
 
 # Remove the first column from the data frame
-normalised_ASV_table <- normalised_ASV_table[, -1]
+#normalised_ASV_table <- normalised_ASV_table[, -1]
 
 # Create a new otu_table object
 new_otu_table <- otu_table(normalised_ASV_table, taxa_are_rows = FALSE)
 
 # Replace the old OTU table with the new one
-otu_table(mb2021_filtered_NOT_rarefied) <- new_otu_table
+otu_table(pseq) <- new_otu_table
 
-# Verify the replacement
-View(mb2021_filtered_NOT_rarefied@otu_table)
 #Save as different RDS file
-saveRDS(mb2021_filtered_NOT_rarefied, file = "mb2021_filtered_NOT_rarefied_normalized.rds")
+saveRDS(pseq, file = "PB2023_spat_not_rarefied_normalized.rds")
 
 
 #If rarefying:
@@ -355,29 +353,4 @@ print(sample_depths)
 ##yes, all samples have 10,000 or 5,000 reads now.
 
 pseq <- Rare
-
-#convert to compositional data
-
-pseq.rel <- microbiome::transform(pseq, "compositional")
-
-
-
-pseq.core <- core(pseq.fam.rel, detection = .1/100, prevalence = 90/100)
-
-pseq_fam <- microbiome::aggregate_rare(ps1, level = "Family", detection = 50/100, prevalence = 70/100)
-
-pseq_phy <- microbiome::aggregate_rare(ps1, level = "Phylum", detection = 50/100, prevalence = 70/100)
-
-pseq_gen <- microbiome::aggregate_rare(ps1, level = "Genus", detection = 50/100, prevalence = 70/100)
-
-##Get a quick look at the data (plot ordination)
-
-set.seed(4235421)
-
-ord <- ordinate(pseq.rel, "MDS", "bray")
-
-#plot MDS/PcoA - can set "colour" and "shape" for any of your variableas
-#geompoint controls data point size on plot
-
-plot_ordination(pseq, ord, color = "Treatment", shape = "Family") + geom_point(size = 4) + scale_shape_binned()
 

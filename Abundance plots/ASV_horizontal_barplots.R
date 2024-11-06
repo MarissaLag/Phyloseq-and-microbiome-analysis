@@ -31,50 +31,58 @@ pseq@sam_data$Family[pseq@sam_data$Family %in% c(11, 15)] <- 3
 pseq@sam_data$Family[pseq@sam_data$Family %in% c(12, 16)] <- 4
 
 
-pseq <- microbiome::transform(pseq, "compositional")
+pseq <- MU42022_filtered_Oct92024
+
+#pseq <- microbiome::transform(pseq, "compositional")
 
 ps <- psmelt(pseq)
 
 #Spat ASVs (unadj)
-filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV17",  "ASV30",   "ASV37",   "ASV49",   "ASV216",  "ASV237",  "ASV240",  "ASV254",  "ASV271",  "ASV314", "ASV325", "ASV347", 
-                    "ASV348", "ASV383", "ASV391", "ASV412", "ASV446", "ASV507", "ASV553", "ASV571", "ASV580", "ASV595", "ASV656", "ASV751", 
-                    "ASV841",  "ASV845",  "ASV900",  "ASV927",  "ASV964",  "ASV1088", "ASV1162", "ASV1164"))
+# filtered_ps <- ps %>% 
+#   filter(OTU %in% c("ASV17",  "ASV30",   "ASV37",   "ASV49",   "ASV216",  "ASV237",  "ASV240",  "ASV254",  "ASV271",  "ASV314", "ASV325", "ASV347", 
+#                     "ASV348", "ASV383", "ASV391", "ASV412", "ASV446", "ASV507", "ASV553", "ASV571", "ASV580", "ASV595", "ASV656", "ASV751", 
+#                     "ASV841",  "ASV845",  "ASV900",  "ASV927",  "ASV964",  "ASV1088", "ASV1162", "ASV1164"))
+# 
+# filtered_ps <- ps %>% 
+#   filter(OTU %in% c("ASV49",   "ASV216",  "ASV237",  "ASV240",  "ASV254",  "ASV271",  "ASV314", "ASV325", "ASV347", 
+#                     "ASV348", "ASV383", "ASV391", "ASV412", "ASV446", "ASV507", "ASV553", "ASV571", "ASV580", "ASV595", "ASV656", "ASV751", 
+#                     "ASV841",  "ASV845",  "ASV900",  "ASV927",  "ASV964",  "ASV1088", "ASV1162", "ASV1164"))
+# 
+# #Spat unadj LS removed - testing only signif different ASVs between COntrol and HS
+# filtered_ps <- ps %>% 
+#   filter(OTU %in% c("ASV49", "ASV240", "ASV325", "ASV348", "ASV412", "ASV580", "ASV656", "ASV751", "ASV841", "ASV927", "ASV1088", "ASV1164"))
+# 
+# filtered_ps <- ps %>% 
+#   filter(OTU %in% c("ASV17", "ASV37"))
+# 
+# #Spat unadj HS removed 
+# filtered_ps <- ps %>% 
+#   filter(OTU %in% c("ASV49", "ASV571", "ASV595", "ASV751", "ASV927", "ASV1088", "ASV1162"))
+# 
+# #Day 1 ASVs (unadj)
+# filtered_ps <- ps %>% 
+#   filter(OTU %in% c("ASV21", "ASV34", "ASV40", "ASV42", "ASV44", "ASV48", "ASV51", "ASV60", "ASV76", "ASV79", "ASV90", "ASV91", "ASV92", "ASV100")) 
+# 
+# #1 dpf (signif ASVs) with HS removed
+# 
+# filtered_ps <- ps %>% 
+#   filter(OTU %in% c("ASV34", "ASV40", "ASV48", "ASV51", "ASV60", "ASV79", "ASV90", "ASV91", "ASV114", "ASV118", "ASV119", "ASV124", "ASV126", "ASV131", "ASV163", "ASV181", "ASV187", "ASV189", "ASV195", "ASV219", "ASV240", "ASV257", "ASV309", "ASV313", "ASV319", "ASV326", "ASV333", "ASV337", "ASV343", "ASV356", "ASV387", "ASV394", "ASV417", "ASV431", "ASV447", "ASV450", "ASV468", "ASV484", "ASV487", "ASV501", "ASV559", "ASV563", "ASV575", "ASV579", "ASV595", "ASV608", "ASV620", "ASV641", "ASV649", "ASV738", "ASV798", "ASV818", "ASV819", "ASV820", "ASV837", "ASV838", "ASV845", "ASV846", "ASV872", "ASV874", "ASV882", "ASV916", "ASV929", "ASV955", "ASV960", "ASV983", "ASV993", "ASV1005", "ASV1007", "ASV1035", "ASV1036", "ASV1061", "ASV1070", "ASV1082", "ASV1086", "ASV1111", "ASV1146", "ASV1153", "ASV1170"))
+# 
+# #1 dpf (signif ASVs) with LS removed
+# 
+# filtered_ps <- ps %>% 
+#   filter(OTU %in% c("ASV34", "ASV40", "ASV44")) 
+# 
+# filtered_ps <- ps %>% 
+#   filter(OTU %in% c("ASV21", "ASV48", "ASV51", "ASV76", "ASV79", "ASV90", "ASV100", "ASV114", "ASV118", "ASV119", "ASV124")) 
+#                     
+# "ASV21", "ASV48", "ASV51", "ASV76", "ASV79", "ASV90", "ASV100", "ASV114", "ASV118", "ASV119", "ASV124", "ASV126", "ASV131", "ASV163", "ASV176", "ASV181", "ASV189", "ASV193", "ASV195", "ASV216", "ASV219", "ASV237", "ASV244", "ASV309", "ASV319", "ASV333", "ASV337", "ASV343", "ASV349", "ASV351", "ASV356", "ASV375", "ASV385", "ASV387", "ASV394", "ASV397", "ASV401", "ASV416", "ASV417", "ASV428", "ASV431", "ASV468", "ASV484", "ASV487", "ASV499", "ASV510", "ASV524", "ASV538", "ASV559", "ASV575", "ASV595", "ASV649", "ASV652", "ASV703", "ASV738", "ASV756", "ASV798", "ASV818", "ASV820", "ASV837", "ASV838", "ASV845", "ASV846", "ASV872", "ASV882", "ASV889", "ASV916", "ASV929", "ASV952", "ASV960", "ASV982", "ASV983", "ASV993", "ASV1005", "ASV1007", "ASV1030", "ASV1035", "ASV1036", "ASV1061", "ASV1074", "ASV1078", "ASV1082", "ASV1086", "ASV1110", "ASV1111", "ASV1138", "ASV1146"
+
+#MU42022 spat inval results
 
 filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV49",   "ASV216",  "ASV237",  "ASV240",  "ASV254",  "ASV271",  "ASV314", "ASV325", "ASV347", 
-                    "ASV348", "ASV383", "ASV391", "ASV412", "ASV446", "ASV507", "ASV553", "ASV571", "ASV580", "ASV595", "ASV656", "ASV751", 
-                    "ASV841",  "ASV845",  "ASV900",  "ASV927",  "ASV964",  "ASV1088", "ASV1162", "ASV1164"))
-
-#Spat unadj LS removed - testing only signif different ASVs between COntrol and HS
-filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV49", "ASV240", "ASV325", "ASV348", "ASV412", "ASV580", "ASV656", "ASV751", "ASV841", "ASV927", "ASV1088", "ASV1164"))
-
-filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV17", "ASV37"))
-
-#Spat unadj HS removed 
-filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV49", "ASV571", "ASV595", "ASV751", "ASV927", "ASV1088", "ASV1162"))
-
-#Day 1 ASVs (unadj)
-filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV21", "ASV34", "ASV40", "ASV42", "ASV44", "ASV48", "ASV51", "ASV60", "ASV76", "ASV79", "ASV90", "ASV91", "ASV92", "ASV100")) 
-
-#1 dpf (signif ASVs) with HS removed
-
-filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV34", "ASV40", "ASV48", "ASV51", "ASV60", "ASV79", "ASV90", "ASV91", "ASV114", "ASV118", "ASV119", "ASV124", "ASV126", "ASV131", "ASV163", "ASV181", "ASV187", "ASV189", "ASV195", "ASV219", "ASV240", "ASV257", "ASV309", "ASV313", "ASV319", "ASV326", "ASV333", "ASV337", "ASV343", "ASV356", "ASV387", "ASV394", "ASV417", "ASV431", "ASV447", "ASV450", "ASV468", "ASV484", "ASV487", "ASV501", "ASV559", "ASV563", "ASV575", "ASV579", "ASV595", "ASV608", "ASV620", "ASV641", "ASV649", "ASV738", "ASV798", "ASV818", "ASV819", "ASV820", "ASV837", "ASV838", "ASV845", "ASV846", "ASV872", "ASV874", "ASV882", "ASV916", "ASV929", "ASV955", "ASV960", "ASV983", "ASV993", "ASV1005", "ASV1007", "ASV1035", "ASV1036", "ASV1061", "ASV1070", "ASV1082", "ASV1086", "ASV1111", "ASV1146", "ASV1153", "ASV1170"))
-
-#1 dpf (signif ASVs) with LS removed
-
-filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV34", "ASV40", "ASV44")) 
-
-filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV21", "ASV48", "ASV51", "ASV76", "ASV79", "ASV90", "ASV100", "ASV114", "ASV118", "ASV119", "ASV124")) 
-                    
-"ASV21", "ASV48", "ASV51", "ASV76", "ASV79", "ASV90", "ASV100", "ASV114", "ASV118", "ASV119", "ASV124", "ASV126", "ASV131", "ASV163", "ASV176", "ASV181", "ASV189", "ASV193", "ASV195", "ASV216", "ASV219", "ASV237", "ASV244", "ASV309", "ASV319", "ASV333", "ASV337", "ASV343", "ASV349", "ASV351", "ASV356", "ASV375", "ASV385", "ASV387", "ASV394", "ASV397", "ASV401", "ASV416", "ASV417", "ASV428", "ASV431", "ASV468", "ASV484", "ASV487", "ASV499", "ASV510", "ASV524", "ASV538", "ASV559", "ASV575", "ASV595", "ASV649", "ASV652", "ASV703", "ASV738", "ASV756", "ASV798", "ASV818", "ASV820", "ASV837", "ASV838", "ASV845", "ASV846", "ASV872", "ASV882", "ASV889", "ASV916", "ASV929", "ASV952", "ASV960", "ASV982", "ASV983", "ASV993", "ASV1005", "ASV1007", "ASV1030", "ASV1035", "ASV1036", "ASV1061", "ASV1074", "ASV1078", "ASV1082", "ASV1086", "ASV1110", "ASV1111", "ASV1138", "ASV1146"
+   filter(OTU %in% c("ASV88", "ASV178")) 
+  
 
 
 # Calculate the average abundance for each treatment group
@@ -128,35 +136,77 @@ pseq <- subset_samples(pseq, Age %in% "Spat")
 pseq <- subset_samples(pseq, !Family %in% "9")
 pseq <- microbiome::transform(pseq, "compositional")
 
-# Subset the phyloseq object to include only high and low salinity treatments
-filtered_phyloseq <- subset_samples(mb2021_filtered_NOT_rarefied, Treatment %in% c("High salinity", "Low salinity"))
 
-#signif ASVs
-selected_asvs <- c("ASV17",  "ASV30",   "ASV37",   "ASV49",   "ASV216",  "ASV237",  "ASV240",  "ASV254",  "ASV271",  "ASV314", "ASV325", "ASV347", 
-                   "ASV348", "ASV383", "ASV391", "ASV412", "ASV446", "ASV507", "ASV553", "ASV571", "ASV580", "ASV595", "ASV656", "ASV751", 
-                   "ASV841",  "ASV845",  "ASV900",  "ASV927",  "ASV964",  "ASV1088", "ASV1162", "ASV1164")
+pseq <- MU42022_filtered_Oct92024
+pseq <- subset_samples(pseq, Age %in% "Spat")
+pseq <- subset_samples(pseq, Treatment %in% c("Control", "Probiotics", "Probiotics + HT"))
+#pseq <- microbiome::transform(pseq, "compositional")
+
+# Subset the phyloseq object to include only high and low salinity treatments
+# filtered_phyloseq <- subset_samples(mb2021_filtered_NOT_rarefied, Treatment %in% c("High salinity", "Low salinity"))
+# 
+# #signif ASVs
+# selected_asvs <- c("ASV17",  "ASV30",   "ASV37",   "ASV49",   "ASV216",  "ASV237",  "ASV240",  "ASV254",  "ASV271",  "ASV314", "ASV325", "ASV347", 
+#                    "ASV348", "ASV383", "ASV391", "ASV412", "ASV446", "ASV507", "ASV553", "ASV571", "ASV580", "ASV595", "ASV656", "ASV751", 
+#                    "ASV841",  "ASV845",  "ASV900",  "ASV927",  "ASV964",  "ASV1088", "ASV1162", "ASV1164")
+
+selected_asvs <- c("ASV88", "ASV178")
+
+selected_asvs <- c("ASV11", "ASV198", "ASV201", "ASV471", "ASV613")
 
 # Subset the phyloseq object to keep only the selected ASVs
-filtered_phyloseq <- prune_taxa(selected_asvs, filtered_phyloseq)
+filtered_phyloseq <- prune_taxa(selected_asvs, pseq)
 
 # Melt the phyloseq object to a long data frame
 melted_phyloseq <- psmelt(filtered_phyloseq)
 
+#Calulcate log-fold change
 
 average_abundance <- melted_phyloseq %>%
-  group_by(Treatment, OTU, Age) %>%
-  summarise(Average_Abundance = mean(Abundance)) %>%
-mutate(Log_Average_Abundance = log(Average_Abundance))  # Adding 1 to avoid log(0)
+  group_by(Treatment, OTU, Family) %>%
+  summarise(Average_Abundance = mean(Abundance), .groups = 'drop') %>%
+  # Pivot to create a column for control values
+  pivot_wider(names_from = Treatment, values_from = Average_Abundance, names_prefix = "Treatment_") %>%
+  # Calculate the log average abundance for each treatment
+  mutate(across(starts_with("Treatment_"), log, .names = "Log_{.col}")) %>%
+  # Calculate the log-fold change for each treatment against the control
+  mutate(across(starts_with("Log_Treatment_"), 
+                ~ . - Log_Treatment_Control, 
+                .names = "Log_Fold_Change_{.col}")) %>%
+  # Select relevant columns for log-fold changes
+  select(OTU, starts_with("Log_Fold_Change_"))
+
+average_abundance_long <- average_abundance %>%
+  pivot_longer(
+    cols = starts_with("Log_Fold_Change_"),
+    names_to = "Treatment",
+    values_to = "Log_Fold_Change"
+  ) %>%
+  # Clean up Treatment names if needed
+  mutate(Treatment = gsub("Log_Fold_Change_Log_Treatment_", "", Treatment))
+
+average_abundance_long <- average_abundance_long %>%
+  filter(Treatment != "Control")
 
 
-
-# Convert ASV IDs to factors to control the order in the plot
-melted_phyloseq$OTU <- factor(melted_phyloseq$OTU, levels = selected_asvs)
-melted_phyloseq$Abundance <- ifelse(melted_phyloseq$Treatment == "low salinity", -melted_phyloseq$Abundance, melted_phyloseq$Abundance)
-
-ggplot(average_abundance, aes(x = Log_Average_Abundance, y = OTU, fill = Treatment)) +
-  geom_bar(stat = "identity", position = position_stack(reverse = TRUE)) +
-  facet_wrap(~ Treatment) +
-  labs(x = "Log Relative Abundance", y = "", title = "Abundance of Signif ASVs - Spat") +
-  theme(legend.position = "bottom")
+# Plotting
+ggplot(average_abundance_long, aes(x = Log_Fold_Change, y = OTU, fill = Treatment)) +
+  geom_col(position = position_dodge(width = 0.9), color = "black") + # Adds black borders for clarity
+  labs(
+    title = "Log-Fold Change in Average Abundance",
+    x = "Log-Fold Change",
+    y = ""
+  ) +
+  scale_fill_manual(values = c("Probiotics" = "skyblue2", "Probiotics + HT" = "#fc8d62")) + # Custom colors
+  theme_bw(base_size = 14) + 
+  theme(
+    panel.grid = element_blank(),      
+    legend.position = "bottom",        
+    legend.title = element_blank(),       
+    plot.title = element_text(hjust = 0.5, face = "bold"), 
+    axis.title.y = element_text(face = "bold"),   
+    axis.title.x = element_text(face = "bold"),           
+    axis.text = element_text(size = 12),                 
+    legend.text = element_text(size = 12)                
+  )
 

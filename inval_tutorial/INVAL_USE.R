@@ -42,16 +42,16 @@ Tree = pseq@phy_tree
 OTU1 = as(OTU, "matrix")
 write.csv(OTU1, file="Data_fram_1.cvs",row.names=TRUE)
 
-write.table(OTU1,file="data_table_mb2021_unrarefied.csv",sep=",",dec = " ")
+write.table(OTU1,file="data_table_PB2023_unrarefied.csv",sep=",",dec = " ")
 
 
 
 ####Format to example data and reload below for actual test 
 
 #reload edited table
-data_table <- read.csv("data_table_mb2021_unrarefied.csv")
+data_table <- read.csv("data_table_PB2023_unrarefied.csv")
 
-pc_FUN = read.csv("data_table_mb2021_unrarefied.csv", header= TRUE)
+pc_FUN = read.csv("data_table_PB2023_unrarefied.csv", header= TRUE)
 
 #pc_FUN <- data_table_mb2021_unrarefied
 
@@ -66,8 +66,10 @@ pc_FUN <- pc_FUN[, !colnames(pc_FUN) %in% c("ASV7", "ASV18")]
 
 pc_FUN <- pc_FUN[!pc_FUN$`Time-point` == "3 dpf", ]
 
+
 #for mb2021 project remove tank 9 from pc_Fun for mb2021
-pc_FUN <- pc_FUN[!pc_FUN$`Tank` == "9", ] 
+pc_FUN <- pc_FUN[!pc_FUN$`Treatment` == "James", ] 
+pc_FUN <- pc_FUN[!pc_FUN$`Treatment` == "Continuous-Probiotics", ] 
 
 View(pc_FUN)
 
@@ -83,10 +85,6 @@ pc_FUN <- pc_FUN[pc_FUN$`Age` == "Spat", ]
 
 pc_FUN <- pc_FUN[-1, ]
 
-#Larvae only 
-
-pc_FUN <- data_table[data_table$Age %in% c("Day 01", "Day 03", "Day 06", "Day 15"), ]
-
   
 ####Test ASVs ----
 
@@ -99,7 +97,7 @@ funi_df<- t(pc_FUN)
 #matrix_F = pc_FUN[ ,6:1012] 
 
 #mb2021
-matrix_F = pc_FUN[ ,7:350]
+matrix_F = pc_FUN[ ,7:190]
 
 ### Make the equation. Saying we want to examine specific column of metadata
 time_a_F = pc_FUN$Treatment
