@@ -7,11 +7,12 @@ if (!requireNamespace("BiocManager", quietly = TRUE))
 
 BiocManager::install("microbiome")
 
+install.packages("phyloseq")
+install.packages("devtools")
+
 library("devtools")
 library(phyloseq)
 library(microbiome)
-library(phyloseq)
-
 
 #Load un-rarefied data ----
 
@@ -21,9 +22,11 @@ pseq <- Marissa_mb2021_filtered_20240203
 
 pseq <- Marissa_MU42022_unfiltered
 
-pseq <- Marissa_mb2021_unfiltered
+pseq <- SMK_Sam
 
-pseq
+pseq <- PB2023 
+
+pseq <- James_MU42022
 
 
 #SMK project - seperate into different RDS objects
@@ -37,14 +40,20 @@ saveRDS(SMK_Sam, "SMK_Sam.rds")
 saveRDS(SMK_Marissa, "PB2023.rds")
 saveRDS(SMK_Korrina, "SMK_Korrina.rds")
 
-pseq <- SMK_Marissa
-pseq@sam_data
+pseq <- PB2023
+View(pseq@sam_data)
+
+#Input Sam's metadata
+# Assuming Sam_Meta is a data.frame with row names matching the sample names in pseq
+sample_data(pseq) <- sample_data(Sam_Meta)
+
+
 
 #removing samples
 # pseq <- subset_samples(pseq, !Genetics %in% c("4"))
-# pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+pseq_algae <- subset_samples(pseq, Sample.type %in% "Algae")
 # pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
-# pseq <- subset_samples(pseq, Age %in% c("Spat"))
+# pseq <- subset_samples(pseq, !Age %in% c("Spat"))
 
 pseq <- subset_samples(pseq, Day %in% c("Spat"))
 pseq_day1 <- subset_samples(pseq, Day %in% c("Day 01"))
@@ -105,14 +114,18 @@ table(tax_table(pseq)[, "Phylum"], exclude = NULL)
 plot(sort(taxa_sums(x2), TRUE), type="h", ylim=c(0, 10000))
 # 
 # x0 = prune_taxa(taxa_sums(pseq) > 30, pseq) 
-x1 = prune_taxa(taxa_sums(pseq) > 200, pseq) 
-x2 = prune_taxa(taxa_sums(pseq) > 300, pseq) #use for PB2023 spat
-x3 = prune_taxa(taxa_sums(pseq) > 1000, pseq)
-
+x1 = prune_taxa(taxa_sums(pseq) > 100, pseq) 
+x2 = prune_taxa(taxa_sums(pseq) > 400, pseq)
+x3 = prune_taxa(taxa_sums(pseq) > 800, pseq)
+#PB2023 used > 300
+#James used > 400
 summarize_phyloseq(pseq)
-summarize_phyloseq(x2)
+summarize_phyloseq(x3)
 
 pseq <- x2
+
+#Save rds
+
 
 ##using x2 mb2021 and x1 for MU42022
 
@@ -134,11 +147,12 @@ plyr::ddply(prevdf, "Phylum", function(df1){cbind(mean(df1$Prevalence),sum(df1$P
 
 #mb2021: Armatimonsdota and Sumerlaetoa only in one sample so will remove
 #mb2021: Entotheonella, Gemmatimondota, Patescibacteria only in 4, 5, and 3 samples so will remove
+#Sam's: Remove Elusimicrobiota, Sumerlaeota, Hydrogenedentes, Deinococcota, Entotheonellaeota, Calditrichota, and Abditibacteriota as 6 or less observations
 # Define phyla to filter
-filterPhyla = c("Acidobacteriota", "Chloroflexi")
+filterPhyla = c("Chloroflexi", "Verrucomicrobiota", "Bdellovibrionota")
+
 # Filter entries with unidentified Phylum.
 ps1 = subset_taxa(pseq, !Phylum %in% filterPhyla)
-ps1
 
 
 # Subset to the remaining phyla
@@ -187,9 +201,9 @@ plot_abundance = function(pseq,title = "",
 }
 #The transformation in this case converts the counts from each sample into their frequencies, often referred to as proportions or relative abundances
 # Transform to relative abundance. Save as new object.
-ps3ra = transform_sample_counts(ps2, function(x){x / sum(x)})
-plotBefore = plot_abundance(ps3,"")
-plotAfter = plot_abundance(ps3ra,"")
+ps2ra = transform_sample_counts(ps2, function(x){x / sum(x)})
+plotBefore = plot_abundance(ps2, "")
+plotAfter = plot_abundance(ps2ra,"")
 # Combine each plot into one graphic.
 grid.arrange(nrow = 2,  plotBefore, plotAfter)
 
@@ -207,6 +221,10 @@ pseq <- x2 #899 taxa for mb2021
 pseq <- x1
 pseq <- x0
 pseq <- ps2 #2609 taxa (filter >5%)
+
+#relative abund
+pseq <- ps2ra 
+
 #check reads
 
 library(ggplot2) 
@@ -216,7 +234,13 @@ library(data.table)
 readcount = data.table(as(sample_data(pseq), "data.frame"),
                          TotalReads = sample_sums(pseq), 
                          keep.rownames = TRUE)
+
+
 setnames(readcount, "rn", "SampleID")
+
+#If data.table not working
+colnames(readcount)[1] <- "SampleID"
+
 
 ggplot(readcount, aes(TotalReads)) + geom_histogram() + ggtitle("Sequencing Depth")
 
@@ -227,16 +251,19 @@ readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")]
 #mb2021: Remove samples F4L18, T10r3, T9r2 (did not work at all)
 #mu42022: Remove samples T15-S-1, also note, algal samples have very few reads after chloroplasts removed but we will keep them
 #PB2023: Remove T7-2-S (<200 reads)
+#Sams: remove 193, 113, 190, 244, 235, 246, 230 (< 1000 reads)
 
-pseq <- subset_samples(pseq, !Sample.ID %in% c("T7-2-S"))
+pseq <- subset_samples(pseq, !Sample.ID %in% c("193", "113", "190", "244", "235", "246", "230", "187", "78")) #fewer than 1000 reads
 pseq <- subset_samples(pseq, !Library_Name %in% c("F4L18", "T10r3", "T9r2"))
-pseq <- subset_samples(pseq, SampleID != "T7-2-S")
+pseq <- subset_samples(pseq, Sample.ID != "T7-2-S")
+
+pseq <- subset_samples(pseq, !Sample.ID  %in% c("T16-10-r3", "A-1", "A-3", "A-6", "A-15"))
 
 #saving filtered but not rarefied pseq object for mb2021 project
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_Oct92024.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filteredwSpat_only_rarefied_June2024.rds")
-saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_spat_unrarefied.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/PB2023_spat_ANCOMBC.rds")
 
 
 otu.rare = otu_table(pseq)
@@ -245,9 +272,10 @@ sample_names = rownames(otu.rare)
 
 #Generate rarefaction curve, rarefaction curve could be used to determined whether the sequencing depth cover microbial diversity of the sample.
 # we will use vegan rarecurve 
+install.packages("vegan")
 library(vegan)
 
-otu.rarecurve <- rarecurve(otu.rare, step = 10000, label = TRUE, xlim = c(0, 10000))
+otu.rarecurve <- rarecurve(otu.rare, step = 10000, label = TRUE, xlim = c(0, 80000))
 
 raref.curve <- rarecurve(otu.rare, label = TRUE, ylab = "ASV Count")
 
@@ -263,6 +291,7 @@ BiocManager::install("DESeq2", force = TRUE)
 
 BiocManager::install("GenomeInfoDb")
 BiocManager::install("DESeq2")
+BiocManager::install("IRanges", ask = FALSE, force = TRUE)
 
 library(DESeq2)
 library(phyloseq)
@@ -271,21 +300,13 @@ DeSeq <- phyloseq_to_deseq2(pseq, ~ Treatment) #convert phyloseq to deseq object
 
 DeSeq2 <- DESeq(DeSeq)
 
-# # countData = ASV counts with samples in columns  
-# # colData = Sample meta data (factors, etc)  
-# # design = the right hand side of a GLM formula
-
-ASV_deseq <- DESeqDataSetFromMatrix(countData = t(),
-                                    colData = fact2,
-                                    design = ~ Treatment)
-
 # positive counts normalisaton (accounts for zero-inflation)
-ASV_deseq <- estimateSizeFactors(DeSeq, type = "poscounts")
+ASV_deseq <- estimateSizeFactors(DeSeq2, type = "poscounts")
 sizeFactors(ASV_deseq)
 
 # size-factor corrected data are calculated by dividing the raw counts by the sample size factor and adding 0.5 to correct for the zeros
 ASV_deseq_norm <- sapply(row.names(ASV_deseq), function(x){
-  plotCounts(ASV_deseq, x, "Day", returnData = TRUE, normalized = TRUE)$count
+  plotCounts(ASV_deseq, x, "Treatment", returnData = TRUE, normalized = TRUE)$count
   
 })
 rownames(ASV_deseq_norm) <- colnames(ASV_deseq)
@@ -337,8 +358,8 @@ saveRDS(pseq, file = "PB2023_spat_not_rarefied_normalized.rds")
 
 #If rarefying:
 ##rarify data to make sequences an even read depth - selecting read depth of 10,000 = any samples with fewer than 10,000 total reads will be removed, all samples will be equalized to 5000 reads for Denman's samples, 10,000 for Marissa/James'
-
-Rare <-rarefy_even_depth(pseq, sample.size= 5128)
+set.seed(123)
+Rare <-rarefy_even_depth(pseq, sample.size= 5128, rngseed = TRUE)
 
 #Marissa/James = 17 samples removed because they contained fewer reads than `sample.size' - first 5 reads are T13-1,T13-2-2,T14-2-2,T15-S-1,T16-10-r3
 
@@ -346,11 +367,45 @@ Rare <-rarefy_even_depth(pseq, sample.size= 5128)
 
 #mb2021 rarefied to 3000
 
-sample_depths <- sample_sums(Rare)
+sample_depths <- sample_sums(pseq)
 
 print(sample_depths)
 
 ##yes, all samples have 10,000 or 5,000 reads now.
 
 pseq <- Rare
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/PB2023_rarefied_3000.rds")
+
+#Phylogenetic tree ----
+
+pseq <- MU42022_filtered_Oct92024
+phy_tree(pseq) #empty
+
+install.packages("ape")
+library(ape)
+install.packages("ggtree")
+BiocManager::install("ggtree")
+library(ggtree)
+
+tree <- rtree(ntaxa(pseq), tip.label = taxa_names(pseq))
+
+pseq_with_tree <- merge_phyloseq(pseq, phy_tree(tree))
+
+pseq_with_tree@phy_tree
+
+pseq <- pseq_with_tree
+
+
+# Extract the phylogenetic tree from the phyloseq object
+tree <- phy_tree(pseq)
+
+# Visualize the tree with ggtree
+ggtree(tree) + 
+  geom_tiplab() + 
+  theme_tree() +
+  labs(title = "Phylogenetic Tree")
+
+
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_algae.rds")
+
 

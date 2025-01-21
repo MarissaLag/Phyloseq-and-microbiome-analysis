@@ -1,9 +1,7 @@
 #DESeq2 test for differential species abundance test
 #Code from Elliot Scanes
 
-
-#Should I be normalizing the data beforehand???
-
+library(DESeq2)
 library(phyloseq)
 library(microbiome)
 
@@ -14,32 +12,47 @@ pseq <- mb2021_filtered_NOT_rarefied
 
 pseq <- MU42022_filtered_NOT_rarefied
 
-pseq <- MU42022_filtered_NOT_rarefied_moreTAXA 
+pseq <- MU42022_normalized_relative
 
-pseq <- Marissa_MU42022_rare_nochloro
+pseq <- MU42022_filtered_Oct92024
 
-  
+pseq <- MU42022_filtered_NOT_rarefied
+
+pseq <- PB2023_spat_not_rarefied_normalized
+
+pseq <- PB2023_rarefied_3764
+
 #filter samples
 
 #MU42022
-pseq <- subset_samples(pseq, !Genetics %in% "4")
-  
-pseq <- subset_samples(pseq, Age %in% "1 dpf")
-pseq <- subset_samples(pseq, !Library_Name %in% c("T9r1", "T9r3"))
+# pseq <- subset_samples(pseq, !Genetics %in% "4")
+# pseq <- subset_samples(pseq, Age %in% "Spat")
+# pseq <- subset_samples(pseq, Age %in% "1 dpf")
+# pseq <- subset_samples(pseq, !Family %in% "9")
+# pseq <- subset_samples(pseq, !Organism %in% "Algae")
+# View(pseq@sam_data)
 
-pseq <- subset_samples(pseq, Age %in% "Day 15")
-pseq <- subset_samples(pseq, !Family %in% "9")
-pseq <- subset_samples(pseq, !Organism %in% "Algae")
-View(pseq@sam_data)
-
+#PB2023
+pseq <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
 
 # Agglomerating family names (mb2021)
-pseq@sam_data$Family[pseq@sam_data$Family %in% c(9, 13)]  <- 1
-pseq@sam_data$Family[pseq@sam_data$Family %in% c(10, 14)] <- 2
-pseq@sam_data$Family[pseq@sam_data$Family %in% c(11, 15)] <- 3
-pseq@sam_data$Family[pseq@sam_data$Family %in% c(12, 16)] <- 4
-pseq@sam_data$Family <- as.factor(pseq@sam_data$Family)
+# pseq@sam_data$Family[pseq@sam_data$Family %in% c(9, 13)]  <- 1
+# pseq@sam_data$Family[pseq@sam_data$Family %in% c(10, 14)] <- 2
+# pseq@sam_data$Family[pseq@sam_data$Family %in% c(11, 15)] <- 3
+# pseq@sam_data$Family[pseq@sam_data$Family %in% c(12, 16)] <- 4
+# pseq@sam_data$Family <- as.factor(pseq@sam_data$Family)
 
+
+#Sanity check
+#check if any OTUs are not present in any samples (want false)
+any(taxa_sums(pseq) == 0)
+
+#if true
+
+pseq_filtered <- prune_taxa(taxa_sums(pseq) > 0, pseq)
+any(taxa_sums(pseq_filtered) == 0)
+
+pseq <- pseq_filtered
 
 #Core
 
@@ -67,7 +80,6 @@ taxa_to_keep <- !(taxa_names(pseq) %in% taxa_to_remove)
 # Prune the taxa from the phyloseq object
 pseq <- prune_taxa(taxa_to_keep, pseq)
 
-library(DESeq2) #load deseq
 
 #Should relative abundance be used? Get error when I try
 
@@ -105,6 +117,11 @@ res_PB_vs_control <- results(DeSeq2, contrast = c("Treatment", "Probiotics", "Co
 res_PBH_vs_control <- results(DeSeq2, contrast = c("Treatment", "Probiotics + HT", "Control"))
 res_HT_vs_control <- results(DeSeq2, contrast = c("Treatment", "High temperature", "Control"))
 
+res_KPB_vs_control <- results(DeSeq2, contrast = c("Treatment", "Killed-Probiotics", "Control"))
+res_contPB_vs_control <- results(DeSeq2, contrast = c("Treatment", "Continuous Probiotics", "Control"))
+
+
+
 ** from this point it’s optional but this code helps filter the results **
 
 res_dat_low <- cbind(as(res_low_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_low_vs_control), ], "matrix")) #make the results a data frame
@@ -115,6 +132,9 @@ res_dat_high <- cbind(as(res_high_vs_control, "data.frame"), as(tax_table(pseq)[
 res_dat_PB <- cbind(as(res_PB_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_PB_vs_control), ], "matrix")) #make the results a data frame
 res_dat_PBH <- cbind(as(res_PBH_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_PBH_vs_control), ], "matrix")) #make the results a data frame
 res_dat_HT <- cbind(as(res_HT_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_HT_vs_control), ], "matrix")) #make the results a data frame
+
+res_dat_KPB <- cbind(as(res_KPB_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_KPB_vs_control), ], "matrix")) #make the results a data frame
+res_dat_contPB <- cbind(as(res_contPB_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_contPB_vs_control), ], "matrix")) #make the results a data frame
 
 
 alpha = 0.05 #Set alpha
@@ -127,11 +147,13 @@ sigtab_PB = res_dat_PB[which(res_dat_PB$padj < alpha), ] #filter out significant
 sigtab_PBH = res_dat_PBH[which(res_dat_PBH$padj < alpha), ]
 sigtab_HT = res_dat_HT[which(res_dat_HT$padj < alpha), ]
 
-#print only the significant results                              
-sigtab_high
-sigtab_low
-#sigtab_high_low
+sigtab_KPB = res_dat_KPB[which(res_dat_KPB$padj < alpha), ]
+sigtab_contPB = res_dat_contPB[which(res_dat_KPB$padj < alpha), ]
 
+#print only the significant results                              
+sigtab_PB
+sigtab_KPB 
+sigtab_contPB
 
 #plotting
 #source: https://joey711.github.io/phyloseq-extensions/DESeq2.html
@@ -154,7 +176,7 @@ sigtab_high$Genus = factor(as.character(sigtab_high$Genus), levels=names(x))
 mycolors <- c("#E69F00", "#CC79A7", "#009E73", "#56B4E9", "#F0E442", "#999999")
 
 
-ggplot(sigtab_PB, aes(x=Genus, y=log2FoldChange, color=Class)) + geom_point(size=7) + 
+ggplot(sigtab_PBH, aes(x=Genus, y=log2FoldChange, color=Class)) + geom_point(size=7) + 
   theme(axis.text.x = element_text(angle = 0, hjust = 0.5, face = "bold")) +
   labs(title = "High salinity vs. Control", x = "", y = "Log2-Fold-Change") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -163,7 +185,7 @@ ggplot(sigtab_PB, aes(x=Genus, y=log2FoldChange, color=Class)) + geom_point(size
 
   scale_color_manual(values = c("Alteromonadaceae" = "pink", "Halieaceae" = "#377EB8", "Rhodobacteraceae" = "#4DAF4A", "Saprospiraceae" = "yellow"))
 
-ggplot(sigtab_high, aes(x=Family, y=log2FoldChange, color=Family)) + geom_point(size=6) + 
+ggplot(sigtab_PBH, aes(x=Family, y=log2FoldChange, color=Family)) + geom_point(size=6) + 
   theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 1)) +
   labs(title = "High salinity vs. Control", x = "", y = "Log2-Fold-Change") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -172,35 +194,37 @@ ggplot(sigtab_high, aes(x=Family, y=log2FoldChange, color=Family)) + geom_point(
 
 
 ##Horizontal var graph -----
-
-
-#Signif ASVs between High sal and control treatment
-View(sigtab_high)
-
-#Signif ASVs between Low sal and control treatment
-View(sigtab_low)
-
 #Need to convert row names (ASV#s) into a column)
 library(tibble)
 library(RColorBrewer)
 
 # Convert row names to a column named "ASV"
-sigtab_low <- rownames_to_column(sigtab_low, var = "ASV")
-sigtab_high <- rownames_to_column(sigtab_high, var = "ASV")
+# sigtab_low <- rownames_to_column(sigtab_low, var = "ASV")
+# sigtab_high <- rownames_to_column(sigtab_high, var = "ASV")
+# 
+# sigtab_PB <- rownames_to_column(sigtab_PB, var = "ASV")
+# sigtab_PBH <- rownames_to_column(sigtab_PBH, var = "ASV")
+# sigtab_HT <- rownames_to_column(sigtab_HT, var = "ASV")
 
 sigtab_PB <- rownames_to_column(sigtab_PB, var = "ASV")
-sigtab_PBH <- rownames_to_column(sigtab_PBH, var = "ASV")
-sigtab_HT <- rownames_to_column(sigtab_HT, var = "ASV")
+sigtab_KPB <- rownames_to_column(sigtab_KPB, var = "ASV")
+sigtab_contPB <- rownames_to_column(sigtab_contPB, var = "ASV")
+
 
 #Want family identity info on bar graph too (but colouring is too much) so making a new column 
-sigtab_high$Combined_Info <- paste(sigtab_high$Genus, sigtab_high$ASV, sep = ";")
-sigtab_low$Combined_Info <- paste(sigtab_low$Genus, sigtab_low$ASV, sep = ";")
+# sigtab_high$Combined_Info <- paste(sigtab_high$Genus, sigtab_high$ASV, sep = ";")
+# sigtab_low$Combined_Info <- paste(sigtab_low$Genus, sigtab_low$ASV, sep = ";")
+# 
+# sigtab_PB$Combined_Info <- paste(sigtab_PB$Genus, sigtab_PB$ASV, sep = ";")
+# sigtab_PBH$Combined_Info <- paste(sigtab_PBH$Genus, sigtab_PBH$ASV, sep = ";")
+# sigtab_HT$Combined_Info <- paste(sigtab_HT$Genus, sigtab_HT$ASV, sep = ";")
 
 sigtab_PB$Combined_Info <- paste(sigtab_PB$Genus, sigtab_PB$ASV, sep = ";")
-sigtab_PBH$Combined_Info <- paste(sigtab_PBH$Genus, sigtab_PBH$ASV, sep = ";")
-sigtab_HT$Combined_Info <- paste(sigtab_HT$Genus, sigtab_HT$ASV, sep = ";")
+sigtab_KPB$Combined_Info <- paste(sigtab_KPB$Genus, sigtab_KPB$ASV, sep = ";")
+sigtab_contPB$Combined_Info <- paste(sigtab_contPB$Genus, sigtab_contPB$ASV, sep = ";")
 
-custom_palette <- brewer.pal(12, "Set3")
+
+custom_palette <- brewer.pal(8, "Set2")
 
 custom_palette_low <- c(  "#FFFFB3", "#6a3d9a", "#00ffcc","green", "#BEBADA", "brown", "#80B1D3","#FDB462","#CCEBC5","red","#FFED6F", "#B3DE69","#FB8072", "#80B1D3",   
                     "yellow", "#8DD3C7", "#FCCDE5", 
@@ -212,29 +236,34 @@ custom_palette <- c(  "#FFFFB3", "#00ffcc","#BEBADA", "brown", "#B3DE69","#FB807
 
 
 
-custom_palette <- c("#a6cee3", "#b2df8a","#ff7f00","#fb9a99",  "#fdbf6f","#e31a1c" ,"lightyellow","#6a3d9a", 
-              "#fdbf6f", "#cab2d6","brown", "#ffcc00", "#00ffcc", "grey", "skyblue3", "#66ff33" )
+custom_palette <- c("#a6cee3", "#b2df8a","#fb9a99","#ff7f00",  "#fdbf6f","#e31a1c" ,"lightyellow","#6a3d9a", 
+              "#cab2d6","brown", "#ffcc00", "#00ffcc", "grey", "skyblue3", "#66ff33" )
+
+custom_palette_KPB <- c("#a6cee3", "#b2df8a","#ff7f00",  "#fdbf6f","#e31a1c" ,"skyblue3", "#6a3d9a", 
+                        "brown", "#ffcc00","#fdbf6f", "#cab2d6","brown",  "#00ffcc", "grey", "skyblue3", "#66ff33" )
 
 
-custom_palette <- c("#33a02c", "#a6cee3","#ffcc00", "brown", "#cab2d6", "#ff7f00", "#b2df8a", "#e31a1c","#6a3d9a", 
-                     "#fb9a99","#ff33bb", "#00ffcc", "#66ff33", "#a6cee3", "#b2df8a","#66ff33","#ff7f00","#fb9a99",  "#fdbf6f", "#ff7f00", "#e31a1c","#6a3d9a", 
-                    "#fdbf6f", "#cab2d6","#ff33bb", "#ffcc00", "#00ffcc")
+custom_palette <- c("#33a02c", "#a6cee3", "#cab2d6","#ffcc00",  "#ff7f00","#00ffcc","#e31a1c", "#fb9a99", "#6a3d9a","#b2df8a", "#e31a1c", 
+                    "#ff33bb", "#00ffcc", "#66ff33", "#a6cee3", "#b2df8a","#66ff33","#ff7f00","#fb9a99",  "#fdbf6f", "#ff7f00", "#e31a1c","#6a3d9a", 
+                    "#fdbf6f", "#cab2d6","#ff33bb",  "#00ffcc")
 
 
 
-ggplot(sigtab_low, aes(x = reorder(Combined_Info, log2FoldChange), y = log2FoldChange, fill = Family)) +
+ggplot(sigtab_KPB, aes(x = reorder(Combined_Info, log2FoldChange), y = log2FoldChange, fill = Family)) +
   geom_bar(stat = "identity", color = "black") +
   coord_flip() +
-  labs(title = "", 
+  labs(title = "kPB-Control", 
        x = "Genus; ASV", 
        y = "Log2 Fold Change") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),   # Remove major gridlines
         panel.grid.minor = element_blank(),   # Remove minor gridlines
-        axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 10),
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        axis.title.x = element_text(size = 15),
+        axis.title.y = element_text(size = 15),
         plot.title = element_text(hjust = 0.5)) +
-  scale_fill_manual(values = custom_palette_low)
+  scale_fill_manual(values = custom_palette_KPB)
 
 #Filter out ASVs shared between HS and LS
 

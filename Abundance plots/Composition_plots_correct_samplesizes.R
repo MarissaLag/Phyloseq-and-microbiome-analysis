@@ -10,9 +10,24 @@ library(ggplot2)
 library(dplyr)
 library(RColorBrewer)
 
+theme.marissa <- function() {
+  theme_classic(base_size = 14) +
+    theme(
+      panel.border = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.text = element_text(size = 14),
+      axis.title = element_text(size = 16, face = "bold"),
+      legend.text = element_text(size = 16),
+      legend.title = element_text(size = 16, face = "bold"))
+}
+
+theme_set(theme.marissa())
+
 #MU42022 filtering
 pseq <- MU42022_filtered_Oct92024
 #pseq <- MU42022_filtered_NOT_rarefied
+pseq <- MU42022_filtered_algae
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
@@ -23,6 +38,11 @@ pseq <- Marissa_mb2021_filtered_20240203
 pseq <- mb2021_filtered_NOT_rarefied_normalized
 pseq <- subset_samples(pseq, Age %in% c("Day 01"))
 pseq <- subset_samples(pseq, !Family %in% c("9")) #remove T9 spat samples
+
+#PB2023 filtering
+pseq <- PB2023_spat_not_rarefied_normalized
+pseq <- subset_samples(pseq, !Treatment %in% c("James", "Continuous Probiotics"))
+pseq <- PB2023_rarefied_3764
 
 
 #1st create new column that contains Treat*Age information 
@@ -82,8 +102,7 @@ ggplot(pseq_psmelt, aes(fill=Phylum, y=Abundance, x=Treatment)) +
   geom_bar(position="stack", stat="identity") +
   #scale_fill_brewer(palette = "Paired") +
   labs(title = "All time-points", x = "", y = "Relative abundance") +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  theme(axis.text.x = element_blank())
+  theme(plot.title = element_text(hjust = 0.5))
 
 #look at sample numbers per group ----
 
@@ -115,7 +134,7 @@ View(Avg_abundance)
 
 #Make abundance out of 100%?
 Avg_abundance <- pseq_psmelt %>%
-  group_by(Age_Treatment, Genus) %>%
+  group_by(Age_Treatment, Phylum) %>%
   summarise(
     Avg_Abundance = mean(Abundance),
     SD_Abundance = sd(Abundance),
@@ -127,28 +146,61 @@ separate(Age_Treatment, into = c("Age", "Treatment"), sep = "_")
 
 
 
+Avg_abundance <- pseq_psmelt %>%
+  group_by(Age, Genus) %>%
+  summarise(
+    Avg_Abundance = mean(Abundance),
+    SD_Abundance = sd(Abundance),
+    .groups = 'drop'
+  ) %>%
+  group_by(Age) %>%
+  mutate(Avg_Abundance = 100 * Avg_Abundance / sum(Avg_Abundance))
+
+
+Avg_abundance <- pseq_psmelt %>%
+  group_by(Treatment, Family) %>%
+  summarise(
+    Avg_Abundance = mean(Abundance),
+    SD_Abundance = sd(Abundance),
+    .groups = 'drop'
+  ) %>%
+  group_by(Treatment) %>%
+  mutate(Avg_Abundance = 100 * Avg_Abundance / sum(Avg_Abundance))
+
 
 
 #plot ----
 
+install.packages("viridis")
+library(viridis)
+
+# Generate a palette with 20 distinct colors
+palette <- viridis(29)
+print(palette)
+
 paired_palette <- brewer.pal(12, "Paired")
 
 # Add another color to the Paired palette
-extended_palette <- c(paired_palette, "#ff7f00", "pink", "red", "yellow", "lightgreen")  # Add a custom color to the palette
+extended_palette <- c(paired_palette, "pink",  "yellow", "lightgreen", "green", "brown", "orange", "red", "blue", "lightblue")  # Add a custom color to the palette
 
 # Use ggplot with the extended Paired palette
-p3 <- ggplot(Avg_abundance, aes(fill = Genus, y = Avg_Abundance, x = Treatment)) + 
+ggplot(Avg_abundance, aes(fill = Family, y = Avg_Abundance, x = Treatment)) + 
   geom_bar(position = "stack", stat = "identity", colour = "black") +
   scale_fill_manual(values = extended_palette) +  # Use scale_fill_manual to specify the extended palette
   labs(title = "", x = "", y = "Relative abundance (%)") +
   theme(plot.title = element_text(hjust = 0.5)) +
-  theme(axis.text.x = element_text(size = 11, angle = 45, hjust = 1, face = "bold")) +
-  facet_wrap("Age") +
-  theme(legend.title = element_text(size = 13),
-        legend.text = element_text(size = 13),
-        axis.title.x = element_text(size = 5),
-        axis.title.y = element_text(size = 14))
-p3  
+  theme_bw() +
+  theme(
+    legend.title = element_text(size = 16, face = "bold"),
+    legend.text = element_text(size = 14),
+    axis.text.x = element_text(size = 13, angle = 45, hjust = 1, face = "bold"),
+    axis.text.y = element_text(size=13, face = "bold"),
+    axis.title.y = element_text(size = 16, face = "bold"),
+    strip.background = element_rect(fill = "white"),  # Set facet heading background to white
+    strip.text = element_text( size = 12)           # Set facet heading text to bold
+  )
+
+
 
 
 #Vibrionaceae abundances ----

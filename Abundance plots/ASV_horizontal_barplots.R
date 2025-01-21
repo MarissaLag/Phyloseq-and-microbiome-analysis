@@ -7,8 +7,23 @@ install.packages("dplyr")
 install.packages("ggplot2")
 library(dplyr)
 library(ggplot2)
+library(phyloseq)
+library(RColorBrewer)
 
+#set theme
+theme.marissa <- function() {
+  theme_classic(base_size = 14) +
+    theme(
+      panel.border = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.text = element_text(size = 14),
+      axis.title = element_text(size = 16, face = "bold"),
+      legend.text = element_text(size = 16),
+      legend.title = element_text(size = 16, face = "bold"))
+}
 
+theme_set(theme.marissa())
 
 #First lets graph abundance of specific ASVs
 #names_diff_treat_unadj_spat
@@ -20,21 +35,29 @@ library(ggplot2)
 #names_diff_treat_unadj_1dpf
 #"ASV21", "ASV34", "ASV40", "ASV42", "ASV44", "ASV48", "ASV51", "ASV60", "ASV76", "ASV79", "ASV90", "ASV91", "ASV92", "ASV100", "ASV109", "ASV114", "ASV118", "ASV119", "ASV124", "ASV126", "ASV130", "ASV131", "ASV150", "ASV163", "ASV176", "ASV181", "ASV187", "ASV189", "ASV193", "ASV195", "ASV216", "ASV218", "ASV219", "ASV237", "ASV240", "ASV244", "ASV257", "ASV262", "ASV309", "ASV313", "ASV315", "ASV319", "ASV326", "ASV333", "ASV337", "ASV343", "ASV349", "ASV351", "ASV356", "ASV375", "ASV379", "ASV385", "ASV387", "ASV394", "ASV397", "ASV401", "ASV416", "ASV417", "ASV428", "ASV431", "ASV447", "ASV450", "ASV468", "ASV484", "ASV487", "ASV499", "ASV501", "ASV510", "ASV523", "ASV524", "ASV538", "ASV556", "ASV559", "ASV563", "ASV575", "ASV579", "ASV595", "ASV608", "ASV620", "ASV641", "ASV649", "ASV652", "ASV703", "ASV738", "ASV756", "ASV758", "ASV789", "ASV798", "ASV818", "ASV819", "ASV820", "ASV837", "ASV838", "ASV845", "ASV846", "ASV872", "ASV874", "ASV882", "ASV889", "ASV916", "ASV918", "ASV919", "ASV929", "ASV952", "ASV955", "ASV960", "ASV982", "ASV983", "ASV993", "ASV1005", "ASV1007", "ASV1030", "ASV1035", "ASV1036", "ASV1061", "ASV1070", "ASV1074", "ASV1078", "ASV1082", "ASV1086", "ASV1110", "ASV1111", "ASV1138", "ASV1146", "ASV1153", "ASV1170"
 
-pseq <- mb2021_filtered_NOT_rarefied
-pseq <- subset_samples(pseq, Age %in% "1 dpf")
-#pseq <- subset_samples(pseq, !Family %in% "9")
-pseq <- subset_samples(pseq, !Treatment %in% c("Low salinity"))
+# pseq <- mb2021_filtered_NOT_rarefied
+# pseq <- subset_samples(pseq, Age %in% "1 dpf")
+# #pseq <- subset_samples(pseq, !Family %in% "9")
+# pseq <- subset_samples(pseq, !Treatment %in% c("Low salinity"))
+# 
+# pseq@sam_data$Family[pseq@sam_data$Family %in% c(9, 13)] <- 1
+# pseq@sam_data$Family[pseq@sam_data$Family %in% c(10, 14)] <- 2
+# pseq@sam_data$Family[pseq@sam_data$Family %in% c(11, 15)] <- 3
+# pseq@sam_data$Family[pseq@sam_data$Family %in% c(12, 16)] <- 4
 
-pseq@sam_data$Family[pseq@sam_data$Family %in% c(9, 13)] <- 1
-pseq@sam_data$Family[pseq@sam_data$Family %in% c(10, 14)] <- 2
-pseq@sam_data$Family[pseq@sam_data$Family %in% c(11, 15)] <- 3
-pseq@sam_data$Family[pseq@sam_data$Family %in% c(12, 16)] <- 4
-
-
+#MU42022 filtering
 pseq <- MU42022_filtered_Oct92024
+#pseq <- MU42022_filtered_NOT_rarefied
+pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
+pseq <- microbiome::transform(pseq, "compositional")
 
-#pseq <- microbiome::transform(pseq, "compositional")
 
+#PB2023
+pseq <- PB2023_spat_not_rarefied_normalized
+pseq <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
+pseq <- microbiome::transform(pseq, "compositional")
 ps <- psmelt(pseq)
 
 #Spat ASVs (unadj)
@@ -48,7 +71,7 @@ ps <- psmelt(pseq)
 #                     "ASV348", "ASV383", "ASV391", "ASV412", "ASV446", "ASV507", "ASV553", "ASV571", "ASV580", "ASV595", "ASV656", "ASV751", 
 #                     "ASV841",  "ASV845",  "ASV900",  "ASV927",  "ASV964",  "ASV1088", "ASV1162", "ASV1164"))
 # 
-# #Spat unadj LS removed - testing only signif different ASVs between COntrol and HS
+# #Spat unadj LS removed - testing only signif different ASVs between Control and HS
 # filtered_ps <- ps %>% 
 #   filter(OTU %in% c("ASV49", "ASV240", "ASV325", "ASV348", "ASV412", "ASV580", "ASV656", "ASV751", "ASV841", "ASV927", "ASV1088", "ASV1164"))
 # 
@@ -78,11 +101,24 @@ ps <- psmelt(pseq)
 #                     
 # "ASV21", "ASV48", "ASV51", "ASV76", "ASV79", "ASV90", "ASV100", "ASV114", "ASV118", "ASV119", "ASV124", "ASV126", "ASV131", "ASV163", "ASV176", "ASV181", "ASV189", "ASV193", "ASV195", "ASV216", "ASV219", "ASV237", "ASV244", "ASV309", "ASV319", "ASV333", "ASV337", "ASV343", "ASV349", "ASV351", "ASV356", "ASV375", "ASV385", "ASV387", "ASV394", "ASV397", "ASV401", "ASV416", "ASV417", "ASV428", "ASV431", "ASV468", "ASV484", "ASV487", "ASV499", "ASV510", "ASV524", "ASV538", "ASV559", "ASV575", "ASV595", "ASV649", "ASV652", "ASV703", "ASV738", "ASV756", "ASV798", "ASV818", "ASV820", "ASV837", "ASV838", "ASV845", "ASV846", "ASV872", "ASV882", "ASV889", "ASV916", "ASV929", "ASV952", "ASV960", "ASV982", "ASV983", "ASV993", "ASV1005", "ASV1007", "ASV1030", "ASV1035", "ASV1036", "ASV1061", "ASV1074", "ASV1078", "ASV1082", "ASV1086", "ASV1110", "ASV1111", "ASV1138", "ASV1146"
 
+
 #MU42022 spat inval results
+filtered_ps <- ps %>% 
+   filter(OTU %in% c("ASV316")) 
+
+#PB2023 results
+filtered_ps <- ps %>% 
+  filter(OTU %in% c("ASV231", "ASV461", "ASV1211", "ASV478", "ASV227")) 
 
 filtered_ps <- ps %>% 
-   filter(OTU %in% c("ASV88", "ASV178")) 
-  
+  filter(OTU %in% c("ASV190", "ASV227")) 
+
+
+filtered_ps <- ps %>% 
+  filter(OTU %in% c("ASV1191", "ASV157", "ASV1032", "ASV1411", "ASV1264", "ASV1287", 
+                    "ASV942", "ASV1131", "ASV297", "ASV236")) 
+
+
 
 
 # Calculate the average abundance for each treatment group
@@ -92,6 +128,7 @@ average_abundance <- filtered_ps %>%
 
 
 # Plot
+
 paired_palette <- brewer.pal(12, "Paired")
 paired_palette <- c(paired_palette, "#ff7f00", "pink", "red", "yellow", "lightgreen")
 paired_palette <- c(brewer.pal(8, "Dark2"),  # 8 more colors from the Dark2 palette
@@ -99,7 +136,7 @@ paired_palette <- c(brewer.pal(8, "Dark2"),  # 8 more colors from the Dark2 pale
                        brewer.pal(8, "Accent"), # 8 more colors from the Accent palette
                        brewer.pal(6, "Set3"))
 
-ggplot(average_abundance, aes(fill = Family, y = Average_Abundance, x = Treatment)) + 
+ggplot(average_abundance, aes(fill = Genus, y = Average_Abundance, x = Treatment)) + 
   geom_bar(position = "stack", stat = "identity", color = "black") +
   scale_fill_manual(values = paired_palette) +
   labs(title = "", 
@@ -114,20 +151,38 @@ ggplot(average_abundance, aes(fill = Family, y = Average_Abundance, x = Treatmen
         panel.border = element_blank()) +  # Adjust legend title font size
   facet_wrap("OTU")
 
-ggplot(average_abundance, aes(fill = OTU, y = Average_Abundance, x = Treatment)) + 
+# Custom labeller function
+# custom_labeller <- function(variable, value) {
+#   if (variable == "OTU") {
+#     return(c("ASV1211" = "ASV1211 - Lewinella", "ASV227" = "ASV227 - Litoreibacter", 
+#              "ASV231" = "ASV231 - Stappia", "ASV461" = "ASV461 - Unknown", 
+#              "ASV478" = "ASV478 - Unknown")[value])
+#   }
+#   return(value)
+# }
+
+custom_labeller <- function(variable, value) {
+  if (variable == "OTU") {
+    return(c("ASV190" = "ASV190 - Phaeobacter", "ASV227" = "ASV227 = Litoreibacter")[value])
+  }
+  return(value)
+}
+
+# Plot
+ggplot(average_abundance, aes(fill = Family, y = Average_Abundance, x = Treatment)) + 
   geom_bar(position = "stack", stat = "identity", color = "black") +
+  scale_fill_manual(values = paired_palette) +
   labs(title = "", 
        x = "", 
        y = "Average Relative Abundance", 
        fill = "") +
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_text(size = 12, angle = 45, hjust = 1),
-        axis.title.y = element_text(size = 14),  # Adjust y-axis title font size
-        legend.text = element_text(size = 12),   # Adjust legend text font size
+        axis.title.y = element_text(size = 14),  
+        legend.text = element_text(size = 12),   
         legend.title = element_text(size = 14),
-        panel.border = element_blank()) +  # Adjust legend title font size
-  facet_wrap("OTU")
-
+        panel.border = element_blank()) +
+  facet_wrap(~OTU, labeller = custom_labeller)
 
 #horizontal bar plot
 
@@ -150,7 +205,7 @@ pseq <- subset_samples(pseq, Treatment %in% c("Control", "Probiotics", "Probioti
 #                    "ASV348", "ASV383", "ASV391", "ASV412", "ASV446", "ASV507", "ASV553", "ASV571", "ASV580", "ASV595", "ASV656", "ASV751", 
 #                    "ASV841",  "ASV845",  "ASV900",  "ASV927",  "ASV964",  "ASV1088", "ASV1162", "ASV1164")
 
-selected_asvs <- c("ASV88", "ASV178")
+selected_asvs <- c("ASV316")
 
 selected_asvs <- c("ASV11", "ASV198", "ASV201", "ASV471", "ASV613")
 

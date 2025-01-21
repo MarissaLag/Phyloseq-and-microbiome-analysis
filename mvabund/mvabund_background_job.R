@@ -78,10 +78,11 @@ MU42022_filtered_NOT_rarefied <- readRDS(data.FN)
 pseq <- MU42022_filtered_NOT_rarefied
 pseq <- MU42022_filtered_Oct92024
 pseq <- MU42022_spat_unrarefied
+pseq <- MU42022_normalized_relative
 
 # Subset samples ----
 #mb2021 project
-pseq <- subset_samples(pseq, Age %in% c("1 dpf"))   # retain only 1 DPF samples
+pseq <- subset_samples(pseq, Age %in% c("1 dpf"))  
 #pseq <- subset_samples(pseq, Age %in% c("Spat"))
 #pseq <- subset_samples(pseq, !Family %in% c("9"))
 #pseq <- subset_samples(pseq, !Treatment %in% c("Low salinity"))
@@ -91,6 +92,17 @@ pseq <- subset_samples(pseq, !Genetics %in% c("4"))
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
 pseq <- subset_samples(pseq, Age %in% c("Spat"))
+
+#Sanity check
+#check if any OTUs are not present in any samples (want false)
+any(taxa_sums(pseq) == 0)
+
+#if true
+pseq_filtered <- prune_taxa(taxa_sums(pseq) > 0, pseq)
+any(taxa_sums(pseq_filtered) == 0)
+
+pseq <- pseq_filtered
+
 
 # Agglomerating family names
 # pseq@sam_data$Family[pseq@sam_data$Family %in% c(9, 13)]  <- 1
@@ -148,7 +160,7 @@ View(fact)
 
 #Make treatments into factors rather than characters
 fact$Sample.ID <- as.factor(fact$Sample.ID)
-fact$Library_Name <- as.factor(fact$Library_Name)
+# fact$Library_Name <- as.factor(fact$Library_Name)
 fact$Treatment <- as.factor(fact$Treatment)
 fact$Genetics <- as.factor(fact$Genetics)
 fact$Age <- as.factor(fact$Age)
@@ -232,7 +244,7 @@ Sys.time()
 
 # Standard method, setting composition argument
 #Note: Comp = TRUE may not allow for p adjustment (see pg 12: https://cran.r-project.org/web/packages/mvabund/mvabund.pdf)
-dat_nb_compositionT_Spat_LS = manyglm(dat_mvabund ~ Treatment * Genetics, family="negative.binomial", data = fact, composition=TRUE, show.warning = TRUE)
+dat_nb_compositionT_Spat_LS = manyglm(dat_mvabund ~ Treatment, family="negative.binomial", data = fact, composition=TRUE, show.warning = TRUE)
 dat_nb_Spat_LS = manyglm(dat_mvabund ~ Treatment * Genetics, family="negative.binomial", data = fact, composition=FALSE)
 plot(dat_nb_compositionT_Spat_LS) #check residuals to see model fit
 

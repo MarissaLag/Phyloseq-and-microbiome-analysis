@@ -10,25 +10,29 @@ library(ape)
 
 MU42022_filtered_Oct92024 <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_Oct92024.rds")
 
-pseq2 <- MU42022_filtered_Oct92024
-pseq2 <- psmelt(pseq2) 
-head(pseq2)
+pseq <- MU42022_filtered_Oct92024
+pseq <- microbiome::transform(pseq, "compositional")
+pseq <- psmelt(pseq) 
 
 pseq <- PB2023_spat_not_rarefied_normalized
+pseq_filt <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
+any(taxa_sums(pseq_filt) == 0)
+# pseq_filtered <- prune_taxa(taxa_sums(pseq_filt) > 0, pseq_filt)
+# any(taxa_sums(pseq_filtered) == 0)
+pseq_filt <- pseq_filtered
+pseq <- microbiome::transform(pseq_filt, "compositional")
 pseq <- psmelt(pseq)
 
 
 #Merge ASV seq with metadata
-#'MU42022_sequence_ASVname_mapping'
-colnames(sequence_ASVname_mapping_SMK) <- c("ASV", "Sequence")
-
-head(pseq@tax_table)
-head(sequence_ASVname_mapping_SMK)
+colnames(MU42022_sequence_ASVname_mapping) <- c("ASV", "Sequence")
+# colnames(sequence_ASVname_mapping_SMK) <- c("ASV", "Sequence")
+# head(sequence_ASVname_mapping_SMK)
 
 # Merge the ASV table with the sequence data based on ASV number
-merged_data <- merge(pseq, sequence_ASVname_mapping_SMK, by.x = "OTU", by.y = "ASV", all.x = TRUE)
-View(merged_data)
-str(merged_data)
+merged_data <- merge(pseq, MU42022_sequence_ASVname_mapping, by.x = "OTU", by.y = "ASV", all.x = TRUE)
+# merged_data <- merge(pseq, sequence_ASVname_mapping_SMK, by.x = "OTU", by.y = "ASV", all.x = TRUE)
+
 
 #Trees ----
 #Subset data for Rhodobacteraceae family
@@ -210,9 +214,10 @@ print(msa_plot + ggtitle("Phylogenetic Tree with MSA Overlay"))
 #Buchan A, Gonzalez JM, Moran MA. 2005. Overview of the marine Roseobacter lineage. Appl. Environ. Microbiol. 71:5665–5677. 10.1128/AEM.71.10.5665-5677.2005. 
 
 # Step 1: Extract ASV558 (MU42022) or ASV230 (PB2023) sequence from the data frame
-# asv558_sequence <- rhodobacteraceae_data$Sequence[rhodobacteraceae_data$OTU == "ASV558"][1]
 
-asv230_sequence <- rhodobacteraceae_data$Sequence[rhodobacteraceae_data$OTU == "ASV230"][1]
+asv558_sequence <- rhodobacteraceae_data$Sequence[rhodobacteraceae_data$OTU == "ASV558"][1]
+
+#asv230_sequence <- rhodobacteraceae_data$Sequence[rhodobacteraceae_data$OTU == "ASV230"][1]
 
 # Install and load Biostrings package if not already installed
 if (!requireNamespace("Biostrings", quietly = TRUE)) {
@@ -227,11 +232,12 @@ names(sequences) <- unique(rhodobacteraceae_data$OTU)  # Assign ASV names to the
 
 dna_sequences <- DNAStringSet(sequences)
 
-ref_seq <- dna_sequences[["ASV230"]]
+#ref_seq <- dna_sequences[["ASV230"]]
+
+ref_seq <- dna_sequences[["ASV558"]]
 
 # Initialize a vector to store results
 roseobacter_matches <- list()
-
 for (i in names(dna_sequences)) {
   # Skip if the current sequence is ASV558 itself
   if (i == "ASV230") next
@@ -255,7 +261,8 @@ print(roseobacter_matches)
 names(roseobacter_matches)
 
 # Add ASV558 to the results if you want to include it explicitly
-roseobacter_matches[["ASV230"]] <- ref_seq
+roseobacter_matches[["ASV558"]] <- ref_seq
+#roseobacter_matches[["ASV230"]] <- ref_seq
 
 # Check the results
 print(roseobacter_matches)
@@ -291,7 +298,7 @@ dist_matrix <- dist.ml(aligned_phyDat)
 
 # Build the phylogenetic tree
 tree <- NJ(dist_matrix)
-plot(tree, main = "Roseobacter - Phylogenetic Tree", cex = 0.5)  # Adjust cex as needed
+plot(tree, main = "Roseobacter - Phylogenetic Tree", cex = 1)  # Adjust cex as needed
 
 # highlighted_ASVs_red <- c("ASV11", "ASV88", "ASV198", "ASV178", "ASV201", "ASV471", "ASV613")
 # highlighted_ASVs_blue <- c("ASV7", "ASV18")
@@ -302,9 +309,9 @@ tip_labels <- tree$tip.label
 # Add red and blue bold labels for the specified ASVs
 for (i in seq_along(tip_labels)) {
   if (tip_labels[i] %in% highlighted_ASVs_red) {
-    tiplabels(text = tip_labels[i], tip = i, col = "red", font = 2, cex = 1)
+    tiplabels(text = tip_labels[i], tip = i, col = "red", font = 2, cex = 1.5)
   } else if (tip_labels[i] %in% highlighted_ASVs_blue) {
-    tiplabels(text = tip_labels[i], tip = i, col = "blue", font = 2, cex = 1)
+    tiplabels(text = tip_labels[i], tip = i, col = "blue", font = 2, cex = 1.5)
   }
 }
 
@@ -318,7 +325,7 @@ highlighted_ASVs_red <- c("ASV11", "ASV88", "ASV198", "ASV178", "ASV201", "ASV47
 highlighted_ASVs_blue <- c("ASV7", "ASV18")
 
 # Plot the tree in a circular format
-plot(tree, main = "Roseobacter - Circular Phylogenetic Tree", cex = 0.5)  # Use type = "fan"
+plot(tree, main = "Roseobacter - Circular Phylogenetic Tree", cex = 1, type = "fan")  # Use type = "fan"
 
 # Get the tip labels
 tip_labels <- tree$tip.label
@@ -326,9 +333,9 @@ tip_labels <- tree$tip.label
 # Add labels with colors for highlighted ASVs
 for (i in seq_along(tip_labels)) {
   if (tip_labels[i] %in% highlighted_ASVs_red) {
-    tiplabels(text = tip_labels[i], tip = i, col = "red", font = 2, cex = 0.8)
+    tiplabels(text = tip_labels[i], tip = i, col = "red", font = 2, cex = 1.3)
   } else if (tip_labels[i] %in% highlighted_ASVs_blue) {
-    tiplabels(text = tip_labels[i], tip = i, col = "blue", font = 2, cex = 0.8)
+    tiplabels(text = tip_labels[i], tip = i, col = "blue", font = 2, cex = 1.3)
   }
 }
 
@@ -366,96 +373,97 @@ library(ggplot2)
 library(tidyr)
 library(pheatmap)
 
+#create roseo dataframe
+pseq <- PB2023_spat_not_rarefied_normalized
+pseq_filt <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
+any(taxa_sums(pseq_filt) == 0)
+# pseq_filtered <- prune_taxa(taxa_sums(pseq_filt) > 0, pseq_filt)
+# any(taxa_sums(pseq_filtered) == 0)
+# pseq_filt <- pseq_filtered
+pseq <- microbiome::transform(pseq_filt, "compositional")
+pseq <- psmelt(pseq)
+merged_data <- merge(pseq, sequence_ASVname_mapping_SMK, by.x = "OTU", by.y = "ASV", all.x = TRUE)
+roseobacter_df <- merged_data[merged_data$OTU %in% names(roseobacter_matches), ]
+
+
+
 # Filter and aggregate data for Roseobacter ASVs at the spat stage
 roseobacter_spat_summary <- roseobacter_df %>%
-  filter(OTU %in% names(roseobacter_matches), !Treatment %in% c("James", "Continuous Probiotics"))  %>%
-  #filter(OTU %in% names(roseobacter_matches), Age == "Spat", !Genetics == "4") %>%
-  select(OTU, Treatment, Abundance) %>%
-  group_by(OTU, Treatment) %>%
-  summarise(Total_Abundance = sum(Abundance), .groups = 'drop') %>%
-  spread(key = Treatment, value = Total_Abundance, fill = 0)
+  group_by(OTU, Treatment, Abundance) %>%
+  summarise(Total_Abundance = sum(Abundance), .groups = 'drop')
 
-#Remove grouping and calculate total abundance across treatments
-roseobacter_spat_summary <- roseobacter_spat_summary %>%
-  ungroup() %>%  # Remove grouping to ensure numeric-only columns for rowSums
-  mutate(Total = rowSums(select(., -OTU))) %>%  # Calculate total abundance across treatments
-  filter(Total > 0) %>%  # Filter out ASVs with zero abundance across treatments
-  select(-Total)  # Remove the Total column after filtering
+
+# Assuming roseobacter_spat_summary is your current data frame
+heatmap_data <- roseobacter_spat_summary %>%
+  # Summing duplicate values for OTU and Treatment pairs
+  group_by(OTU, Treatment) %>%
+  summarise(Abundance = sum(Abundance), .groups = "drop") %>%
+  # Reshaping the data to have OTU as rows and Treatment as columns
+  pivot_wider(names_from = Treatment, values_from = Abundance, values_fill = 0)
 
 # Convert to matrix for heatmap
-roseobacter_matrix <- as.matrix(roseobacter_spat_summary[,-1])
-rownames(roseobacter_matrix) <- roseobacter_spat_summary$OTU
+roseobacter_matrix <- as.matrix(heatmap_data[, -1])
+rownames(roseobacter_matrix) <- heatmap_data$OTU 
+
 
 library(RColorBrewer)
 pheatmap(
   roseobacter_matrix,
+  color = colorRampPalette(c("white", "red", "darkred"))(50),
   border_color = "black",
-  color = brewer.pal(9, "Reds"),
   main = "",
   cluster_rows = TRUE, 
   cluster_cols = FALSE,
-  show_rownames = FALSE,
+  show_rownames = TRUE,
   angle_col = 0,
-  fontsize_col = 12,
+  fontsize_col = 18,
+  fontsize_row = 13,
   clustering_distance_rows = "manhattan"
 )
 
-#relative abundance heatmap
-# Summarize Roseobacter ASV abundance by Treatment at the Spat stage
-roseobacter_spat_summary <- roseobacter_df %>%
-  filter(OTU %in% names(roseobacter_matches), Age == "Spat", !Genetics == "4") %>%
-  select(OTU, Treatment, Abundance) %>%
-  group_by(OTU, Treatment) %>%
-  summarise(Total_Abundance = sum(Abundance), .groups = 'drop') %>%
-  spread(key = Treatment, value = Total_Abundance, fill = 0)  # Fill missing values with 0
+# Perform hierarchical clustering
+row_hclust <- hclust(dist(roseobacter_matrix), method = "complete")
 
-# Filter out ASVs with zero total abundance across all treatments
-roseobacter_spat_summary <- roseobacter_spat_summary %>%
-  rowwise() %>%
-  filter(sum(c_across(-OTU)) > 0) %>%  # Keep only rows with non-zero total abundance
-  ungroup()
+# Cut the tree into clusters (e.g., 5 clusters)
+k <- 3  # Number of clusters
+row_clusters <- cutree(row_hclust, k = k)
 
-# Calculate relative abundance
-roseobacter_spat_summary <- roseobacter_spat_summary %>%
-  rowwise() %>%
-  mutate(across(-OTU, ~ . / sum(c_across(-OTU)))) %>%  # Calculate relative abundance
-  ungroup()
+# Create a data frame for row annotations
+row_annotation <- data.frame(Cluster = factor(row_clusters))
+rownames(row_annotation) <- rownames(roseobacter_matrix)
 
-# Convert to matrix for heatmap
-roseobacter_matrix <- as.matrix(roseobacter_spat_summary[,-1])
-rownames(roseobacter_matrix) <- roseobacter_spat_summary$OTU
+# Assign colors for the clusters
+annotation_colors <- list(Cluster = c(
+  "1" = "yellow",
+  "2" = "orange",
+  "3" = "forestgreen",
+))
 
-# Plot the heatmap with relative abundance
+
+# Generate the heatmap with cluster labels
 pheatmap(
-  roseobacter_matrix,
-  border_color = "black",
-  color = brewer.pal(9, "Reds"),
+  heatmap_matrix_scaled,
+  annotation_row = row_annotation,
+  annotation_colors = annotation_colors,
+  cluster_rows = TRUE,  # Ensure clustering
+  cluster_cols = FALSE,  # No clustering on columns
+  show_rownames = FALSE,  # Optionally hide row names for clarity
   main = "",
-  cluster_rows = TRUE, 
-  cluster_cols = FALSE,
-  show_rownames = FALSE,
   angle_col = 0,
-  fontsize_col = 12,
-  clustering_distance_rows = "manhattan"
+  fontsize_col = 13
 )
-
 
 #Boxplots ----
-# roseobacter_spat<- rhodobacteraceae_data %>%
-#   filter(OTU %in% names(roseobacter_matches), Age == "Spat", !Genetics == "4")
-
-roseobacter_spat<- rhodobacteraceae_data %>%
-   filter(OTU %in% names(roseobacter_matches), !Treatment %in% c("James", "Continuous Probiotics"))
-  
 
 # Calculate average and standard deviation of Abundance for each OTU across treatment groups
-roseobacter_stats <- roseobacter_spat %>%
+roseobacter_stats <- roseobacter_df %>%
   group_by(OTU, Treatment) %>%
   summarise(
     Average_Abundance = mean(Abundance, na.rm = TRUE),
     Std_Abundance = sd(Abundance, na.rm = TRUE),
     .groups = 'drop'  # Drop grouping after summarising
   )
+
 
 library(RColorBrewer)
 
@@ -466,41 +474,162 @@ ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, fill = OTU))
   geom_bar(stat = "identity", position = "stack") +  # Change position to "stack"
   labs(title = "",
        x = "",  
-       y = "Total Average Abundance") +
+       y = "Average Relative Abundance") +
   scale_fill_viridis_d(option = "F", direction = 1) +  # Use Viridis palette; adjust option for different colors
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size = 12),
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size = 14, face = "bold"),
+        axis.text.y = element_text(size = 14, face = "bold"),
+        axis.title.y = element_text(size=16, face = "bold"),
         legend.position = "none",
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
-
-ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, fill = OTU)) +
-  geom_bar(stat = "identity", position = "dodge", colour = "black") +  # Use position "dodge" for separate bars
-  geom_errorbar(aes(ymin = Average_Abundance - Std_Abundance, 
-                    ymax = Average_Abundance + Std_Abundance), 
-                width = 0.2, position = position_dodge(0.9)) +  # Add error bars
-  labs(title = "Average Abundance of OTUs Across Treatments",
-       x = "",  
-       y = "Average Abundance") +
-  scale_fill_viridis_d(option = "F", direction = 1) +  # Use Viridis palette
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size = 12),
-        legend.position = "none",  # Remove the legend
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank())
 
 #scatter plot
 ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, color = OTU)) +
   geom_jitter(width = 0.2, height = 0, size = 7, alpha = 0.7) + 
-  geom_text(aes(label = OTU), vjust = -0.5, size = 3) + 
+  geom_text(aes(label = OTU), vjust = -0.5, size = 4) + 
   labs(title = "",
        x = "",  
-       y = "Average Abundance") +
+       y = "Average Relative Abundance") +
   scale_color_viridis_d(option = "F", direction = 1) +  # Use Viridis palette for colors
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size = 12),
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size = 12, face = "bold"),
+        axis.text.y = element_text(size = 14, face = "bold"),
+        axis.title.y = element_text(size=16, face = "bold"),
         panel.grid.major = element_blank(),
+        legend.position = "none",
         panel.grid.minor = element_blank())
+
+
+
+#Testing roseobacter ----
+
+pseq <- MU42022_filtered_Oct92024
+pseq <- subset_samples(pseq, !Treatment %in% c("High temperature"))
+pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+pseq3 <- microbiome::transform(pseq, "compositional")
+
+pseq3 <- psmelt(pseq3) 
+
+roseobacter_df <- pseq3[pseq3$OTU %in% names(roseobacter_matches), ]
+
+head(roseobacter_df)
+
+# One-way ANOVA
+anova_result <- aov(Abundance ~ Treatment, data = roseobacter_df)
+summary(anova_result)
+plot(anova_result)
+
+#Many zeros
+library(MASS)  # For negative binomial GLM
+library(lme4)  # For mixed models
+
+# GLM with negative binomial distribution
+nb_glm <- glm.nb(Abundance ~ Treatment, data = roseobacter_df)
+summary(nb_glm)
+
+# GLMM with negative binomial distribution
+nb_glmm <- glmer.nb(Abundance ~ Treatment + (1|Genetics), data = roseobacter_df)
+summary(nb_glmm)
+
+# Simulate residuals
+qqnorm(residuals(nb_glmm))
+plot(fitted(nb_glmm)~residuals(nb_glmm))
+residuals_dharma <- simulateResiduals(fittedModel = nb_glmm)
+plot(residuals_dharma)
+
+#Try tweedie dist'd
+library(mgcv)
+tweedie_model <- mgcv::gam(Abundance ~ Treatment, 
+                     family = tw(), 
+                     data = roseobacter_df)
+summary(tweedie_model)
+
+qqnorm(residuals(tweedie_model))
+residuals_dharma <- simulateResiduals(fittedModel = tweedie_model)
+plot(residuals_dharma)
+
+#manyglm
+
+pseq2 <- MU42022_filtered_Oct92024
+
+pseq2 <- subset_samples(pseq2, Age %in% c("Spat"))
+pseq2 <- subset_samples(pseq2, !Genetics %in% c("4"))
+
+fact1 = sample_data(pseq2)
+fact = as.matrix.data.frame(fact1)
+fact = as.data.frame(fact)
+
+roseobacter_taxa <- names(roseobacter_matches)
+pseq2_subset <- prune_taxa(roseobacter_taxa, pseq2)
+ASV_data_cleaned <- as.data.frame(pseq2_subset@otu_table)
+#rownames(ASV_data_cleaned) <- NULL
+
+
+#many zeros - try method
+# install.packages("zCompositions")
+# library(zCompositions)
+#roseobacter_otu_matrix[is.na(roseobacter_otu_matrix)] <- 0
+#roseobacter_otu_czm <- cmultRepl(roseobacter_otu_matrix[, -1], method = "CZM", label = 0)
+# too many zeros - does not work, could try on full dataset
+#roseobacter_otu_bayesian <- cmultRepl(roseobacter_otu_matrix[, -1], method = "GBM", label = 0)
+# roseobacter_otu_matrix[, -1] <- apply(roseobacter_otu_matrix[, -1], 2, function(x) as.numeric(as.character(x)))
+# roseobacter_otu_bayesian <- cmultRepl(roseobacter_otu_matrix[, -1], method = "GBM", label = 0)
+
+dat_mvabund <- mvabund(ASV_data_cleaned)
+
+library(mvabund)
+
+Mod = manyglm(dat_mvabund ~ Treatment * Genetics, family="negative.binomial", data = fact, composition=TRUE, show.warning = TRUE)
+#Warning: singular matrix in betaEst: An eps*I is added to the singular matrix.
+plot(Mod)
+summary(Mod)
+
+#Using CZM method on pseq object
+library(compositions)
+
+# Extract OTU table and convert to a matrix
+otu_matrix <- otu_table(pseq2)
+
+# Apply the CZM method
+otu_czm <- cmultRepl(as.matrix(otu_matrix), method = "CZM", label = 0)
+
+#centered log-normalization
+otu_czm_clr <- clr(otu_czm)
+
+# Convert clr data to a matrix
+otu_czm_clr_matrix <- as.matrix(otu_czm_clr)
+
+# Ensure OTU names are consistent
+rownames(otu_czm_clr_matrix) <- rownames(otu_table(pseq2))
+
+# Create the new OTU table
+otu_table_new <- otu_table(otu_czm_clr_matrix, taxa_are_cols = TRUE)
+
+# Recreate the phyloseq object
+physeq_new <- phyloseq(otu_table_new, sample_data(pseq2), tax_table(pseq2))
+
+# Save the data frame as a tab-delimited text file
+write.table(roseobacter_df, file = "roseobacter_df_PB2023.txt", sep = "\t", row.names = FALSE, quote = FALSE)
+
+# Pivot the data frame to wide format
+roseobacter_wide_df <- roseobacter_df %>%
+  pivot_wider(names_from = OTU, values_from = Abundance, values_fill = list(Abundance = 0))
+
+# View the resulting wide-format data frame
+View(roseobacter_wide_df)
+
+
+#test if avergae roseobacter abundance is different between treatments
+library(dplyr)
+
+# Summarize average abundance by Sample and Treatment
+sample_abundance <- roseobacter_df %>%
+  filter(!Treatment %in% c("Continuous Probiotics", "James")) %>%
+  group_by(Sample.ID, Treatment) %>%
+  summarize(avg_abundance = mean(Abundance, na.rm = TRUE))
+
+library(lme4)
 
 
 

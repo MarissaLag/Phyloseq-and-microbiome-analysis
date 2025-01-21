@@ -41,6 +41,13 @@ pseq <- mb2021_filtered_NOT_rarefied_normalized
 pseq <- subset_samples(pseq, !Age %in% c("Spat"))
 pseq <- subset_samples(pseq, !Family %in% c("9"))
 
+#Mu42022 - combining to add algae
+merged_phyloseq <- merge_phyloseq(MU42022_filtered_algae, MU42022_filtered_Oct92024)
+View(merged_phyloseq@otu_table)
+
+pseq <- merged_phyloseq
+
+
 #convert to compositional data
 
 pseq.rel <- microbiome::transform(pseq, "compositional")
@@ -60,14 +67,16 @@ set.seed(4235421)
 pseq <- Marissa_MU42022_rarefied_20231016
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+pseq <- subset_samples(pseq, !Age %in% "Spat")
 pseq.rel <- microbiome::transform(pseq, "compositional")
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
-p_legend <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
-  geom_point(aes(fill = Treatment), size = 6) +
-  scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) +
-  scale_fill_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen")) + # Matching colors for ellipses and points
-  ggtitle("All time-points") +
+p_legend <- plot_ordination(pseq.rel, ord, color = "Organism", shape = "Age") +
+  #geom_point(aes(fill = Treatment), size = 6) +
+  geom_point(size = 8) +
+  scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen", "yellow")) +
+  scale_fill_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen", "yellow")) + # Matching colors for ellipses and points
+  ggtitle("") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
   #geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
 
@@ -105,11 +114,11 @@ pseq.rel <- microbiome::transform(pseq, "compositional")
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
 p1 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
-  geom_point(aes(fill = Treatment), size = 6, shape = 16) +
+  geom_point(aes(fill = Treatment), size = 6) +
   scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
   scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + # Matching colors for ellipses and points
   ggtitle("Day 1") +
-  theme(plot.title = element_text(hjust = 0.5), legend.position = "none")
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
   #geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
 p1
 

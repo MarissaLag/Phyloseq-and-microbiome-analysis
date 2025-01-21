@@ -15,6 +15,7 @@ library(dplyr)
 library(microbiome)
 library(phyloseq)
 library(RColorBrewer)
+library(tidyr)
 
 #Set data ----
 
@@ -27,6 +28,10 @@ pseq <- MU42022_filtered_NOT_rarefied #579 taxa
 #pseq <- Marissa_mb2021_filtered_20240203
 
 pseq <- mb2021_filtered_NOT_rarefied #1007 taxa
+
+pseq <- PB2023_spat_not_rarefied_normalized
+
+pseq <- PB2023_rarefied_3000
 
 #Load objects ----
 
@@ -42,20 +47,18 @@ Tree = pseq@phy_tree
 OTU1 = as(OTU, "matrix")
 write.csv(OTU1, file="Data_fram_1.cvs",row.names=TRUE)
 
-write.table(OTU1,file="data_table_PB2023_unrarefied.csv",sep=",",dec = " ")
-
-
+write.table(OTU1,file="data_table_PB2023.csv",sep=",",dec = ".")
 
 ####Format to example data and reload below for actual test 
 
 #reload edited table
-data_table <- read.csv("data_table_PB2023_unrarefied.csv")
+data_table <- read.csv("data_table_PB2023.csv")
 
 pc_FUN = read.csv("data_table_PB2023_unrarefied.csv", header= TRUE)
 
 #pc_FUN <- data_table_mb2021_unrarefied
 
-pc_FUN <- data_table_MU_2022_rarefied
+pc_FUN <- data_table_PB2023
 
 #if removing samples ----
 
@@ -69,7 +72,7 @@ pc_FUN <- pc_FUN[!pc_FUN$`Time-point` == "3 dpf", ]
 
 #for mb2021 project remove tank 9 from pc_Fun for mb2021
 pc_FUN <- pc_FUN[!pc_FUN$`Treatment` == "James", ] 
-pc_FUN <- pc_FUN[!pc_FUN$`Treatment` == "Continuous-Probiotics", ] 
+pc_FUN <- pc_FUN[!pc_FUN$`Treatment` == "Continuous Probiotics", ] 
 
 View(pc_FUN)
 
@@ -90,6 +93,7 @@ pc_FUN <- pc_FUN[-1, ]
 
 #Inverse data
 funi_df<- t(pc_FUN) 
+dim(pc_FUN)
 
 ###make into a matrix and populate::: This tells r what is metadata and what is the actual data ... Below 5-952 are the coloumns that are the data
 
@@ -97,7 +101,7 @@ funi_df<- t(pc_FUN)
 #matrix_F = pc_FUN[ ,6:1012] 
 
 #mb2021
-matrix_F = pc_FUN[ ,7:190]
+matrix_F = pc_FUN[ ,7:147]
 
 ### Make the equation. Saying we want to examine specific column of metadata
 time_a_F = pc_FUN$Treatment

@@ -14,58 +14,79 @@ library(dplyr)
 library(ggplot2)
 library(metagMisc)
 library(pheatmap)
+library(tidyr)
+
+#set theme
+theme.marissa <- function() {
+  theme_classic(base_size = 14) +
+    theme(
+      panel.border = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.text = element_text(size = 14),
+      axis.title = element_text(size = 16, face = "bold"),
+      legend.text = element_text(size = 16),
+      legend.title = element_text(size = 16, face = "bold"))
+}
+
+theme_set(theme.marissa())
 
 #Select ASVs "which were constantly detected in at least one of the four 
 #different timepoints of recolonization across all samples (minimum relative abundance was 0.005%)" (Domin et al., 2023)
 
-#For James' experiment, select core ASVs within treatments Control and Antibiotics
-
 pseq <-`Filtered_Rarified_MU42022_23-12-13`
+pseq <- MU42022_filtered_Oct92024
+pseq <- PB2023_spat_not_rarefied_normalized
 
 #Exclude factors
 
-pseq_filt <- subset_samples(pseq, Age %in% c("Day 01", "Day 03", "Day 06", "Day 15"))
+pseq <- subset_samples(pseq, Age %in% c("Spat"))
 
-pseq_filt <- subset_samples(pseq_filt, Treatment %in% c("Control", "Antibiotics"))
+pseq <- subset_samples(pseq, !Treatment %in% c("James", "Continuous Probiotics"))
 
-OTU = pseq_filt@otu_table
-Tax = pseq_filt@tax_table
-Metadata = pseq_filt@sam_data
-Tree = pseq_filt@phy_tree
-
-View(OTU)
-samplenames = Metadata$Treatment
+pseq <- subset_samples(pseq, !Organism %in% c("Algae"))
 
 
+#check if any OTUs are not present in any samples (want false)
+any(taxa_sums(pseq) == 0)
 
-View(Metadata)
+#if true
+pseq_filtered <- prune_taxa(taxa_sums(pseq) > 0, pseq)
+any(taxa_sums(pseq_filtered) == 0)
+pseq <- pseq_filtered
+
+# Transform to relative abundance
+pseq_rel <- transform_sample_counts(pseq, function(x) x / sum(x))
+# Subset to top 20 ASVs
+# top_asvs <- names(sort(taxa_sums(pseq_rel), decreasing = TRUE))[1:579]
+top_asvs <- names(sort(taxa_sums(pseq_rel), decreasing = TRUE))[1:141]
+pseq_top <- prune_taxa(top_asvs, pseq_rel)
+
+# Generate a heatmap
+plot_heatmap(pseq_top, 
+             sample.label = "Treatment", 
+             taxa.label = F, 
+             low = "white", 
+             high = "red", 
+             na.value = "gray")
+
+
 #Taxa shared between all samples samples
 
-ps <- phyloseq_extract_shared_otus(pseq_filt, samp_names = pseq_filt)
-ps <- phyloseq_extract_shared_otus(pseq_filt, samp_names = c("T1-1", "T1-15", "T1-3", "T1-6", "T13-1", "T13-15", "T13-3", "T13-6", "T16-1-r1", "T16-1-r2", "T16-15-r1", "T16-15-r2", "T16-15-r3", "T16-3-r1", "T16-3-r2", "T16-6-r1", "T16-6-r2", "T19-1", "T19-3", "T19-6", "T7-1", "T7-15", "T7-3", "T7-6" ))
-
-pseq_filt@otu_table[1:5,1:5]
-head(pseq_filt@sam_data)
-pseq_filt@sam_data[pseq_filt@sam_data$Treatment=="Control", "Sample.ID"]
-
-setdiff()
-intersect()
-
-pseq_filt
-
-# Make a subset of pseq_filt with only Control samples, get all taxa IDs
-
-# 
-?subset_samples()
-
-###Andy Try
 #source: https://microbiome.github.io/tutorials/Core.html
-ps10<-merge_samples(pseq_filt, "Treatment", fun= mean)
+
+#Merge ASv data for each time point
+#Convert to relative comp
+pseq_filt <- microbiome::transform(pseq_filt, "compositional")
+
+ps10<-merge_samples(pseq_filt, "Age", fun= mean)
 ps10@otu_table[,1:10]
 ?core_members
+#Select core
 Core_trial<-core(ps10, detection=0.5/100, prevalence = 90/100)
 View(Core_trial@otu_table)
 Core_trial
+
 
 Core_trial <- psmelt(Core_trial)
 str(Core_trial)
@@ -74,9 +95,6 @@ str(Core_trial)
 
 otu_names_list <- Core_trial$OTU
 otu_names_list
-
-
-
 
 #recall pseq_filt object
 pseq_filt
@@ -89,92 +107,295 @@ prune_pseq_filt<- prune_taxa(otu_names_list, pseq_filt)
 
 prune_pseq_filt
 
+prune_psmelt <- psmelt(prune_pseq_filt)
 
 
-#713 taxa remaining, lets reduce it to 100 taxa to make heat map clearer
-#top 300 most abundant taxa
-prune_pseq_filt <- prune_taxa(names(sort(taxa_sums(prune_pseq_filt),TRUE)[1:100]), prune_pseq_filt)
-prune_pseq_filt@sam_data
-
-plot_heatmap(prune_pseq_filt, sample.label="Age")
-
-sample_data(prune_pseq_filt) <- sample_data(prune_pseq_filt)[, !(colnames(sample_data(prune_pseq_filt)) %in% "new_column_name")]
-
-Treat_Age <- c("C - 1dpf", "C - 15dpf", "C - 3dpf", "C - 6dpf", "C - 1dpf", "C - 15dpf", "C - 3dpf", "C - 6dpf", "A - 1dpf", "A - 1dpf", "A - 15dpf", "A - 15dpf", "A - 15dpf", "A - 3dpf", "A - 3dpf", "A - 6dpf", "A - 6dpf", "C - 1dpf", "C - 3dpf", "C - 6dpf", "C - 1dpf", "C - 15dpf", "C - 3dpf", "C - 6dpf")
-prune_pseq_filt@sam_data$Treat_Age <- Treat_Age
-
-prune_pseq_filt_comb <-merge_samples(prune_pseq_filt, "Treat_Age", fun= mean)
-View(prune_pseq_filt_comb@sam_data)
-
-#plot treatments seperately
-prune_pseq_filt <- subset_samples(prune_pseq_filt, Treatment %in% c("Control"))
-sample_order <- c("Day 01", "Day 03", "Day 06", "Day 15")
-plot_heatmap(prune_pseq_filt, sample.label="Age", sample.order = "Age", method = "NMDS", distance = "bray")
-p <- plot_heatmap(prune_pseq_filt, sample.label="Age", sample.order = "Age", method = "NMDS", distance = "bray", facet_grid("Treatment"))
-p <- plot_heatmap(prune_pseq_filt_comb, sample.label="Age", sample.order = "Age", method = "NMDS", distance = "bray", facet_grid("Treatment"))
-p + facet_wrap("Treatment")
+#All data (not just shared otus)
+pseq <- microbiome::transform(pseq, "compositional")
+prune_psmelt <- psmelt(pseq)
+  
 
 
-order <- c("C - 1dpf", "A - 1dpf", "C - 3dpf", "A - 3dpf", "C - 6dpf", "A - 6dpf", "C - 15dpf", "A - 15dpf")
-order <- c("C - 1dpf", "C - 3dpf", "C - 6dpf", "C - 15dpf", "A - 1dpf", "A - 3dpf", "A - 6dpf", "A - 15dpf")
-
-plot_heatmap(prune_pseq_filt_comb, sample.order = order)
-
-
-#Only map ASVs found to be signif different between Age groups
-
-asv_list_all <- dimnames(subset_data)[[1]]
-
-age_ASVs <- prune_taxa(asv_list, pseq_filt)
+# Order Age as a factor in the desired order
+# prune_psmelt$Age <- factor(prune_psmelt$Age, levels = c("Day 01", "Day 03", "Day 06", "Day 15", "Spat"))
+#prune_psmelt$Age <- factor(prune_psmelt$Day, levels = c("Day 01", "Day 03", "Day 06", "Day 15", "Spat"))
 
 
-#convert to compositional data
+# Summarize abundance by OTU and Age
+heatmap_data <- prune_psmelt %>%
+  group_by(OTU, Treatment) %>%
+  summarize(Mean_Abundance = mean(Abundance, na.rm = TRUE)) %>%
+  ungroup() %>%
+  pivot_wider(names_from = Treatment, values_from = Mean_Abundance, values_fill = 0)
 
-age_ASVs.rel <- microbiome::transform(age_ASVs, "compositional")
+# Convert the OTU column into row names for clustering
+heatmap_matrix <- as.data.frame(heatmap_data)
+rownames(heatmap_matrix) <- heatmap_matrix$OTU
+heatmap_matrix$OTU <- NULL  # Remove OTU column since it's now row names
 
-psmelt_age_ASVs <- psmelt(age_ASVs.rel)
+# Scale the data by row (optional: for clearer visualization)
+heatmap_matrix_scaled <- t(scale(t(heatmap_matrix)))  # Row-wise scaling
 
-View(psmelt_age_ASVs)
-
-plot_heatmap(age_ASVs, sample.order = order)
-
-plot_heatmap(age_ASVs.rel, sample.label = "Sample.ID",
-           high="#66CCFF", low="#000033")
-
-plot_heatmap(age_ASVs, sample.label = "Age")
-
-#pheatmaps ----
-install.packages("dendextend")
-library(dendextend)
-
-#create dendrogram of variable (e.g., genes or ASVs)
-
-my_hclust_ASV <- hclust(dist(psmelt_age_ASVs), method = "complete")
-
-as.dendrogram(my_hclust_ASV) %>%
-  plot(horiz = TRUE)
-
-#cut tree into clusters - here splitting into 2 clusters
-
-my_ASV_col <- cutree(tree = as.dendrogram(my_hclust_ASV), k = 4)
-
-#rename to cluster name
-
-#if 2 clusters (i.e., k = 2) selected
-my_ASV_col <- data.frame(cluster = ifelse(test = my_ASV_col == 1, yes = "cluster 1", no = "cluster 2"))
-
-#if more clusters used
-my_ASV_col <- data.frame(cluster = factor(my_ASV_col, labels = c("cluster 1", "cluster 2", "cluster 3", "cluster 4")))
-
-head(my_ASV_col)
+#If getting errors
+anyNA(heatmap_matrix_scaled) # Check for NA values
+any(is.nan(heatmap_matrix_scaled)) # Check for NaN values
+any(is.infinite(heatmap_matrix_scaled)) # Check for infinite values
+# Replace NA and NaN with 0
+heatmap_matrix_scaled[is.na(heatmap_matrix_scaled)] <- 0
+heatmap_matrix_scaled[is.nan(heatmap_matrix_scaled)] <- 0
 
 
-#add some column annotations and create the heatmap.
-row.names() <- colnames(inv_F$str)
-pheatmap(psmelt_age_ASVs, annotation_row = my_ASV_col, annotation_col = my_sample_col)
 
-pheatmap(subset_data, 
-         annotation_row = my_ASV_col, 
-         show_rownames = FALSE,
+# Plot the heatmap
+
+pheatmap(heatmap_matrix_scaled,
+         color = colorRampPalette(c("skyblue2", "white", "red"))(50), # Custom gradient
+         cluster_rows = TRUE,   # Clustering OTUs
+         cluster_cols = FALSE,  # No clustering for Age
+         show_rownames = FALSE, # Optional: hide OTU names
+         fontsize_col = 18,
          angle_col = 0,
-         cluster_cols = FALSE)
+         main = "")
+
+
+
+#pheatmaps with clusters ----
+library(dplyr)
+library(tidyr)
+library(pheatmap)
+
+# Prepare data (from your previous steps)
+heatmap_data <- prune_psmelt %>%
+  group_by(OTU, Treatment) %>%
+  summarize(Mean_Abundance = mean(Abundance, na.rm = TRUE)) %>%
+  ungroup() %>%
+  pivot_wider(names_from = Treatment, values_from = Mean_Abundance, values_fill = 0)
+
+# Convert to matrix for pheatmap
+heatmap_matrix <- as.matrix(heatmap_data[, -1])
+rownames(heatmap_matrix) <- heatmap_data$OTU
+
+# Scale the data
+heatmap_matrix_scaled <- t(scale(t(heatmap_matrix)))  # Row-wise scaling
+
+#If getting errors
+anyNA(heatmap_matrix_scaled) # Check for NA values
+any(is.nan(heatmap_matrix_scaled)) # Check for NaN values
+any(is.infinite(heatmap_matrix_scaled)) # Check for infinite values
+# Replace NA and NaN with 0
+heatmap_matrix_scaled[is.na(heatmap_matrix_scaled)] <- 0
+heatmap_matrix_scaled[is.nan(heatmap_matrix_scaled)] <- 0
+
+# Perform hierarchical clustering
+row_hclust <- hclust(dist(heatmap_matrix_scaled), method = "complete")
+
+# Cut the tree into clusters (e.g., 5 clusters)
+k <- 9  # Number of clusters
+row_clusters <- cutree(row_hclust, k = k)
+
+# Create a data frame for row annotations
+row_annotation <- data.frame(Cluster = factor(row_clusters))
+rownames(row_annotation) <- rownames(heatmap_matrix_scaled)
+
+# Assign colors for the clusters
+annotation_colors <- list(Cluster = c(
+  "1" = "yellow3",
+  "2" = "orange",
+  "3" = "forestgreen",
+  "4" = "red4",
+  "5" = "pink",
+  "6" = "grey",
+  "7" = "red3",
+  "8" = "green",
+  "9" = "purple",
+  "10" = "pink3",
+  "11" = "blue",
+  "12" = "limegreen"
+))
+
+
+# Generate the heatmap with cluster labels
+pheatmap(
+  heatmap_matrix_scaled,
+  annotation_row = row_annotation,
+  annotation_colors = annotation_colors,
+  cluster_rows = TRUE,  # Ensure clustering
+  cluster_cols = FALSE,  # No clustering on columns
+  show_rownames = FALSE,  # Optionally hide row names for clarity
+  main = "",
+  angle_col = 0,
+  fontsize_col = 18,
+  fontsize = 14
+)
+
+#Tree of ASV clusters ----
+library(ape)
+library(ggtree)
+library(ggplot2)
+
+# Convert hclust to phylo object
+tree <- as.phylo(row_hclust)
+# Create a data frame with ASV and cluster information
+tip_data <- data.frame(
+  label = names(row_clusters),  # ASV names
+  Cluster = factor(row_clusters)  # Cluster assignment
+)
+
+# Define cluster colors
+cluster_colors <- annotation_colors$Cluster
+
+# Create the circular tree
+ ggtree(tree, layout = "fan", branch.length = 0.5) %<+% tip_data +
+  geom_tiplab(aes(color = Cluster), size = 5, show.legend = FALSE) +
+  geom_point(aes(color = Cluster), size = 1.5) +  # Add points to tips
+  scale_color_manual(values = cluster_colors) +
+  theme(legend.position = "right")
+
+
+#Look at cluster 2 only 
+# Filter rows for cluster 1
+cluster_1_rows <- rownames(row_annotation)[row_annotation$Cluster == "3"]
+heatmap_matrix_cluster_1 <- heatmap_matrix_scaled[cluster_1_rows, , drop = FALSE]
+
+# Subset the row annotation to match the filtered rows
+row_annotation_cluster_1 <- row_annotation[cluster_1_rows, , drop = FALSE]
+
+# Generate the heatmap for cluster 1
+pheatmap(
+  heatmap_matrix_cluster_1,
+  annotation_row = row_annotation_cluster_1,
+  annotation_colors = annotation_colors,
+  cluster_rows = TRUE,  # Ensure clustering within cluster 1 rows
+  cluster_cols = FALSE,  # No clustering on columns
+  show_rownames = TRUE,  # Show row names for cluster 1
+  main = "Cluster 3 Heatmap",
+  angle_col = 0,
+  fontsize_col = 18,
+  fontsize_row = 14,
+  fontsize = 14
+)
+
+
+#Look at ASVs in each cluster ----
+#Cluster 1 looks ifferent in spat between control/PB and PBH
+
+pseq <- MU42022_filtered_Oct92024
+# pseq_filt <- subset_samples(pseq, Treatment %in% c("Control"))
+pseq_filt <- subset_samples(pseq_filt, Age %in% c("Spat"))
+#pseq_filt <- microbiome::transform(pseq_filt, "compositional")
+prune_psmelt <- psmelt(pseq_filt)
+
+# Create a data frame with ASVs and their corresponding cluster assignments
+cluster_summary <- data.frame(ASV = rownames(heatmap_matrix_scaled),
+                              Cluster = row_clusters)
+
+# Summarize ASVs by cluster
+cluster_1 <- cluster_summary %>%
+  group_by(Cluster) %>%
+  filter(Cluster %in% c("1"))
+
+# View the cluster details
+#View(cluster_details)
+
+# Extract the list of ASVs from cluster_1
+cluster_1_asvs <- cluster_1$ASV
+
+# Filter prune_psmelt to include only rows with ASVs in cluster_1
+prune_psmelt_cluster1 <- prune_psmelt %>% 
+  filter(OTU %in% cluster_1_asvs)
+
+Avg_abundance <- prune_psmelt_cluster1 %>%
+  group_by(Treatment, Order, Family, Genus) %>%
+  summarise(
+    Avg_Abundance = mean(Abundance),
+    SD_Abundance = sd(Abundance),
+    .groups = 'drop'
+  ) %>%
+  group_by(Treatment) %>%
+  mutate(Avg_Abundance = 100 * Avg_Abundance / sum(Avg_Abundance))
+
+paired_palette <- brewer.pal(12, "Paired")
+
+extended_palette <- c(paired_palette, "pink",  "yellow", "lightgreen", "green", "brown", "orange", "red")  # Add a custom color to the palette
+
+# Use ggplot with the extended Paired palette
+ggplot(Avg_abundance, aes(fill = Order, y = Avg_Abundance, x = Treatment)) + 
+  geom_bar(position = "stack", stat = "identity", colour = "black") +
+  scale_fill_manual(values = extended_palette) +  # Use scale_fill_manual to specify the extended palette
+  labs(title = "", x = "", y = "Relative abundance (%)") +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_bw() +
+  theme(
+    legend.title = element_text(size = 13),
+    legend.text = element_text(size = 13),
+    axis.text.x = element_text(size = 11, angle = 45, hjust = 1, face = "bold"),
+    axis.title.y = element_text(size = 14),
+    strip.background = element_rect(fill = "white"),  # Set facet heading background to white
+    strip.text = element_text( size = 12)           # Set facet heading text to bold
+  )
+
+
+
+
+
+# Step 1: Prepare the data
+heatmap_data <- prune_psmelt %>%
+  group_by(OTU, Sample.ID) %>% 
+  summarise(Abundance = sum(Abundance), .groups = "drop") %>% # Summarize if necessary
+  pivot_wider(names_from = Sample.ID, values_from = Abundance, values_fill = 0) # Wide format
+
+# Convert to a matrix
+heatmap_matrix <- as.data.frame(heatmap_data)
+rownames(heatmap_matrix) <- heatmap_matrix$OTU
+heatmap_matrix <- heatmap_matrix[, -1] # Remove OTU column
+
+# Scale the data by row (optional: for clearer visualization)
+heatmap_matrix_scaled <- t(scale(t(heatmap_matrix)))  # Row-wise scaling
+
+#If getting errors
+anyNA(heatmap_matrix_scaled) # Check for NA values
+any(is.nan(heatmap_matrix_scaled)) # Check for NaN values
+any(is.infinite(heatmap_matrix_scaled)) # Check for infinite values
+# Replace NA and NaN with 0
+heatmap_matrix_scaled[is.na(heatmap_matrix_scaled)] <- 0
+heatmap_matrix_scaled[is.nan(heatmap_matrix_scaled)] <- 0
+
+# Generate the heatmap
+pheatmap(heatmap_matrix_scaled,
+         color = colorRampPalette(c("skyblue2", "white", "red"))(50), # Custom gradient
+         cluster_rows = TRUE,  
+         cluster_cols = FALSE,  
+         show_rownames = FALSE, 
+         fontsize_col = 12,    
+         main = "Control")
+
+#replace x-axis with treatment names
+# Extract the metadata
+metadata <- as.data.frame(pseq@sam_data)
+
+# Define the desired treatment order
+treatment_order <- c("Control", "Killed-Probiotics", "Probiotics")
+
+# Sort metadata by treatment order
+metadata <- metadata[order(factor(metadata$Treatment, levels = treatment_order)), ]
+
+# Reorder the columns of the heatmap matrix to match the sorted metadata
+heatmap_matrix_ordered <- heatmap_matrix_scaled[, metadata$Sample.ID]
+
+# Use the Treatment variable as custom x-axis labels
+x_labels <- metadata$Treatment
+
+# Generate the heatmap with ordered samples and custom labels
+pheatmap(heatmap_matrix_ordered,
+         color = colorRampPalette(c("skyblue2", "white", "red"))(50), # Custom gradient
+         cluster_rows = TRUE,   # Clustering OTUs
+         cluster_cols = FALSE,  # No clustering for columns
+         show_rownames = FALSE, # Optional: hide OTU names
+         main = "Heatmap by Treatment",
+         angle_col = 45,
+         fontsize_col = 14,
+         fontsize_row = 14,
+         fontsize = 14,
+         labels_col = x_labels)
+
+
