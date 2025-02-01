@@ -217,13 +217,8 @@ pseq <- x2
 #Check if data needs rarefying
 #Rarefication curves ----
 
-pseq <- x2 #899 taxa for mb2021
-pseq <- x1
-pseq <- x0
-pseq <- ps2 #2609 taxa (filter >5%)
-
 #relative abund
-pseq <- ps2ra 
+# pseq <- ps2ra 
 
 #check reads
 
@@ -259,17 +254,25 @@ pseq <- subset_samples(pseq, Sample.ID != "T7-2-S")
 pseq <- subset_samples(pseq, !Sample.ID  %in% c("T16-10-r3", "A-1", "A-3", "A-6", "A-15"))
 
 
-#Partial rarefication 
+#Partial rarefication?? (to remove max reads)
 #Trying this out based on Knight et al., (2019) paper stating samples should not have > 10x sample read difference
 #So, removing reads that are >10x more than lowest read depth in samples
 
+pseq_filtered <- prune_samples(sample_sums(pseq) <= 13130, pseq)
 
+readcount = data.table(as(sample_data(pseq_filtered), "data.frame"),
+                       TotalReads = sample_sums(pseq_filtered), 
+                       keep.rownames = TRUE)
+
+setnames(readcount, "rn", "SampleID")
+
+readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")]
 
 #saving filtered but not rarefied pseq object for mb2021 project
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_Oct92024.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filteredwSpat_only_rarefied_June2024.rds")
-saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/PB2023_spat_filtered_not_rarefied.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/PB2023_spat_filtered_max_samples_removed.rds")
 
 
 otu.rare = otu_table(pseq)
@@ -367,8 +370,7 @@ otu_table(pseq) <- new_otu_table
 #Save as different RDS file
 saveRDS(pseq, file = "PB2023_spat_not_rarefied_normalized_Jan2025.rds")
 
-
-#If rarefying:
+#If rarefying ----
 ##rarify data to make sequences an even read depth - selecting read depth of 10,000 = any samples with fewer than 10,000 total reads will be removed, all samples will be equalized to 5000 reads for Denman's samples, 10,000 for Marissa/James'
 set.seed(123)
 Rare <-rarefy_even_depth(pseq, sample.size= 4658, rngseed = TRUE)
