@@ -44,9 +44,11 @@ pseq <- subset_samples(pseq, !Family %in% c("9"))
 #Mu42022 - combining to add algae
 merged_phyloseq <- merge_phyloseq(MU42022_filtered_algae, MU42022_filtered_Oct92024)
 View(merged_phyloseq@otu_table)
-
 pseq <- merged_phyloseq
 
+#PB2023
+pseq <- PB2023_spat_not_rarefied_CSSnormalized_Jan2025
+pseq <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
 
 #convert to compositional data
 
@@ -113,11 +115,11 @@ pseq.rel <- microbiome::transform(pseq, "compositional")
 
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
-p1 <- plot_ordination(pseq.rel, ord, color = "Treatment") +
-  geom_point(aes(fill = Treatment), size = 6) +
+p1 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Family", label = "Sample.ID") +
+  geom_point(aes(fill = Treatment), size = 9) +
   scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
   scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + # Matching colors for ellipses and points
-  ggtitle("Day 1") +
+  ggtitle("") +
   theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
   #geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
 p1

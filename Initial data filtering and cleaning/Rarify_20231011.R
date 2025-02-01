@@ -24,7 +24,7 @@ pseq <- Marissa_MU42022_unfiltered
 
 pseq <- SMK_Sam
 
-pseq <- PB2023 
+pseq <- PB2023
 
 pseq <- James_MU42022
 
@@ -51,7 +51,7 @@ sample_data(pseq) <- sample_data(Sam_Meta)
 
 #removing samples
 # pseq <- subset_samples(pseq, !Genetics %in% c("4"))
-pseq_algae <- subset_samples(pseq, Sample.type %in% "Algae")
+pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 # pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
 # pseq <- subset_samples(pseq, !Age %in% c("Spat"))
 
@@ -115,7 +115,7 @@ plot(sort(taxa_sums(x2), TRUE), type="h", ylim=c(0, 10000))
 # 
 # x0 = prune_taxa(taxa_sums(pseq) > 30, pseq) 
 x1 = prune_taxa(taxa_sums(pseq) > 100, pseq) 
-x2 = prune_taxa(taxa_sums(pseq) > 400, pseq)
+x2 = prune_taxa(taxa_sums(pseq) > 300, pseq)
 x3 = prune_taxa(taxa_sums(pseq) > 800, pseq)
 #PB2023 used > 300
 #James used > 400
@@ -134,82 +134,82 @@ pseq <- x2
 #rarify - removing abundance code with below code does not seem to work...not sure why. Ignore for now.
 
 #Compute prevalence of each feature, store as data.frame
-prevdf = apply(X = otu_table(pseq),
-               MARGIN = ifelse(taxa_are_rows(pseq), yes = 1, no = 2),
-               FUN = function(x){sum(x > 0)})
-# Add taxonomy and total read counts to this data.frame
-prevdf = data.frame(Prevalence = prevdf,
-                    TotalAbundance = taxa_sums(pseq),
-                    tax_table(pseq))
-
-#Check for low prevelance phyla and remove
-plyr::ddply(prevdf, "Phylum", function(df1){cbind(mean(df1$Prevalence),sum(df1$Prevalence))})
-
-#mb2021: Armatimonsdota and Sumerlaetoa only in one sample so will remove
-#mb2021: Entotheonella, Gemmatimondota, Patescibacteria only in 4, 5, and 3 samples so will remove
-#Sam's: Remove Elusimicrobiota, Sumerlaeota, Hydrogenedentes, Deinococcota, Entotheonellaeota, Calditrichota, and Abditibacteriota as 6 or less observations
-# Define phyla to filter
-filterPhyla = c("Chloroflexi", "Verrucomicrobiota", "Bdellovibrionota")
-
-# Filter entries with unidentified Phylum.
-ps1 = subset_taxa(pseq, !Phylum %in% filterPhyla)
-
-
-# Subset to the remaining phyla
-prevdf1 = subset(prevdf, Phylum %in% get_taxa_unique(ps1, "Phylum"))
-ggplot(prevdf1, aes(TotalAbundance, Prevalence / nsamples(pseq),color=Phylum)) +
-  # Include a guess for parameter
-  geom_hline(yintercept = 0.05, alpha = 0.5, linetype = 2) +  geom_point(size = 2, alpha = 0.7) +
-  scale_x_log10() +  xlab("Total Abundance") + ylab("Prevalence [Frac. Samples]") +
-  facet_wrap(~Phylum) + theme(legend.position="none")
-  
-# Define prevalence threshold as 5% of total samples
-prevalenceThreshold = 0.05 * nsamples(pseq)
-prevalenceThreshold
-
-# Execute prevalence filter, using `prune_taxa()` function
-keepTaxa = rownames(prevdf1)[(prevdf1$Prevalence >= prevalenceThreshold)]
-ps2 = prune_taxa(keepTaxa, ps1)
-
-ps2
-plot(sort(taxa_sums(ps2), TRUE), type="h", ylim=c(0, 10000)) #still has tail
-
-#Agglomerate taxonomic redundancies
-# How many genera would be present after filtering?
-length(get_taxa_unique(ps3, taxonomic.rank = "Genus"))
-## [1] 363
-ps3 = tax_glom(ps2, "Genus", NArm = TRUE)
-#362 - since hardly different, will skip this
-
-
-
-#Abundance transformations
-#It is usually necessary to transform microbiome count data to account for differences in library size, variance, scale, etc
-plot_abundance = function(pseq,title = "",
-                          Facet = "Order", Color = "Phylum"){
-  # Arbitrary subset, based on Phylum, for plotting
-  p1f = subset_taxa(pseq, Phylum %in% c("Firmicutes"))
-  mphyseq = psmelt(p1f)
-  mphyseq <- subset(mphyseq, Abundance > 0)
-  ggplot(data = mphyseq, mapping = aes_string(x = "Treatment",y = "Abundance",
-                                              color = Color, fill = Color)) +
-    geom_violin(fill = NA) +
-    geom_point(size = 1, alpha = 0.3,
-               position = position_jitter(width = 0.3)) +
-    facet_wrap(facets = Facet) + scale_y_log10()+
-    theme(legend.position="none")
-}
-#The transformation in this case converts the counts from each sample into their frequencies, often referred to as proportions or relative abundances
-# Transform to relative abundance. Save as new object.
-ps2ra = transform_sample_counts(ps2, function(x){x / sum(x)})
-plotBefore = plot_abundance(ps2, "")
-plotAfter = plot_abundance(ps2ra,"")
-# Combine each plot into one graphic.
-grid.arrange(nrow = 2,  plotBefore, plotAfter)
-
-#Look for taxa will bimodal abundance
-psOrd = subset_taxa(ps3ra, Order == "Lactobacillales")
-plot_abundance(psOrd, Facet = "Genus", Color = NULL)
+# prevdf = apply(X = otu_table(pseq),
+#                MARGIN = ifelse(taxa_are_rows(pseq), yes = 1, no = 2),
+#                FUN = function(x){sum(x > 0)})
+# # Add taxonomy and total read counts to this data.frame
+# prevdf = data.frame(Prevalence = prevdf,
+#                     TotalAbundance = taxa_sums(pseq),
+#                     tax_table(pseq))
+# 
+# #Check for low prevelance phyla and remove
+# plyr::ddply(prevdf, "Phylum", function(df1){cbind(mean(df1$Prevalence),sum(df1$Prevalence))})
+# 
+# #mb2021: Armatimonsdota and Sumerlaetoa only in one sample so will remove
+# #mb2021: Entotheonella, Gemmatimondota, Patescibacteria only in 4, 5, and 3 samples so will remove
+# #Sam's: Remove Elusimicrobiota, Sumerlaeota, Hydrogenedentes, Deinococcota, Entotheonellaeota, Calditrichota, and Abditibacteriota as 6 or less observations
+# # Define phyla to filter
+# filterPhyla = c("Chloroflexi", "Verrucomicrobiota", "Bdellovibrionota")
+# 
+# # Filter entries with unidentified Phylum.
+# ps1 = subset_taxa(pseq, !Phylum %in% filterPhyla)
+# 
+# 
+# # Subset to the remaining phyla
+# prevdf1 = subset(prevdf, Phylum %in% get_taxa_unique(ps1, "Phylum"))
+# ggplot(prevdf1, aes(TotalAbundance, Prevalence / nsamples(pseq),color=Phylum)) +
+#   # Include a guess for parameter
+#   geom_hline(yintercept = 0.05, alpha = 0.5, linetype = 2) +  geom_point(size = 2, alpha = 0.7) +
+#   scale_x_log10() +  xlab("Total Abundance") + ylab("Prevalence [Frac. Samples]") +
+#   facet_wrap(~Phylum) + theme(legend.position="none")
+#   
+# # Define prevalence threshold as 5% of total samples
+# prevalenceThreshold = 0.05 * nsamples(pseq)
+# prevalenceThreshold
+# 
+# # Execute prevalence filter, using `prune_taxa()` function
+# keepTaxa = rownames(prevdf1)[(prevdf1$Prevalence >= prevalenceThreshold)]
+# ps2 = prune_taxa(keepTaxa, ps1)
+# 
+# ps2
+# plot(sort(taxa_sums(ps2), TRUE), type="h", ylim=c(0, 10000)) #still has tail
+# 
+# #Agglomerate taxonomic redundancies
+# # How many genera would be present after filtering?
+# length(get_taxa_unique(ps3, taxonomic.rank = "Genus"))
+# ## [1] 363
+# ps3 = tax_glom(ps2, "Genus", NArm = TRUE)
+# #362 - since hardly different, will skip this
+# 
+# 
+# 
+# #Abundance transformations
+# #It is usually necessary to transform microbiome count data to account for differences in library size, variance, scale, etc
+# plot_abundance = function(pseq,title = "",
+#                           Facet = "Order", Color = "Phylum"){
+#   # Arbitrary subset, based on Phylum, for plotting
+#   p1f = subset_taxa(pseq, Phylum %in% c("Firmicutes"))
+#   mphyseq = psmelt(p1f)
+#   mphyseq <- subset(mphyseq, Abundance > 0)
+#   ggplot(data = mphyseq, mapping = aes_string(x = "Treatment",y = "Abundance",
+#                                               color = Color, fill = Color)) +
+#     geom_violin(fill = NA) +
+#     geom_point(size = 1, alpha = 0.3,
+#                position = position_jitter(width = 0.3)) +
+#     facet_wrap(facets = Facet) + scale_y_log10()+
+#     theme(legend.position="none")
+# }
+# #The transformation in this case converts the counts from each sample into their frequencies, often referred to as proportions or relative abundances
+# # Transform to relative abundance. Save as new object.
+# ps2ra = transform_sample_counts(ps2, function(x){x / sum(x)})
+# plotBefore = plot_abundance(ps2, "")
+# plotAfter = plot_abundance(ps2ra,"")
+# # Combine each plot into one graphic.
+# grid.arrange(nrow = 2,  plotBefore, plotAfter)
+# 
+# #Look for taxa will bimodal abundance
+# psOrd = subset_taxa(ps3ra, Order == "Lactobacillales")
+# plot_abundance(psOrd, Facet = "Genus", Color = NULL)
 
 #Depending on data, may not always have to rarefy read counts
 #if rarefication curves look good, don't rarefy. If there are one or two outliers, remove them and don't rarefy
@@ -241,7 +241,6 @@ setnames(readcount, "rn", "SampleID")
 #If data.table not working
 colnames(readcount)[1] <- "SampleID"
 
-
 ggplot(readcount, aes(TotalReads)) + geom_histogram() + ggtitle("Sequencing Depth")
 
 View(readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")])
@@ -259,11 +258,18 @@ pseq <- subset_samples(pseq, Sample.ID != "T7-2-S")
 
 pseq <- subset_samples(pseq, !Sample.ID  %in% c("T16-10-r3", "A-1", "A-3", "A-6", "A-15"))
 
+
+#Partial rarefication 
+#Trying this out based on Knight et al., (2019) paper stating samples should not have > 10x sample read difference
+#So, removing reads that are >10x more than lowest read depth in samples
+
+
+
 #saving filtered but not rarefied pseq object for mb2021 project
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_Oct92024.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filteredwSpat_only_rarefied_June2024.rds")
-saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/PB2023_spat_ANCOMBC.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/PB2023_spat_filtered_not_rarefied.rds")
 
 
 otu.rare = otu_table(pseq)
@@ -295,6 +301,12 @@ BiocManager::install("IRanges", ask = FALSE, force = TRUE)
 
 library(DESeq2)
 library(phyloseq)
+
+#Removing Continuous PB and James from this dataset so normalization not effected
+pseq <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
+
+#Set your reference level
+pseq@sam_data$Treatment <- factor(pseq@sam_data$Treatment, levels = c("Control", "Probiotics", "Killed-Probiotics"))
 
 DeSeq <- phyloseq_to_deseq2(pseq, ~ Treatment) #convert phyloseq to deseq object
 
@@ -328,7 +340,7 @@ dim(ASV_deseq_norm[, colSums(ASV_deseq_norm) == 0]) # 0
 dim(ASV_deseq_norm[, colSums(ASV_deseq_norm) == 1])
 
 #save normalised table
-write.csv(ASV_deseq_norm, "~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files//normalised_ASV_table_PB2023.csv")
+write.csv(ASV_deseq_norm, "~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files//normalised_ASV_table_PB2023_spat_Jan2025.csv")
 
 #Make new pseq object with normalized ASV table
 #PB2023_spat_not_rarefied_normalized <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/PB2023_spat_not_rarefied_normalized.rds")
@@ -341,7 +353,7 @@ View(normalised_ASV_table)
 
 normalised_ASV_table <- as.data.frame(ASV_deseq_norm)
 
-rownames(normalised_ASV_table) <- normalised_ASV_table[, 1]
+#rownames(normalised_ASV_table) <- normalised_ASV_table[, 1]
 
 # Remove the first column from the data frame
 #normalised_ASV_table <- normalised_ASV_table[, -1]
@@ -353,13 +365,13 @@ new_otu_table <- otu_table(normalised_ASV_table, taxa_are_rows = FALSE)
 otu_table(pseq) <- new_otu_table
 
 #Save as different RDS file
-saveRDS(pseq, file = "PB2023_spat_not_rarefied_normalized.rds")
+saveRDS(pseq, file = "PB2023_spat_not_rarefied_normalized_Jan2025.rds")
 
 
 #If rarefying:
 ##rarify data to make sequences an even read depth - selecting read depth of 10,000 = any samples with fewer than 10,000 total reads will be removed, all samples will be equalized to 5000 reads for Denman's samples, 10,000 for Marissa/James'
 set.seed(123)
-Rare <-rarefy_even_depth(pseq, sample.size= 5128, rngseed = TRUE)
+Rare <-rarefy_even_depth(pseq, sample.size= 4658, rngseed = TRUE)
 
 #Marissa/James = 17 samples removed because they contained fewer reads than `sample.size' - first 5 reads are T13-1,T13-2-2,T14-2-2,T15-S-1,T16-10-r3
 
@@ -367,14 +379,14 @@ Rare <-rarefy_even_depth(pseq, sample.size= 5128, rngseed = TRUE)
 
 #mb2021 rarefied to 3000
 
-sample_depths <- sample_sums(pseq)
+sample_depths <- sample_sums(Rare)
 
 print(sample_depths)
 
 ##yes, all samples have 10,000 or 5,000 reads now.
 
 pseq <- Rare
-saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/PB2023_rarefied_3000.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_rarefied_new2025_tryout_2.rds")
 
 #Phylogenetic tree ----
 

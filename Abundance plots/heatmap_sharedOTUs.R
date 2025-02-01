@@ -37,6 +37,7 @@ theme_set(theme.marissa())
 pseq <-`Filtered_Rarified_MU42022_23-12-13`
 pseq <- MU42022_filtered_Oct92024
 pseq <- PB2023_spat_not_rarefied_normalized
+pseq <- PB2023_spat_not_rarefied_CSSnormalized_Jan2025
 
 #Exclude factors
 
@@ -77,7 +78,7 @@ plot_heatmap(pseq_top,
 
 #Merge ASv data for each time point
 #Convert to relative comp
-pseq_filt <- microbiome::transform(pseq_filt, "compositional")
+pseq_filt <- microbiome::transform(pseq, "compositional")
 
 ps10<-merge_samples(pseq_filt, "Age", fun= mean)
 ps10@otu_table[,1:10]
@@ -213,6 +214,11 @@ annotation_colors <- list(Cluster = c(
   "12" = "limegreen"
 ))
 
+# Rename treatments
+row_annotation$Treatment <- factor(row_annotation$Treatment,
+                                   levels = c("Control", "Killed-Probiotics", "Probiotics"),  # Old levels
+                                   labels = c("Control", "Killed-Bacteria Added", "Bacteria Added"))  # New labels
+
 
 # Generate the heatmap with cluster labels
 pheatmap(
@@ -249,12 +255,12 @@ cluster_colors <- annotation_colors$Cluster
   geom_tiplab(aes(color = Cluster), size = 5, show.legend = FALSE) +
   geom_point(aes(color = Cluster), size = 1.5) +  # Add points to tips
   scale_color_manual(values = cluster_colors) +
-  theme(legend.position = "right")
+  theme(legend.position = "none")
 
 
 #Look at cluster 2 only 
 # Filter rows for cluster 1
-cluster_1_rows <- rownames(row_annotation)[row_annotation$Cluster == "3"]
+cluster_1_rows <- rownames(row_annotation)[row_annotation$Cluster == "9"]
 heatmap_matrix_cluster_1 <- heatmap_matrix_scaled[cluster_1_rows, , drop = FALSE]
 
 # Subset the row annotation to match the filtered rows
@@ -268,7 +274,7 @@ pheatmap(
   cluster_rows = TRUE,  # Ensure clustering within cluster 1 rows
   cluster_cols = FALSE,  # No clustering on columns
   show_rownames = TRUE,  # Show row names for cluster 1
-  main = "Cluster 3 Heatmap",
+  main = "Cluster 9 Heatmap",
   angle_col = 0,
   fontsize_col = 18,
   fontsize_row = 14,

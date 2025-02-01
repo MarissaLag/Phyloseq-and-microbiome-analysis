@@ -29,9 +29,11 @@ pseq <- MU42022_filtered_NOT_rarefied #579 taxa
 
 pseq <- mb2021_filtered_NOT_rarefied #1007 taxa
 
-pseq <- PB2023_spat_not_rarefied_normalized
+pseq <- PB2023_spat_not_rarefied_normalized_Jan2025
 
-pseq <- PB2023_rarefied_3000
+pseq <- MU42022_filtered_Oct92024
+
+pseq <- PB2023_spat_not_rarefied_CSSnormalized_Jan2025
 
 #Load objects ----
 
@@ -47,42 +49,41 @@ Tree = pseq@phy_tree
 OTU1 = as(OTU, "matrix")
 write.csv(OTU1, file="Data_fram_1.cvs",row.names=TRUE)
 
-write.table(OTU1,file="data_table_PB2023.csv",sep=",",dec = ".")
+write.table(OTU1,file="data_table_PB2023_spat_CSS_max_samplesremoved.csv",sep=",",dec = ".")
 
 ####Format to example data and reload below for actual test 
 
 #reload edited table
-data_table <- read.csv("data_table_PB2023.csv")
 
-pc_FUN = read.csv("data_table_PB2023_unrarefied.csv", header= TRUE)
+pc_FUN <- data_table_MU42022_oct2024
 
-#pc_FUN <- data_table_mb2021_unrarefied
+pc_FUN <- data_table_PB2023_spat_norm_CSS
 
-pc_FUN <- data_table_PB2023
+pc_FUN <- data_table_PB2023_spat_CSS_max_samplesremoved
 
 #if removing samples ----
 
 #for MU42022, remove PB on day 01
-pc_FUN <- pc_FUN[, !colnames(pc_FUN) %in% c("ASV7", "ASV18")]
-
-#for mb2021 project remove remaining day 3 samples and T9 spat data
-
-pc_FUN <- pc_FUN[!pc_FUN$`Time-point` == "3 dpf", ]
+# pc_FUN <- pc_FUN[, !colnames(pc_FUN) %in% c("ASV7", "ASV18")]
+# 
+# #for mb2021 project remove remaining day 3 samples and T9 spat data
+# 
+# pc_FUN <- pc_FUN[!pc_FUN$`Time-point` == "3 dpf", ]
 
 
 #for mb2021 project remove tank 9 from pc_Fun for mb2021
-pc_FUN <- pc_FUN[!pc_FUN$`Treatment` == "James", ] 
-pc_FUN <- pc_FUN[!pc_FUN$`Treatment` == "Continuous Probiotics", ] 
+pc_FUN <- pc_FUN[!pc_FUN$`Treatment` %in% c("Continuous Probiotics", "James"), ] 
+pc_FUN <- pc_FUN[!pc_FUN$`Treatment` == "NA", ] 
 
 View(pc_FUN)
 
 #Day 1 only 
 
-pc_FUN <- pc_FUN[pc_FUN$'Age' == "Day 01", ]
+pc_FUN <- pc_FUN[!pc_FUN$'Genetics' == "4", ]
 
 #Spat only
 
-pc_FUN <- pc_FUN[pc_FUN$`Age` == "Spat", ]
+pc_FUN <- pc_FUN[pc_FUN$`Age` == "Day 15", ]
 
 #If present, filter NAs in column 1
 
@@ -101,18 +102,28 @@ dim(pc_FUN)
 #matrix_F = pc_FUN[ ,6:1012] 
 
 #mb2021
-matrix_F = pc_FUN[ ,7:147]
+matrix_F = pc_FUN[ ,7:146]
 
 ### Make the equation. Saying we want to examine specific column of metadata
 time_a_F = pc_FUN$Treatment
 
 ### Run test 
+set.seed(123)
 inv_F_spat = multipatt(matrix_F, time_a_F, func = "r.g", control = how(nperm=9999))
 results <- summary(inv_F_spat)
 
-
 #save results
 write.csv(inv_F, "Spat_INVALsummary_results.csv", row.names = TRUE)
+
+#If you want to look at all results
+
+all_results <- inv_F_spat$sign
+
+# Filter non-significant results
+non_significant <- all_results[all_results$p.value > 0.05, ]
+
+# Inspect non-significant ASVs
+print(non_significant)
 
 
 #Bubble plot results ----
@@ -138,7 +149,7 @@ ggplot(pc_FUN, aes(x=Treatment, y= ASV, size = Abundance, color = Treatment)) +
 
 pc_FUN <- pc_FUN[pc_FUN$Age == "Spat", ]
 
-pc_FUN <- pc_FUN[pc_FUN$ASV %in% c("ASV88", "ASV376"), ]
+pc_FUN <- pc_FUN[pc_FUN$ASV %in% c("ASV3"), ]
 
 
 ggplot(pc_FUN, aes(x=Treatment, y= Genus, size = Abundance, color = Treatment)) + 

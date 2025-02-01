@@ -50,9 +50,10 @@ pseq <- MU42022_filtered_Oct92024
 #pseq <- MU42022_filtered_NOT_rarefied
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
+pseq <- subset_samples(pseq, Age %in% "Spat")
 pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
 pseq <- microbiome::transform(pseq, "compositional")
-
+ps <- psmelt(pseq)
 
 #PB2023
 pseq <- PB2023_spat_not_rarefied_normalized
@@ -104,7 +105,7 @@ ps <- psmelt(pseq)
 
 #MU42022 spat inval results
 filtered_ps <- ps %>% 
-   filter(OTU %in% c("ASV316")) 
+   filter(OTU %in% c("ASV88", "ASV178")) 
 
 #PB2023 results
 filtered_ps <- ps %>% 
@@ -119,11 +120,14 @@ filtered_ps <- ps %>%
                     "ASV942", "ASV1131", "ASV297", "ASV236")) 
 
 
+filtered_ps <- ps %>%
+  filter(Genus == "Phaeobacter")
+View(filtered_ps)
 
 
 # Calculate the average abundance for each treatment group
 average_abundance <- filtered_ps %>%
-  group_by(Treatment, Family, OTU) %>%
+  group_by(Treatment) %>%
   summarise(Average_Abundance = mean(Abundance)) 
 
 
@@ -136,7 +140,7 @@ paired_palette <- c(brewer.pal(8, "Dark2"),  # 8 more colors from the Dark2 pale
                        brewer.pal(8, "Accent"), # 8 more colors from the Accent palette
                        brewer.pal(6, "Set3"))
 
-ggplot(average_abundance, aes(fill = Genus, y = Average_Abundance, x = Treatment)) + 
+ggplot(average_abundance, aes(y = Average_Abundance, x = Treatment)) + 
   geom_bar(position = "stack", stat = "identity", color = "black") +
   scale_fill_manual(values = paired_palette) +
   labs(title = "", 
@@ -194,8 +198,9 @@ pseq <- microbiome::transform(pseq, "compositional")
 
 pseq <- MU42022_filtered_Oct92024
 pseq <- subset_samples(pseq, Age %in% "Spat")
+pseq <- subset_samples(pseq, !Genetics %in% "4")
 pseq <- subset_samples(pseq, Treatment %in% c("Control", "Probiotics", "Probiotics + HT"))
-#pseq <- microbiome::transform(pseq, "compositional")
+pseq <- microbiome::transform(pseq, "compositional")
 
 # Subset the phyloseq object to include only high and low salinity treatments
 # filtered_phyloseq <- subset_samples(mb2021_filtered_NOT_rarefied, Treatment %in% c("High salinity", "Low salinity"))
@@ -205,7 +210,7 @@ pseq <- subset_samples(pseq, Treatment %in% c("Control", "Probiotics", "Probioti
 #                    "ASV348", "ASV383", "ASV391", "ASV412", "ASV446", "ASV507", "ASV553", "ASV571", "ASV580", "ASV595", "ASV656", "ASV751", 
 #                    "ASV841",  "ASV845",  "ASV900",  "ASV927",  "ASV964",  "ASV1088", "ASV1162", "ASV1164")
 
-selected_asvs <- c("ASV316")
+selected_asvs <- c("ASV88", "ASV178")
 
 selected_asvs <- c("ASV11", "ASV198", "ASV201", "ASV471", "ASV613")
 
@@ -243,12 +248,19 @@ average_abundance_long <- average_abundance %>%
 average_abundance_long <- average_abundance_long %>%
   filter(Treatment != "Control")
 
+#Update names to include genus
+# Update OTU names
+average_abundance_long$OTU <- ifelse(
+  average_abundance_long$OTU == "ASV88", "ASV88 - Loktanella",
+  ifelse(average_abundance_long$OTU == "ASV178", "ASV178 - Loktanella", average_abundance_long$OTU)
+)
+
 
 # Plotting
 ggplot(average_abundance_long, aes(x = Log_Fold_Change, y = OTU, fill = Treatment)) +
   geom_col(position = position_dodge(width = 0.9), color = "black") + # Adds black borders for clarity
   labs(
-    title = "Log-Fold Change in Average Abundance",
+    title = "",
     x = "Log-Fold Change",
     y = ""
   ) +
@@ -261,7 +273,7 @@ ggplot(average_abundance_long, aes(x = Log_Fold_Change, y = OTU, fill = Treatmen
     plot.title = element_text(hjust = 0.5, face = "bold"), 
     axis.title.y = element_text(face = "bold"),   
     axis.title.x = element_text(face = "bold"),           
-    axis.text = element_text(size = 12),                 
-    legend.text = element_text(size = 12)                
+    axis.text = element_text(size = 14, face = "bold"),                 
+    legend.text = element_text(size = 14)                
   )
 

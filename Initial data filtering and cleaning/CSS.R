@@ -16,13 +16,43 @@
 
 #remotes::install_github("HCBravoLab/metagenomeSeq")
 
-install.packages("metagenomeSeq")
+# install.packages("metagenomeSeq")
+# install.packages("zCompositions")
 library(metagenomeSeq)
 library(phyloseq)
+library(zCompositions)
 
 #Data (physeq object)
 
 pseq <- MU42022_filtered_Oct92024
+
+pseq <- PB2023_spat_filtered_not_rarefied
+
+#Preform zComposition (zero imputation) before CSS scaling 
+
+otu_matrix <- as.matrix(otu_table(pseq))
+
+otu_imputed <- cmultRepl(otu_matrix, 
+                         method = "CZM")
+
+otu_table_imputed <- otu_table(otu_imputed, taxa_are_rows = FALSE)
+
+pseq_imputed <- phyloseq(otu_table_imputed, sample_data(pseq), tax_table(pseq))
+
+#If samples removed, must remove from sample_data
+
+# Get sample names from both phyloseq objects
+original_samples <- sample_names(pseq)
+imputed_samples <- sample_names(pseq_imputed)
+
+# Find samples that were removed
+removed_samples <- setdiff(original_samples, imputed_samples)
+print(removed_samples)
+
+# Subset sample_data to keep only samples in pseq_imputed
+sample_data(pseq_imputed) <- sample_data(pseq_imputed)[imputed_samples, ]
+
+pseq <- pseq_imputed
 
 # Convert from filtered phyloseq object to metagenomeseq object:
 metaSeqObject1=phyloseq_to_metagenomeSeq(pseq)
@@ -33,7 +63,9 @@ metaSeqObject_CSS_filt=filterData(metaSeqObject_CSS, depth=1000) #Excludes low r
 seq.asv.css=data.frame(MRcounts(metaSeqObject_CSS_filt, norm=TRUE, log=TRUE)) # Convert back to an asv table, now css corrected.
 
 # Fixes column names in the ASV table to match our metadata by erasing the X character at the beginning. (Something like this may or may not be needed for your data, you just need the sample names to match before remaking the phyloseq object)
-names(seq.asv.css) = gsub(pattern = "X", replacement = "", x = names(seq.asv.css))
+names(seq.asv.css) = gsub(pattern = "\\.", replacement = "-", x = names(seq.asv.css))
+
+seq.asv.css <- t(seq.asv.css)
 
 # Remove samples that were filtered out from the metadata file before remaking phyloseq object.
 # sample.names2=colnames(seq.asv.css) #Pull the sample names from the sequence table.
@@ -41,8 +73,14 @@ names(seq.asv.css) = gsub(pattern = "X", replacement = "", x = names(seq.asv.css
 # metadata=metadata[!row.names(metadata) %in% deleted,] #Delete samples that were removed during normalization from metadata
 
 # Recreate phyloseq object.
-physeq.sub.arch=phyloseq(otu_table(seq.asv.css, taxa_are_rows=TRUE), sample_data(metadata), tax_table(taxa))
+taxa = pseq@tax_table
+metadata = pseq@sam_data
+
+physeq.sub.arch=phyloseq(otu_table(seq.asv.css, taxa_are_rows=FALSE), sample_data(metadata), tax_table(taxa))
 physeq.sub.arch
 # If sample names are column names in the sequence table, taxa_are_rows=TRUE
 # If samples names are row names, taxa_are_rows=FALSE
-# I want to convert back to a phyloseq object so I can use the microbiome package to run an NMDS
+
+saveRDS(physeq.sub.arch, file = "PB2023_spat_not_rarefied_CSSnormalized_max_samples_removed.rds")
+
+

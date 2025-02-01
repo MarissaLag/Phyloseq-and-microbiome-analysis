@@ -134,7 +134,7 @@ View(Avg_abundance)
 
 #Make abundance out of 100%?
 Avg_abundance <- pseq_psmelt %>%
-  group_by(Age_Treatment, Phylum) %>%
+  group_by(Age_Treatment, Genus) %>%
   summarise(
     Avg_Abundance = mean(Abundance),
     SD_Abundance = sd(Abundance),
@@ -158,7 +158,7 @@ Avg_abundance <- pseq_psmelt %>%
 
 
 Avg_abundance <- pseq_psmelt %>%
-  group_by(Treatment, Family) %>%
+  group_by(Treatment, Family, Age) %>%
   summarise(
     Avg_Abundance = mean(Abundance),
     SD_Abundance = sd(Abundance),
@@ -198,9 +198,7 @@ ggplot(Avg_abundance, aes(fill = Family, y = Avg_Abundance, x = Treatment)) +
     axis.title.y = element_text(size = 16, face = "bold"),
     strip.background = element_rect(fill = "white"),  # Set facet heading background to white
     strip.text = element_text( size = 12)           # Set facet heading text to bold
-  )
-
-
+  ) + facet_wrap(~Age)
 
 
 #Vibrionaceae abundances ----

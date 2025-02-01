@@ -1,6 +1,20 @@
 #DESeq2 test for differential species abundance test
 #Code from Elliot Scanes
 
+#Install deseq
+# if (!require("BiocManager", quietly = TRUE))
+#   install.packages("BiocManager") #download deseq
+# 
+# BiocManager::install("DESeq2") #Install deseq
+# 
+# BiocManager::install("DESeq2", force = TRUE)
+# 
+# BiocManager::install("GenomeInfoDb")
+# BiocManager::install("DESeq2")
+
+#install.packages("VennDiagram")
+library(VennDiagram)
+
 library(DESeq2)
 library(phyloseq)
 library(microbiome)
@@ -10,10 +24,6 @@ pseq <- Marissa_mb2021_filtered_20240203
 
 pseq <- mb2021_filtered_NOT_rarefied
 
-pseq <- MU42022_filtered_NOT_rarefied
-
-pseq <- MU42022_normalized_relative
-
 pseq <- MU42022_filtered_Oct92024
 
 pseq <- MU42022_filtered_NOT_rarefied
@@ -22,18 +32,18 @@ pseq <- PB2023_spat_not_rarefied_normalized
 
 pseq <- PB2023_rarefied_3764
 
-#filter samples
+#filter samples - note, removing samples will alter how deseq normalizes the data
 
 #MU42022
-# pseq <- subset_samples(pseq, !Genetics %in% "4")
-# pseq <- subset_samples(pseq, Age %in% "Spat")
-# pseq <- subset_samples(pseq, Age %in% "1 dpf")
+pseq <- subset_samples(pseq, !Genetics %in% "4")
+pseq <- subset_samples(pseq, Day %in% "Spat")
+#pseq <- subset_samples(pseq, Age %in% "1 dpf")
 # pseq <- subset_samples(pseq, !Family %in% "9")
 # pseq <- subset_samples(pseq, !Organism %in% "Algae")
 # View(pseq@sam_data)
 
 #PB2023
-pseq <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
+pseq <- subset_samples(pseq, !Treatment %in% c("James", "Continuous Probiotics"))
 
 # Agglomerating family names (mb2021)
 # pseq@sam_data$Family[pseq@sam_data$Family %in% c(9, 13)]  <- 1
@@ -60,35 +70,30 @@ pseq <- core(pseq, detection = .1/100, prevalence = 90/100)
 
 View(pseq@otu_table)
 
- #Install deseq
-# if (!require("BiocManager", quietly = TRUE))
-#   install.packages("BiocManager") #download deseq
-# 
-# BiocManager::install("DESeq2") #Install deseq
-# 
-# BiocManager::install("DESeq2", force = TRUE)
-# 
-# BiocManager::install("GenomeInfoDb")
-# BiocManager::install("DESeq2")
-
 #filter out probiotic (ASV7 and 18) for MU42022
-taxa_to_remove <- c("ASV7", "ASV18")
+# taxa_to_remove <- c("ASV7", "ASV18")
+# 
+# # Create a logical vector indicating which taxa to keep
+# taxa_to_keep <- !(taxa_names(pseq) %in% taxa_to_remove)
+# 
+# # Prune the taxa from the phyloseq object
+# pseq <- prune_taxa(taxa_to_keep, pseq)
 
-# Create a logical vector indicating which taxa to keep
-taxa_to_keep <- !(taxa_names(pseq) %in% taxa_to_remove)
 
-# Prune the taxa from the phyloseq object
-pseq <- prune_taxa(taxa_to_keep, pseq)
-
-
-#Should relative abundance be used? Get error when I try
-
-#pseq_rel <- microbiome::transform(pseq, "compositional")
-
+#Be careful when using  phyloseq_to_deseq2 function - Will automatically normalize
+#And uses alphabetical order to determine which treatment is the reference
+# Ensure "Control" is the reference level
+pseq@sam_data$Treatment <- factor(pseq@sam_data$Treatment, levels = c("Control", "Probiotics", "Killed-Probiotics"))
 
 DeSeq <- phyloseq_to_deseq2(pseq, ~ Treatment) #convert phyloseq to deseq object
 
-DeSeq2 <- DESeq(DeSeq) #run deseq analysis
+#Only run below code if your data has not been deseq normalized!
+#If normalization already performed:
+#DeSeq2 <- DeSeq
+#If not testing certain treatments, remove them prior to normalization
+DeSeq2 <- DESeq(DeSeq) #run deseq normalization
+
+sizeFactors(DeSeq2) #Check size factors (Should return values)
 
 #Notes about the DESeq fxn:
 #This function performs a default analysis through the steps:
@@ -117,6 +122,7 @@ res_PB_vs_control <- results(DeSeq2, contrast = c("Treatment", "Probiotics", "Co
 res_PBH_vs_control <- results(DeSeq2, contrast = c("Treatment", "Probiotics + HT", "Control"))
 res_HT_vs_control <- results(DeSeq2, contrast = c("Treatment", "High temperature", "Control"))
 
+res_PB_vs_control <- results(DeSeq2, contrast = c("Treatment", "Probiotics", "Control"))
 res_KPB_vs_control <- results(DeSeq2, contrast = c("Treatment", "Killed-Probiotics", "Control"))
 res_contPB_vs_control <- results(DeSeq2, contrast = c("Treatment", "Continuous Probiotics", "Control"))
 
@@ -133,6 +139,7 @@ res_dat_PB <- cbind(as(res_PB_vs_control, "data.frame"), as(tax_table(pseq)[rown
 res_dat_PBH <- cbind(as(res_PBH_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_PBH_vs_control), ], "matrix")) #make the results a data frame
 res_dat_HT <- cbind(as(res_HT_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_HT_vs_control), ], "matrix")) #make the results a data frame
 
+res_dat_PB <- cbind(as(res_PB_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_PB_vs_control), ], "matrix")) #make the results a data frame
 res_dat_KPB <- cbind(as(res_KPB_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_KPB_vs_control), ], "matrix")) #make the results a data frame
 res_dat_contPB <- cbind(as(res_contPB_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_contPB_vs_control), ], "matrix")) #make the results a data frame
 
@@ -147,8 +154,10 @@ sigtab_PB = res_dat_PB[which(res_dat_PB$padj < alpha), ] #filter out significant
 sigtab_PBH = res_dat_PBH[which(res_dat_PBH$padj < alpha), ]
 sigtab_HT = res_dat_HT[which(res_dat_HT$padj < alpha), ]
 
+sigtab_PB = res_dat_PB[which(res_dat_PB$padj < alpha), ] #filter out significant results
 sigtab_KPB = res_dat_KPB[which(res_dat_KPB$padj < alpha), ]
-sigtab_contPB = res_dat_contPB[which(res_dat_KPB$padj < alpha), ]
+sigtab_contPB = res_dat_contPB[which(res_dat_contPB$padj < alpha), ]
+
 
 #print only the significant results                              
 sigtab_PB
@@ -173,10 +182,10 @@ x = tapply(sigtab_high$log2FoldChange, sigtab_high$Genus, function(x) max(x))
 x = sort(x, TRUE)
 sigtab_high$Genus = factor(as.character(sigtab_high$Genus), levels=names(x))
 
-mycolors <- c("#E69F00", "#CC79A7", "#009E73", "#56B4E9", "#F0E442", "#999999")
+mycolors <- c("#E69F00", "#CC79A7", "#009E73", "#56B4E9", "#F0E442", "#999999", "red")
 
 
-ggplot(sigtab_PBH, aes(x=Genus, y=log2FoldChange, color=Class)) + geom_point(size=7) + 
+ggplot(sigtab_PB, aes(x=Genus, y=log2FoldChange, color=Class)) + geom_point(size=7) + 
   theme(axis.text.x = element_text(angle = 0, hjust = 0.5, face = "bold")) +
   labs(title = "High salinity vs. Control", x = "", y = "Log2-Fold-Change") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -252,7 +261,7 @@ custom_palette <- c("#33a02c", "#a6cee3", "#cab2d6","#ffcc00",  "#ff7f00","#00ff
 ggplot(sigtab_KPB, aes(x = reorder(Combined_Info, log2FoldChange), y = log2FoldChange, fill = Family)) +
   geom_bar(stat = "identity", color = "black") +
   coord_flip() +
-  labs(title = "kPB-Control", 
+  labs(title = "KPB-Control", 
        x = "Genus; ASV", 
        y = "Log2 Fold Change") +
   theme_bw() +
@@ -297,38 +306,34 @@ ggplot(sigtab_low_filtered, aes(x = reorder(Combined_Info, log2FoldChange), y = 
 #Venn diagram of shared ASVs ----
 
 # Extract ASV names from each set
-asv_PB <- sigtab_PB$ASV
-asv_PBH <- sigtab_PBH$ASV
-asv_HT <- rownames(sigtab_HT)
+
+asv_PB <- rownames(sigtab_PB)
+asv_KPB <- rownames(sigtab_KPB)
 
 # Create a list of ASV sets
+
 asv_list <- list(
   PB = asv_PB,
-  PBH = asv_PBH,
-  HT = asv_HT
+  KPB = asv_KPB
 )
 
 mycols <- c(PB = "lightgreen", PBH = "lightblue", HT = "#F8766D")
 
+mycols <- c(PB = "lightgreen", KPB = "orange")
+
 # Create Venn diagram
 venn_result <- venn.diagram(
   x = list(
-    "Probiotics" = asv_list[["PB"]],
-    "Probiotics + HT" = asv_list[["PBH"]],
-    "High temperature (HT)" = asv_list[["HT"]]
+    "Bacteria Added" = asv_list[["PB"]],
+    "Killed-Bacteria Added" = asv_list[["KPB"]]
   ),
-  category.names = c("Probiotics", "Probiotics + HT", "High temperature (HT)"),
+  category.names = c("Bacteria Added", "Killed-Bacteria Added"),
   fill = mycols,
   filename = NULL
 )
 
 # Plot the Venn diagram
 grid.draw(venn_result)
-
-
-
-
-
 
 
 
@@ -376,7 +381,7 @@ library(phyloseq)
 
 pseq <- MU42022_filtered_NOT_rarefied
 pseq <- mb2021_filtered_NOT_rarefied
-#how to pick which factors to use?? Checked, does not matter which factors you use, will normalize the same. 
+
 #need to remove NAs (algae)
 DeSeq <- phyloseq_to_deseq2(pseq, ~ Age) #convert phyloseq to deseq object
 

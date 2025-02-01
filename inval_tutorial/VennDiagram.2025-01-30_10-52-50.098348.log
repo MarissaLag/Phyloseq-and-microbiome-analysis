@@ -1,0 +1,12 @@
+INFO [2025-01-30 10:52:50] $x
+INFO [2025-01-30 10:52:50] list(`Bacteria Added` = asv_list[["PB"]], `Killed-Bacteria Added` = asv_list[["KPB"]])
+INFO [2025-01-30 10:52:50] 
+INFO [2025-01-30 10:52:50] $category.names
+INFO [2025-01-30 10:52:50] c("Bacteria Added", "Killed-Bacteria Added")
+INFO [2025-01-30 10:52:50] 
+INFO [2025-01-30 10:52:50] $fill
+INFO [2025-01-30 10:52:50] mycols
+INFO [2025-01-30 10:52:50] 
+INFO [2025-01-30 10:52:50] $filename
+INFO [2025-01-30 10:52:50] NULL
+INFO [2025-01-30 10:52:50] 

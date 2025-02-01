@@ -12,14 +12,20 @@ MU42022_filtered_Oct92024 <- readRDS("~/Documents/GitHub/Phyloseq and microbiome
 
 pseq <- MU42022_filtered_Oct92024
 pseq <- microbiome::transform(pseq, "compositional")
+pseq <- subset_samples(pseq, !Genetics == "4")
+pseq <- subset_samples(pseq, Age == "Spat")
+any(taxa_sums(pseq) == 0)
+# pseq <- prune_taxa(taxa_sums(pseq) > 0, pseq)
+# any(taxa_sums(pseq) == 0)
 pseq <- psmelt(pseq) 
 
 pseq <- PB2023_spat_not_rarefied_normalized
+pseq <- PB2023_spat_not_rarefied_CSSnormalized_Jan2025
 pseq_filt <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
 any(taxa_sums(pseq_filt) == 0)
 # pseq_filtered <- prune_taxa(taxa_sums(pseq_filt) > 0, pseq_filt)
 # any(taxa_sums(pseq_filtered) == 0)
-pseq_filt <- pseq_filtered
+#pseq_filt <- pseq_filtered
 pseq <- microbiome::transform(pseq_filt, "compositional")
 pseq <- psmelt(pseq)
 
@@ -41,12 +47,6 @@ rhodobacteraceae_data <- subset(merged_data, Family == "Rhodobacteraceae")
 sequences <- unique(rhodobacteraceae_data$Sequence)
 names(sequences) <- unique(rhodobacteraceae_data$OTU)  # Assign ASV names to the sequences
 
-# Subset data for alphaproteobacteria 
-alpha_data <- subset(merged_data, Class == "Alphaproteobacteria")
-#View(alpha_data)
-# Extract unique sequences for the Rhodobacteraceae ASVs
-sequences <- unique(alpha_data$Sequence)
-names(sequences) <- unique(alpha_data$OTU)  # Assign ASV names to the sequences
 
 #All data 
 # Extract unique sequences for the Rhodobacteraceae ASVs
@@ -425,22 +425,36 @@ pheatmap(
 row_hclust <- hclust(dist(roseobacter_matrix), method = "complete")
 
 # Cut the tree into clusters (e.g., 5 clusters)
-k <- 3  # Number of clusters
+k <- 1  # Number of clusters
 row_clusters <- cutree(row_hclust, k = k)
 
 # Create a data frame for row annotations
 row_annotation <- data.frame(Cluster = factor(row_clusters))
 rownames(row_annotation) <- rownames(roseobacter_matrix)
 
+roseobacter_matrix_scaled <- t(scale(t(roseobacter_matrix)))  # Row-wise scaling
+
 # Assign colors for the clusters
 annotation_colors <- list(Cluster = c(
-  "1" = "yellow",
-  "2" = "orange",
-  "3" = "forestgreen",
+  "1" = "springgreen"
 ))
 
+# Generate the heatmap with cluster annotations
+pheatmap(
+  roseobacter_matrix_scaled,
+  annotation_colors = annotation_colors,
+  border_color = "black",
+  main = "",
+  cluster_rows = TRUE, 
+  cluster_cols = FALSE,
+  show_rownames = TRUE,
+  angle_col = 0,
+  fontsize_col = 18,
+  fontsize_row = 12,
+  clustering_distance_rows = "manhattan",
+  annotation_row = row_annotation  # Add the row annotation here
+)
 
-# Generate the heatmap with cluster labels
 pheatmap(
   heatmap_matrix_scaled,
   annotation_row = row_annotation,
@@ -450,8 +464,10 @@ pheatmap(
   show_rownames = FALSE,  # Optionally hide row names for clarity
   main = "",
   angle_col = 0,
-  fontsize_col = 13
+  fontsize_col = 18,
+  fontsize = 14
 )
+
 
 #Boxplots ----
 
@@ -477,8 +493,8 @@ ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, fill = OTU))
        y = "Average Relative Abundance") +
   scale_fill_viridis_d(option = "F", direction = 1) +  # Use Viridis palette; adjust option for different colors
   theme_bw() +
-  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size = 14, face = "bold"),
-        axis.text.y = element_text(size = 14, face = "bold"),
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size = 16, face = "bold"),
+        axis.text.y = element_text(size = 16, face = "bold"),
         axis.title.y = element_text(size=16, face = "bold"),
         legend.position = "none",
         panel.grid.major = element_blank(),
@@ -500,25 +516,67 @@ ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, color = OTU)
         legend.position = "none",
         panel.grid.minor = element_blank())
 
-
+ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, color = OTU)) +
+  geom_jitter(width = 0.2, height = 0, size = 4, alpha = 0.7) + 
+  labs(title = "",
+       x = "",  
+       y = "Average Relative Abundance") +
+  scale_color_viridis_d(option = "F", direction = 1) +  # Use Viridis palette for colors
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1, size = 12, face = "bold"),
+        axis.text.y = element_text(size = 14, face = "bold"),
+        axis.title.y = element_text(size = 16, face = "bold"),
+        panel.grid.major = element_blank(),
+        legend.position = "none",
+        panel.grid.minor = element_blank()) +
+  facet_wrap(~OTU)  # Create separate panels for each OTU
 
 #Testing roseobacter ----
 
 pseq <- MU42022_filtered_Oct92024
 pseq <- subset_samples(pseq, !Treatment %in% c("High temperature"))
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+pseq <- subset_samples(pseq, Age %in% c("Spat"))
 pseq3 <- microbiome::transform(pseq, "compositional")
 
 pseq3 <- psmelt(pseq3) 
+
+pseq3$Genetics = as.factor(pseq3$Genetics)
+pseq3$Treatment = as.factor(pseq3$Treatment)
+pseq3$OTU = as.factor(pseq3$Factor)
 
 roseobacter_df <- pseq3[pseq3$OTU %in% names(roseobacter_matches), ]
 
 head(roseobacter_df)
 
+str(roseobacter_df)
+
+#Look at ASV11 only
+roseobacter_asv11 <- roseobacter_df %>%
+  filter(OTU == "ASV11")
+
+#Calculate avg roseobacter abundance in each sample, then test treatment effects
+# Calculate the average abundance per sample
+average_abundance_per_sample <- roseobacter_df %>%
+  group_by(Sample, Treatment) %>%
+  summarize(Average_Abundance = mean(Abundance, na.rm = TRUE), .groups = "drop")
+
 # One-way ANOVA
-anova_result <- aov(Abundance ~ Treatment, data = roseobacter_df)
+anova_result <- aov(Abundance ~ Treatment, data = roseobacter_asv11)
 summary(anova_result)
 plot(anova_result)
+tukey_result <- TukeyHSD(anova_result)
+print(tukey_result)
+
+residuals <- residuals(anova_result)
+
+# Q-Q Plot
+qqnorm(residuals)
+qqline(residuals, col = "red", lwd = 2)
+
+# Shapiro-Wilk test
+shapiro.test(residuals)
+
 
 #Many zeros
 library(MASS)  # For negative binomial GLM
@@ -540,13 +598,29 @@ plot(residuals_dharma)
 
 #Try tweedie dist'd
 library(mgcv)
+
+roseobacter_asv11 <- roseobacter_df %>%
+  filter(OTU == "ASV11")
+
 tweedie_model <- mgcv::gam(Abundance ~ Treatment, 
                      family = tw(), 
-                     data = roseobacter_df)
+                     data = roseobacter_asv11)
 summary(tweedie_model)
-
-qqnorm(residuals(tweedie_model))
+aov <- anova(tweedie_model)
 residuals_dharma <- simulateResiduals(fittedModel = tweedie_model)
+plot(residuals_dharma)
+
+pairwise_results <- emmeans(tweedie_model, ~ Treatment)
+contrast(pairwise_results, method = "pairwise", adjust = "bonferroni")
+
+
+tweedie_model_random <- mgcv::gam(Abundance ~ Treatment + s(Genetics, bs = "re"),
+                           family = tw(),
+                           data = roseobacter_asv11)
+summary(tweedie_model_random)
+
+qqnorm(residuals(tweedie_model_random))
+residuals_dharma <- simulateResiduals(fittedModel = tweedie_model_random) #issues with random model
 plot(residuals_dharma)
 
 #manyglm
