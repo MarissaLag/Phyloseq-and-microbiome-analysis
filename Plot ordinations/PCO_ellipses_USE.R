@@ -48,6 +48,8 @@ pseq <- merged_phyloseq
 
 #PB2023
 pseq <- PB2023_spat_not_rarefied_CSSnormalized_Jan2025
+pseq <- PB2023_rarefied_3000
+pseq <- PB2023_rarefied_1313
 pseq <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
 
 #convert to compositional data
@@ -123,6 +125,18 @@ p1 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Family", labe
   theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
   #geom_encircle(aes(fill = Treatment), expand = 0.2, alpha = 0.2)
 p1
+
+
+p1 <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Family") +
+  geom_point(aes(fill = Treatment), size = 8) +
+  geom_text(aes(label = Sample.ID.seq), size = 5, vjust = -1, check_overlap = TRUE) +  # Add this line to label points
+  scale_colour_manual(values = c("darkgrey", "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) +
+  ggtitle("") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+
+print(p1)
+
 
 #3 dpf
 pseq <- MU42022_filtered_Oct92024

@@ -57,6 +57,7 @@ ps <- psmelt(pseq)
 
 #PB2023
 pseq <- PB2023_spat_not_rarefied_normalized
+pseq <- PB2023_spat_10X_limited_CSS
 pseq <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
 pseq <- microbiome::transform(pseq, "compositional")
 ps <- psmelt(pseq)
@@ -109,11 +110,13 @@ filtered_ps <- ps %>%
 
 #PB2023 results
 filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV231", "ASV461", "ASV1211", "ASV478", "ASV227")) 
+  filter(OTU %in% c("ASV265", "ASV190")) 
 
 filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV190", "ASV227")) 
+  filter(OTU %in% c("ASV190", "ASV227", "ASV231")) 
 
+filtered_ps <- ps %>% 
+  filter(OTU %in% c("ASV227", "ASV166", "ASV167", "ASV353", "ASV597")) 
 
 filtered_ps <- ps %>% 
   filter(OTU %in% c("ASV1191", "ASV157", "ASV1032", "ASV1411", "ASV1264", "ASV1287", 
@@ -127,8 +130,9 @@ View(filtered_ps)
 
 # Calculate the average abundance for each treatment group
 average_abundance <- filtered_ps %>%
-  group_by(Treatment) %>%
-  summarise(Average_Abundance = mean(Abundance)) 
+  group_by(Treatment, OTU) %>%
+  summarise(Average_Abundance = mean(Abundance),
+            std_Abundance = sd(Abundance)) 
 
 
 # Plot
@@ -140,8 +144,8 @@ paired_palette <- c(brewer.pal(8, "Dark2"),  # 8 more colors from the Dark2 pale
                        brewer.pal(8, "Accent"), # 8 more colors from the Accent palette
                        brewer.pal(6, "Set3"))
 
-ggplot(average_abundance, aes(y = Average_Abundance, x = Treatment)) + 
-  geom_bar(position = "stack", stat = "identity", color = "black") +
+ggplot(average_abundance, aes(y = Average_Abundance, x = Treatment, fill = Treatment)) + 
+  geom_bar(position = "stack", stat = "identity", colour = "black") +
   scale_fill_manual(values = paired_palette) +
   labs(title = "", 
        x = "", 
@@ -149,11 +153,39 @@ ggplot(average_abundance, aes(y = Average_Abundance, x = Treatment)) +
        fill = "") +
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_text(size = 12, angle = 45, hjust = 1),
-        axis.title.y = element_text(size = 14),  # Adjust y-axis title font size
-        legend.text = element_text(size = 12),   # Adjust legend text font size
+        axis.title.y = element_text(size = 14),
+        legend.text = element_text(size = 12),
         legend.title = element_text(size = 14),
-        panel.border = element_blank()) +  # Adjust legend title font size
+        panel.border = element_blank()) + 
   facet_wrap("OTU")
+
+# Update Treatment labels
+filtered_ps <- filtered_ps %>%
+  mutate(Treatment = recode(Treatment,
+                            "Killed-Probiotics" = "Killed-Bacteria Added",
+                            "Probiotics" = "Bacteria Added"))
+         
+
+filtered_ps$Treatment <- factor(filtered_ps$Treatment, 
+                                levels = c("Control", "Killed-Bacteria Added", "Bacteria Added"))
+
+
+ggplot(filtered_ps, aes(x = Treatment, y = Abundance, fill = Treatment)) + 
+  geom_boxplot() + # Create the boxplot
+   scale_fill_manual(values = c("Control" = "darkgrey", 
+                                 "Killed-Bacteria Added" = "cornflowerblue", 
+                             "Bacteria Added" = "orange")) +
+  labs(title = "", 
+       x = "", 
+       y = "Average Relative Abundance", 
+       fill = "") +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size = 12, angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14),
+        panel.border = element_blank()) + 
+  facet_wrap("OTU") # Create separate plots for each OTU
 
 # Custom labeller function
 # custom_labeller <- function(variable, value) {

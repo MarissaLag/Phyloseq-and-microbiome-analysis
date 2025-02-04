@@ -258,21 +258,37 @@ pseq <- subset_samples(pseq, !Sample.ID  %in% c("T16-10-r3", "A-1", "A-3", "A-6"
 #Trying this out based on Knight et al., (2019) paper stating samples should not have > 10x sample read difference
 #So, removing reads that are >10x more than lowest read depth in samples
 
-pseq_filtered <- prune_samples(sample_sums(pseq) <= 13130, pseq)
+# Custom function to limit read counts
+limit_reads <- function(x) {
+  ifelse(x > 13130, 13130, x)  # Set any count above 13130 to 13130
+}
 
-readcount = data.table(as(sample_data(pseq_filtered), "data.frame"),
-                       TotalReads = sample_sums(pseq_filtered), 
-                       keep.rownames = TRUE)
+# Apply the function to the phyloseq object
+pseq_limited <- transform_sample_counts(pseq, limit_reads)
 
-setnames(readcount, "rn", "SampleID")
+# Check the modified read counts
+otu_table(pseq_limited)
 
-readcount[order(readcount$TotalReads), c("SampleID", "TotalReads")]
+readcount <- data.table(
+  SampleID = rownames(sample_data(pseq_limited)),  # Capture row names directly as SampleID
+  TotalReads = sample_sums(pseq_limited)
+)
+
+# Limit the TotalReads to a maximum of 13130
+readcount[, TotalReads := ifelse(TotalReads > 13130, 13130, TotalReads)]
+
+# Order by TotalReads and select SampleID and TotalReads
+ordered_readcount <- readcount[order(TotalReads), .(SampleID, TotalReads)]
+
+# Print the ordered read counts
+print(ordered_readcount)
+
 
 #saving filtered but not rarefied pseq object for mb2021 project
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_Oct92024.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filteredwSpat_only_rarefied_June2024.rds")
-saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/PB2023_spat_filtered_max_samples_removed.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/PB2023_spat_limited_10X_reads.rds")
 
 
 otu.rare = otu_table(pseq)

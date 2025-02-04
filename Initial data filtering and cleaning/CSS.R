@@ -28,31 +28,33 @@ pseq <- MU42022_filtered_Oct92024
 
 pseq <- PB2023_spat_filtered_not_rarefied
 
+pseq <- PB2023_spat_limited_10X_reads
+
 #Preform zComposition (zero imputation) before CSS scaling 
 
-otu_matrix <- as.matrix(otu_table(pseq))
-
-otu_imputed <- cmultRepl(otu_matrix, 
-                         method = "CZM")
-
-otu_table_imputed <- otu_table(otu_imputed, taxa_are_rows = FALSE)
-
-pseq_imputed <- phyloseq(otu_table_imputed, sample_data(pseq), tax_table(pseq))
+# otu_matrix <- as.matrix(otu_table(pseq))
+# 
+# otu_imputed <- cmultRepl(otu_matrix, 
+#                          method = "CZM")
+# 
+# otu_table_imputed <- otu_table(otu_imputed, taxa_are_rows = FALSE)
+# 
+# pseq_imputed <- phyloseq(otu_table_imputed, sample_data(pseq), tax_table(pseq))
 
 #If samples removed, must remove from sample_data
 
 # Get sample names from both phyloseq objects
-original_samples <- sample_names(pseq)
-imputed_samples <- sample_names(pseq_imputed)
-
-# Find samples that were removed
-removed_samples <- setdiff(original_samples, imputed_samples)
-print(removed_samples)
-
-# Subset sample_data to keep only samples in pseq_imputed
-sample_data(pseq_imputed) <- sample_data(pseq_imputed)[imputed_samples, ]
-
-pseq <- pseq_imputed
+# original_samples <- sample_names(pseq)
+# imputed_samples <- sample_names(pseq_imputed)
+# 
+# # Find samples that were removed
+# removed_samples <- setdiff(original_samples, imputed_samples)
+# print(removed_samples)
+# 
+# # Subset sample_data to keep only samples in pseq_imputed
+# sample_data(pseq_imputed) <- sample_data(pseq_imputed)[imputed_samples, ]
+# 
+# pseq <- pseq_imputed
 
 # Convert from filtered phyloseq object to metagenomeseq object:
 metaSeqObject1=phyloseq_to_metagenomeSeq(pseq)
@@ -81,6 +83,6 @@ physeq.sub.arch
 # If sample names are column names in the sequence table, taxa_are_rows=TRUE
 # If samples names are row names, taxa_are_rows=FALSE
 
-saveRDS(physeq.sub.arch, file = "PB2023_spat_not_rarefied_CSSnormalized_max_samples_removed.rds")
+saveRDS(physeq.sub.arch, file = "PB2023_spat_10X_limited_CSS.rds")
 
 

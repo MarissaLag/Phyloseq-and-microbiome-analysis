@@ -39,6 +39,8 @@ pseq <- MU42022_filtered_Oct92024
 pseq <- PB2023_spat_not_rarefied_normalized
 pseq <- PB2023_spat_not_rarefied_CSSnormalized_Jan2025
 
+pseq <- PB2023_spat_10X_limited_CSS
+
 #Exclude factors
 
 pseq <- subset_samples(pseq, Age %in% c("Spat"))
@@ -191,7 +193,7 @@ heatmap_matrix_scaled[is.nan(heatmap_matrix_scaled)] <- 0
 row_hclust <- hclust(dist(heatmap_matrix_scaled), method = "complete")
 
 # Cut the tree into clusters (e.g., 5 clusters)
-k <- 9  # Number of clusters
+k <- 6  # Number of clusters
 row_clusters <- cutree(row_hclust, k = k)
 
 # Create a data frame for row annotations
@@ -252,7 +254,7 @@ cluster_colors <- annotation_colors$Cluster
 
 # Create the circular tree
  ggtree(tree, layout = "fan", branch.length = 0.5) %<+% tip_data +
-  geom_tiplab(aes(color = Cluster), size = 5, show.legend = FALSE) +
+  geom_tiplab(aes(color = Cluster), size = 4, show.legend = FALSE) +
   geom_point(aes(color = Cluster), size = 1.5) +  # Add points to tips
   scale_color_manual(values = cluster_colors) +
   theme(legend.position = "none")
@@ -260,7 +262,7 @@ cluster_colors <- annotation_colors$Cluster
 
 #Look at cluster 2 only 
 # Filter rows for cluster 1
-cluster_1_rows <- rownames(row_annotation)[row_annotation$Cluster == "9"]
+cluster_1_rows <- rownames(row_annotation)[row_annotation$Cluster == "6"]
 heatmap_matrix_cluster_1 <- heatmap_matrix_scaled[cluster_1_rows, , drop = FALSE]
 
 # Subset the row annotation to match the filtered rows
@@ -274,7 +276,7 @@ pheatmap(
   cluster_rows = TRUE,  # Ensure clustering within cluster 1 rows
   cluster_cols = FALSE,  # No clustering on columns
   show_rownames = TRUE,  # Show row names for cluster 1
-  main = "Cluster 9 Heatmap",
+  main = "Cluster 6 Heatmap",
   angle_col = 0,
   fontsize_col = 18,
   fontsize_row = 14,
