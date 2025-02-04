@@ -21,6 +21,7 @@ pseq <- psmelt(pseq)
 
 pseq <- PB2023_spat_not_rarefied_normalized
 pseq <- PB2023_spat_not_rarefied_CSSnormalized_Jan2025
+pseq <- PB2023_spat_10X_limited_CSS
 pseq_filt <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
 any(taxa_sums(pseq_filt) == 0)
 # pseq_filtered <- prune_taxa(taxa_sums(pseq_filt) > 0, pseq_filt)
@@ -473,7 +474,7 @@ pheatmap(
 
 # Calculate average and standard deviation of Abundance for each OTU across treatment groups
 roseobacter_stats <- roseobacter_df %>%
-  group_by(OTU, Treatment) %>%
+  group_by(OTU, Treatment, sample_Family ) %>%
   summarise(
     Average_Abundance = mean(Abundance, na.rm = TRUE),
     Std_Abundance = sd(Abundance, na.rm = TRUE),
@@ -484,6 +485,15 @@ roseobacter_stats <- roseobacter_df %>%
 library(RColorBrewer)
 
 library(viridis)  # For gradient color palettes
+
+roseobacter_stats <- roseobacter_stats %>%
+  mutate(Treatment = recode(Treatment,
+                            "Killed-Probiotics" = "Killed-Bacteria Added",
+                            "Probiotics" = "Bacteria Added"))
+
+roseobacter_stats$Treatment <- factor(roseobacter_stats$Treatment, 
+                                levels = c("Control", "Killed-Bacteria Added", "Bacteria Added"))
+
 
 # Create a stacked bar plot of ASV abundance by Treatment with no gridlines and a gradient color palette
 ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, fill = OTU)) +
@@ -498,7 +508,8 @@ ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, fill = OTU))
         axis.title.y = element_text(size=16, face = "bold"),
         legend.position = "none",
         panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank())
+        panel.grid.minor = element_blank()) +
+  facet_wrap(~sample_Family)
 
 #scatter plot
 ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, color = OTU)) +

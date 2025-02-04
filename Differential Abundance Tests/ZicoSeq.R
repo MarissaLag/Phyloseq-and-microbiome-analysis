@@ -54,11 +54,13 @@ meta = as.matrix.data.frame(meta.dat)
 meta.dat = as.data.frame(meta)
 str(meta.dat)
 
-meta.dat$Treatment <- as.factor(meta.dat$Treatment)  # Convert to factor
+meta.dat$Treatment <- as.factor(meta.dat$Treatment) 
+meta.dat$Family <- as.factor(meta.dat$Family)
+
 
 ZicoSeq.obj <- ZicoSeq(meta.dat = meta.dat, feature.dat = comm, 
-                       grp.name = 'Treatment', feature.dat.type = "count",
-                       adj.name = "Genetics",
+                       grp.name = 'Family', feature.dat.type = "count",
+                       adj.name = "Treatment",
                        # Filter to remove rare taxa
                        prev.filter = 0.2, mean.abund.filter = 0,  
                        max.abund.filter = 0.002, min.prop = 0, 

@@ -110,10 +110,10 @@ filtered_ps <- ps %>%
 
 #PB2023 results
 filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV265", "ASV190")) 
+  filter(OTU %in% c("ASV275")) 
 
 filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV190", "ASV227", "ASV231")) 
+  filter(OTU %in% c( "ASV32", "ASV397","ASV438","ASV597","ASV774","ASV1119")) 
 
 filtered_ps <- ps %>% 
   filter(OTU %in% c("ASV227", "ASV166", "ASV167", "ASV353", "ASV597")) 
@@ -130,7 +130,7 @@ View(filtered_ps)
 
 # Calculate the average abundance for each treatment group
 average_abundance <- filtered_ps %>%
-  group_by(Treatment, OTU) %>%
+  group_by(Treatment, sample_Family, OTU) %>%
   summarise(Average_Abundance = mean(Abundance),
             std_Abundance = sd(Abundance)) 
 
@@ -157,7 +157,7 @@ ggplot(average_abundance, aes(y = Average_Abundance, x = Treatment, fill = Treat
         legend.text = element_text(size = 12),
         legend.title = element_text(size = 14),
         panel.border = element_blank()) + 
-  facet_wrap("OTU")
+  facet_wrap(~sample_Family)
 
 # Update Treatment labels
 filtered_ps <- filtered_ps %>%
