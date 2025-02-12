@@ -36,6 +36,8 @@ pseq <- MU42022_filtered_Oct92024
 pseq <- PB2023_spat_filtered_not_rarefied
 pseq <- PB2023_rarefied_3000
 
+pseq <- mb2021_filtered_NOT_rarefied
+
 # pseq@sam_data$Treatment <- gsub("Killed-Probiotics", "KilledProbiotics", pseq@sam_data$Treatment)
 # pseq@sam_data$Treatment
 

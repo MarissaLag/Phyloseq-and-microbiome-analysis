@@ -110,7 +110,7 @@ filtered_ps <- ps %>%
 
 #PB2023 results
 filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV275")) 
+  filter(OTU %in% c("ASV275", "ASV231", "ASV190", "ASV227")) 
 
 filtered_ps <- ps %>% 
   filter(OTU %in% c( "ASV32", "ASV397","ASV438","ASV597","ASV774","ASV1119")) 
@@ -173,11 +173,11 @@ filtered_ps$Treatment <- factor(filtered_ps$Treatment,
 ggplot(filtered_ps, aes(x = Treatment, y = Abundance, fill = Treatment)) + 
   geom_boxplot() + # Create the boxplot
    scale_fill_manual(values = c("Control" = "darkgrey", 
-                                 "Killed-Bacteria Added" = "cornflowerblue", 
-                             "Bacteria Added" = "orange")) +
+                                 "Killed-Bacteria Added" = "orange", 
+                             "Bacteria Added" = "#00A572")) +
   labs(title = "", 
        x = "", 
-       y = "Average Relative Abundance", 
+       y = "Relative Abundance", 
        fill = "") +
   theme(plot.title = element_text(hjust = 0.5),
         axis.text.x = element_text(size = 12, angle = 45, hjust = 1),
@@ -185,7 +185,7 @@ ggplot(filtered_ps, aes(x = Treatment, y = Abundance, fill = Treatment)) +
         legend.text = element_text(size = 12),
         legend.title = element_text(size = 14),
         panel.border = element_blank()) + 
-  facet_wrap("OTU") # Create separate plots for each OTU
+  facet_wrap("OTU",  labeller = custom_labeller) # Create separate plots for each OTU
 
 # Custom labeller function
 # custom_labeller <- function(variable, value) {
@@ -199,7 +199,9 @@ ggplot(filtered_ps, aes(x = Treatment, y = Abundance, fill = Treatment)) +
 
 custom_labeller <- function(variable, value) {
   if (variable == "OTU") {
-    return(c("ASV190" = "ASV190 - Phaeobacter", "ASV227" = "ASV227 = Litoreibacter")[value])
+    return(c("ASV190" = "ASV190 - Phaeobacter", "ASV227" = "ASV227 = Litoreibacter",
+           "ASV231" = "ASV231 - Stappia", "ASV275" = "ASV275 - Loktanella")
+           [value])
   }
   return(value)
 }

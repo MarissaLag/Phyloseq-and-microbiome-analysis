@@ -18,7 +18,7 @@ library(microbiome)
 
 pseq<- readRDS("Marissa_.rds")
 
-pseq <- Marissa_mb2021_filtered_20240203
+pseq <- mb2021_filtered_NOT_rarefied
 
 pseq <- Marissa_MU42022_unfiltered
 
@@ -56,7 +56,7 @@ pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 # pseq <- subset_samples(pseq, !Age %in% c("Spat"))
 
 pseq <- subset_samples(pseq, Day %in% c("Spat"))
-pseq_day1 <- subset_samples(pseq, Day %in% c("Day 01"))
+pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
 
 #create objects
 

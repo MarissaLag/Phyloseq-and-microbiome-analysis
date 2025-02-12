@@ -32,12 +32,14 @@ pseq <- PB2023_spat_not_rarefied_normalized
 
 pseq <- PB2023_rarefied_3764
 
+pseq <- mb2021_filteredw1dpf_only_rarefied_June2024
+
 #filter samples - note, removing samples will alter how deseq normalizes the data
 
 #MU42022
 pseq <- subset_samples(pseq, !Genetics %in% "4")
-pseq <- subset_samples(pseq, Day %in% "Spat")
-#pseq <- subset_samples(pseq, Age %in% "1 dpf")
+pseq <- subset_samples(pseq, Age %in% "Spat")
+pseq <- subset_samples(pseq, Age %in% "1 dpf")
 # pseq <- subset_samples(pseq, !Family %in% "9")
 # pseq <- subset_samples(pseq, !Organism %in% "Algae")
 # View(pseq@sam_data)
@@ -83,7 +85,7 @@ View(pseq@otu_table)
 #Be careful when using  phyloseq_to_deseq2 function - Will automatically normalize
 #And uses alphabetical order to determine which treatment is the reference
 # Ensure "Control" is the reference level
-pseq@sam_data$Treatment <- factor(pseq@sam_data$Treatment, levels = c("Control", "Probiotics", "Killed-Probiotics"))
+#pseq@sam_data$Treatment <- factor(pseq@sam_data$Treatment, levels = c("Control", "Probiotics", "Killed-Probiotics"))
 
 DeSeq <- phyloseq_to_deseq2(pseq, ~ Treatment) #convert phyloseq to deseq object
 
@@ -185,16 +187,17 @@ sigtab_high$Genus = factor(as.character(sigtab_high$Genus), levels=names(x))
 mycolors <- c("#E69F00", "#CC79A7", "#009E73", "#56B4E9", "#F0E442", "#999999", "red")
 
 
-ggplot(sigtab_PB, aes(x=Genus, y=log2FoldChange, color=Class)) + geom_point(size=7) + 
+ggplot(sigtab_high, aes(x=Genus, y=log2FoldChange, color=Class)) + geom_point(size=7) + 
   theme(axis.text.x = element_text(angle = 0, hjust = 0.5, face = "bold")) +
   labs(title = "High salinity vs. Control", x = "", y = "Log2-Fold-Change") +
   theme(plot.title = element_text(hjust = 0.5)) +
   theme(panel.grid = element_blank()) +
-  scale_colour_manual(values = mycolors)
+  scale_colour_brewer(palette = "Set3")
+  #scale_colour_manual(values = mycolors)
 
   scale_color_manual(values = c("Alteromonadaceae" = "pink", "Halieaceae" = "#377EB8", "Rhodobacteraceae" = "#4DAF4A", "Saprospiraceae" = "yellow"))
 
-ggplot(sigtab_PBH, aes(x=Family, y=log2FoldChange, color=Family)) + geom_point(size=6) + 
+ggplot(sigtab_high, aes(x=Family, y=log2FoldChange, color=Family)) + geom_point(size=6) + 
   theme(axis.text.x = element_text(angle = 0, hjust = 0.5, vjust = 1)) +
   labs(title = "High salinity vs. Control", x = "", y = "Log2-Fold-Change") +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -206,11 +209,12 @@ ggplot(sigtab_PBH, aes(x=Family, y=log2FoldChange, color=Family)) + geom_point(s
 #Need to convert row names (ASV#s) into a column)
 library(tibble)
 library(RColorBrewer)
+library(viridis)
 
-# Convert row names to a column named "ASV"
-# sigtab_low <- rownames_to_column(sigtab_low, var = "ASV")
-# sigtab_high <- rownames_to_column(sigtab_high, var = "ASV")
-# 
+#Convert row names to a column named "ASV"
+sigtab_low <- rownames_to_column(sigtab_low, var = "ASV")
+sigtab_high <- rownames_to_column(sigtab_high, var = "ASV")
+
 # sigtab_PB <- rownames_to_column(sigtab_PB, var = "ASV")
 # sigtab_PBH <- rownames_to_column(sigtab_PBH, var = "ASV")
 # sigtab_HT <- rownames_to_column(sigtab_HT, var = "ASV")
@@ -221,8 +225,8 @@ sigtab_contPB <- rownames_to_column(sigtab_contPB, var = "ASV")
 
 
 #Want family identity info on bar graph too (but colouring is too much) so making a new column 
-# sigtab_high$Combined_Info <- paste(sigtab_high$Genus, sigtab_high$ASV, sep = ";")
-# sigtab_low$Combined_Info <- paste(sigtab_low$Genus, sigtab_low$ASV, sep = ";")
+sigtab_high$Combined_Info <- paste(sigtab_high$Genus, sigtab_high$ASV, sep = ";")
+sigtab_low$Combined_Info <- paste(sigtab_low$Genus, sigtab_low$ASV, sep = ";")
 # 
 # sigtab_PB$Combined_Info <- paste(sigtab_PB$Genus, sigtab_PB$ASV, sep = ";")
 # sigtab_PBH$Combined_Info <- paste(sigtab_PBH$Genus, sigtab_PBH$ASV, sep = ";")
@@ -258,21 +262,24 @@ custom_palette <- c("#33a02c", "#a6cee3", "#cab2d6","#ffcc00",  "#ff7f00","#00ff
 
 
 
-ggplot(sigtab_KPB, aes(x = reorder(Combined_Info, log2FoldChange), y = log2FoldChange, fill = Family)) +
+ggplot(sigtab_high, aes(x = reorder(Combined_Info, log2FoldChange), 
+                        y = log2FoldChange, 
+                        fill = Family)) +
   geom_bar(stat = "identity", color = "black") +
   coord_flip() +
-  labs(title = "KPB-Control", 
+  labs(title = "High Salinity - Control", 
        x = "Genus; ASV", 
        y = "Log2 Fold Change") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),   # Remove major gridlines
         panel.grid.minor = element_blank(),   # Remove minor gridlines
-        axis.text.x = element_text(size = 15),
-        axis.text.y = element_text(size = 15),
+        axis.text.x = element_text(size = 10),
+        axis.text.y = element_text(size = 11),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_text(size = 15),
         plot.title = element_text(hjust = 0.5)) +
-  scale_fill_manual(values = custom_palette_KPB)
+  scale_fill_brewer(palette = "Set3")
+  
 
 #Filter out ASVs shared between HS and LS
 

@@ -26,6 +26,8 @@ pseq <- PB2023_rarefied_3000
 
 pseq <- PB2023_spat_limited_10X_reads
 
+pseq <- mb2021_filtered_NOT_rarefied
+
 #MU42022 filtering
 # pseq <- subset_samples(pseq, Age %in% c("Spat"))
 # pseq <- subset_samples(pseq, !Genetics %in% c("4"))

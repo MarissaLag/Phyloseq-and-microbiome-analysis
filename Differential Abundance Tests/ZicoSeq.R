@@ -32,7 +32,8 @@ pseq <- PB2023_spat_10X_limited_CSS
 pseq <- subset_samples(pseq, !Treatment %in% c("James", "Continuous Probiotics"))
 
 pseq <- MU42022_filtered_NOT_rarefied
-pseq <- subset_samples(pseq, Age %in% c("Spat"))
+pseq <- mb2021_filtered_NOT_rarefied
+pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
 
 #Quality check
 any(taxa_sums(pseq) == 0)
@@ -59,10 +60,10 @@ meta.dat$Family <- as.factor(meta.dat$Family)
 
 
 ZicoSeq.obj <- ZicoSeq(meta.dat = meta.dat, feature.dat = comm, 
-                       grp.name = 'Family', feature.dat.type = "count",
-                       adj.name = "Treatment",
+                       grp.name = 'Treatment', feature.dat.type = "count",
+                       #adj.name = "Family",
                        # Filter to remove rare taxa
-                       prev.filter = 0.2, mean.abund.filter = 0,  
+                       prev.filter = 0.3, mean.abund.filter = 0,  
                        max.abund.filter = 0.002, min.prop = 0, 
                        # Winsorization to replace outliers
                        is.winsor = TRUE, outlier.pct = 0.03, winsor.end = 'top',
@@ -143,8 +144,13 @@ library(phyloseq)
 library(ggplot2)
 
 # Define the ASVs of interest
+
+significant_asvs <- significant_asvs_fdr
+
 significant_asvs <- c("ASV190",  "ASV227",  "ASV231",  "ASV236",
                       "ASV348",  "ASV461",  "ASV478",  "ASV777",  "ASV953",  "ASV1211")
+
+significant_asvs <- c("ASV6")
 
 # Subset the phyloseq object to include only the ASVs of interest
 pseq_subset <- prune_taxa(taxa_names(pseq) %in% significant_asvs, pseq)
