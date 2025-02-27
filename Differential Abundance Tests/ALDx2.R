@@ -20,6 +20,8 @@ pseq <- MU42022_nonrare_normalized_spat_limitedtaxa
 
 pseq <- PB2023_spat_not_rarefied_CSSnormalized_Jan2025
 
+pseq <- mb2021_filtered_NOT_rarefied_CSS
+
 pseq <- PB2023_spat_filtered_not_rarefied
 
 pseq <- PB2023_rarefied_3000
@@ -36,6 +38,15 @@ pseq <- mb2021_filtered_NOT_rarefied
 #PB2023 filtering
 pseq <- subset_samples(pseq, !Treatment %in% c("James", "Continuous Probiotics"))
 
+#Quality check
+any(taxa_sums(pseq) == 0)
+
+#if true
+
+pseq_filtered <- prune_taxa(taxa_sums(pseq) > 0, pseq)
+any(taxa_sums(pseq_filtered) == 0)
+
+pseq <- pseq_filtered
 
 # Extract the OTU table and convert it to a matrix
 otu_table_matrix <- as(otu_table(pseq), "matrix")
@@ -68,7 +79,7 @@ head(aldex_results)
 
 # Filter for significant ASVs based on eBH values < 0.05
 significant_kw <- aldex_results[aldex_results$kw.ep < 0.05, ]
-significant_glm <- aldex_results[aldex_results$glm.ep < 0.05, ]
+significant_glm <- aldex_results[aldex_results$glm.eBH < 0.05, ]
 
 # Optionally, you can combine these results 
 significant_all <- merge(significant_kw, significant_glm, by = "row.names", all = TRUE)

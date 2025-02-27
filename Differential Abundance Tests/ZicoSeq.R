@@ -33,6 +33,8 @@ pseq <- subset_samples(pseq, !Treatment %in% c("James", "Continuous Probiotics")
 
 pseq <- MU42022_filtered_NOT_rarefied
 pseq <- mb2021_filtered_NOT_rarefied
+pseq <- mb2021_filtered_NOT_rarefied_June2024
+pseq <- mb2021_filteredw1dpf_only_rarefied_June2024
 pseq <- subset_samples(pseq, Age %in% c("1 dpf"))
 
 #Quality check

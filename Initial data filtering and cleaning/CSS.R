@@ -30,6 +30,8 @@ pseq <- PB2023_spat_filtered_not_rarefied
 
 pseq <- PB2023_spat_limited_10X_reads
 
+pseq <- mb2021_filtered_NOT_rarefied
+
 #Preform zComposition (zero imputation) before CSS scaling 
 
 # otu_matrix <- as.matrix(otu_table(pseq))
@@ -65,7 +67,9 @@ metaSeqObject_CSS_filt=filterData(metaSeqObject_CSS, depth=1000) #Excludes low r
 seq.asv.css=data.frame(MRcounts(metaSeqObject_CSS_filt, norm=TRUE, log=TRUE)) # Convert back to an asv table, now css corrected.
 
 # Fixes column names in the ASV table to match our metadata by erasing the X character at the beginning. (Something like this may or may not be needed for your data, you just need the sample names to match before remaking the phyloseq object)
-names(seq.asv.css) = gsub(pattern = "\\.", replacement = "-", x = names(seq.asv.css))
+names(seq.asv.css) = gsub(pattern = "...", replacement = "---", x = names(seq.asv.css))
+# Replace "..." with "---" in the column names of the data frame
+colnames(seq.asv.css) <- gsub("\\.\\.\\.", "---", colnames(seq.asv.css))
 
 seq.asv.css <- t(seq.asv.css)
 
@@ -83,6 +87,6 @@ physeq.sub.arch
 # If sample names are column names in the sequence table, taxa_are_rows=TRUE
 # If samples names are row names, taxa_are_rows=FALSE
 
-saveRDS(physeq.sub.arch, file = "PB2023_spat_10X_limited_CSS.rds")
+saveRDS(physeq.sub.arch, file = "mb2021_filtered_NOT_rarefied_CSS.rds")
 
 

@@ -32,7 +32,7 @@ pseq <- PB2023_spat_not_rarefied_normalized
 
 pseq <- PB2023_rarefied_3764
 
-pseq <- mb2021_filteredw1dpf_only_rarefied_June2024
+pseq <- mb2021_filteredwSpat_only_rarefied_June2024
 
 #filter samples - note, removing samples will alter how deseq normalizes the data
 
@@ -225,8 +225,8 @@ sigtab_contPB <- rownames_to_column(sigtab_contPB, var = "ASV")
 
 
 #Want family identity info on bar graph too (but colouring is too much) so making a new column 
-sigtab_high$Combined_Info <- paste(sigtab_high$Genus, sigtab_high$ASV, sep = ";")
-sigtab_low$Combined_Info <- paste(sigtab_low$Genus, sigtab_low$ASV, sep = ";")
+sigtab_high$Combined_Info <- paste(sigtab_high$Family, sigtab_high$ASV, sep = ";")
+sigtab_low$Combined_Info <- paste(sigtab_low$Family, sigtab_low$ASV, sep = ";")
 # 
 # sigtab_PB$Combined_Info <- paste(sigtab_PB$Genus, sigtab_PB$ASV, sep = ";")
 # sigtab_PBH$Combined_Info <- paste(sigtab_PBH$Genus, sigtab_PBH$ASV, sep = ";")
@@ -262,19 +262,19 @@ custom_palette <- c("#33a02c", "#a6cee3", "#cab2d6","#ffcc00",  "#ff7f00","#00ff
 
 
 
-ggplot(sigtab_high, aes(x = reorder(Combined_Info, log2FoldChange), 
+ggplot(sigtab_low, aes(x = reorder(Combined_Info, log2FoldChange), 
                         y = log2FoldChange, 
-                        fill = Family)) +
+                        fill = Class)) +
   geom_bar(stat = "identity", color = "black") +
   coord_flip() +
-  labs(title = "High Salinity - Control", 
+  labs(title = "Low Salinity - Control", 
        x = "Genus; ASV", 
        y = "Log2 Fold Change") +
   theme_bw() +
   theme(panel.grid.major = element_blank(),   # Remove major gridlines
         panel.grid.minor = element_blank(),   # Remove minor gridlines
-        axis.text.x = element_text(size = 10),
-        axis.text.y = element_text(size = 11),
+        axis.text.x = element_text(size = 11),
+        axis.text.y = element_text(size = 9),
         axis.title.x = element_text(size = 15),
         axis.title.y = element_text(size = 15),
         plot.title = element_text(hjust = 0.5)) +
@@ -296,10 +296,16 @@ sigtab_low_filtered <- sigtab_low %>%
 head(sigtab_high_filtered)
 head(sigtab_low_filtered)
 
-ggplot(sigtab_low_filtered, aes(x = reorder(Combined_Info, log2FoldChange), y = log2FoldChange, fill = Class)) +
+soft_palette <- c("#FAD6A5", "#F28D3B", "#D83A25", "skyblue3", "#2A475E", "#77DD77",
+                     "lightyellow", "#F1C5D8", "#E0B0FF", "lightgrey")
+
+soft_palette <- c("#FAD6A5", "#F28D3B", "skyblue3", "#77DD77",
+                  "lightyellow", "#F1C5D8", "#E0B0FF", "lightgrey")
+
+ggplot(sigtab_high_filtered, aes(x = reorder(Combined_Info, log2FoldChange), y = log2FoldChange, fill = Class)) +
   geom_bar(stat = "identity", color = "black") +
   coord_flip() +
-  labs(title = "1 dpf - Significant ASVs - Low salinity vs Control", 
+  labs(title = "1 dpf - Significant ASVs - High salinity vs Control", 
        x = "Family; ASV", 
        y = "Log2 Fold Change") +
   theme(panel.grid.major = element_blank(),   # Remove major gridlines
@@ -307,9 +313,9 @@ ggplot(sigtab_low_filtered, aes(x = reorder(Combined_Info, log2FoldChange), y = 
         axis.text.x = element_text(size = 10),
         axis.text.y = element_text(size = 10),
         plot.title = element_text(hjust = 0.5)) +
-  scale_fill_manual(values = custom_palette)
+  scale_fill_manual(values = soft_palette)
 
-
+values = wes_palette("GrandBudapest1", n = 3
 #Venn diagram of shared ASVs ----
 
 # Extract ASV names from each set
