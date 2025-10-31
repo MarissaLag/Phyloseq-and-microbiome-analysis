@@ -20,7 +20,7 @@ pseq <- MU42022_nonrare_normalized_spat_limitedtaxa
 
 pseq <- PB2023_spat_not_rarefied_CSSnormalized_Jan2025
 
-pseq <- mb2021_filtered_NOT_rarefied_CSS
+pseq <- PB2023_spat_10X_limited_CSS
 
 pseq <- PB2023_spat_filtered_not_rarefied
 
@@ -70,12 +70,28 @@ group_vector <- as.character(group_vector)
 # 'mc.samples' is the number of Monte Carlo instances, typically set to 128 or 500
 #Use 500 for smaller sample sizes
 aldex_clr <- aldex.clr(otu_table_matrix, group_vector, mc.samples = 500)
+  
+x.effect <- aldex.effect(aldex_clr, CI=T, verbose=F, include.sample.summary=T, 
+                           paired.test=FALSE)
+x.tt <- aldex.ttest(aldex_clr, hist.plot=F, paired.test=FALSE, verbose=FALSE)
+
+# merge into one output for convenience
+x.all <- data.frame(x.tt,x.effect)
+
+par(mfrow=c(1,3))
+aldex.plot(x.all, type="MA", test="welch", main='MA plot')
+aldex.plot(x.all, type="MW", test="welch", main='effect plot')
+aldex.plot(x.all, type="volcano", test="welch", main='volcano plot')
+
+aldex.plotFeature(aldex_clr, 'S:E:G:D')
 
 # Use ALDEx2 for a t-test or ANOVA-like test depending on your groups
 #t-test is for comparing 2 factors, Anova for more than 2 factors:
 # For two groups: use aldex.ttest; for multiple groups: use aldex.kw
 aldex_results <- aldex.kw(aldex_clr)
+aldex_results <- aldex.ttest(aldex_clr)
 head(aldex_results)
+View(aldex_results)
 
 # Filter for significant ASVs based on eBH values < 0.05
 significant_kw <- aldex_results[aldex_results$kw.ep < 0.05, ]

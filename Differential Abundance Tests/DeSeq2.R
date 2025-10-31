@@ -54,6 +54,13 @@ pseq <- subset_samples(pseq, !Treatment %in% c("James", "Continuous Probiotics")
 # pseq@sam_data$Family[pseq@sam_data$Family %in% c(12, 16)] <- 4
 # pseq@sam_data$Family <- as.factor(pseq@sam_data$Family)
 
+#Sam's project
+
+pseq <- Sam_all_samples_partial_rarefy
+pseq <- subset_samples(pseq, Day %in% c("Spat"))
+pseq <- subset_samples(pseq, !Organism %in% c("Water"))
+pseq <- subset_samples(pseq, Microbial.Source %in% c("Disease Resilient", "Disease Susceptible", "Control"))
+
 
 #Sanity check
 #check if any OTUs are not present in any samples (want false)
@@ -87,7 +94,7 @@ View(pseq@otu_table)
 # Ensure "Control" is the reference level
 #pseq@sam_data$Treatment <- factor(pseq@sam_data$Treatment, levels = c("Control", "Probiotics", "Killed-Probiotics"))
 
-DeSeq <- phyloseq_to_deseq2(pseq, ~ Treatment) #convert phyloseq to deseq object
+DeSeq <- phyloseq_to_deseq2(pseq, ~ Microbial.Source) #convert phyloseq to deseq object
 
 #Only run below code if your data has not been deseq normalized!
 #If normalization already performed:
@@ -118,6 +125,10 @@ res_low_vs_control <- results(DeSeq2, contrast = c("Treatment", "Low salinity", 
 # res_F2_vs_F4 <- results(DeSeq2, contrast = c("Family", "2", "4"))
 # res_F1_vs_F4 <- results(DeSeq2, contrast = c("Family", "1", "4"))
 
+#Sam's project
+res_resilient_vs_control <- results(DeSeq2, contrast = c("Microbial.Source", "Disease Resilient", "Control"))
+res_susceptible_vs_control <- results(DeSeq2, contrast = c("Microbial.Source", "Disease Susceptible", "Control"))
+res_resilient_vs_susceptible <- results(DeSeq2, contrast = c("Microbial.Source", "Disease Resilient", "Disease Susceptible"))
 
 
 res_PB_vs_control <- results(DeSeq2, contrast = c("Treatment", "Probiotics", "Control"))
@@ -132,39 +143,57 @@ res_contPB_vs_control <- results(DeSeq2, contrast = c("Treatment", "Continuous P
 
 ** from this point it’s optional but this code helps filter the results **
 
+#Salinity project  
+  
 res_dat_low <- cbind(as(res_low_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_low_vs_control), ], "matrix")) #make the results a data frame
 res_dat_high <- cbind(as(res_high_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_high_vs_control), ], "matrix")) #make the results a data frame
 #res_dat_high_low <- cbind(as(res_high_vs_low, "data.frame"), as(tax_table(pseq)[rownames(res_high_vs_low), ], "matrix")) #make the results a data frame
 
+#MU42022 project
 
 res_dat_PB <- cbind(as(res_PB_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_PB_vs_control), ], "matrix")) #make the results a data frame
 res_dat_PBH <- cbind(as(res_PBH_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_PBH_vs_control), ], "matrix")) #make the results a data frame
 res_dat_HT <- cbind(as(res_HT_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_HT_vs_control), ], "matrix")) #make the results a data frame
 
+#PB2023 project
+
 res_dat_PB <- cbind(as(res_PB_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_PB_vs_control), ], "matrix")) #make the results a data frame
 res_dat_KPB <- cbind(as(res_KPB_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_KPB_vs_control), ], "matrix")) #make the results a data frame
 res_dat_contPB <- cbind(as(res_contPB_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_contPB_vs_control), ], "matrix")) #make the results a data frame
 
+#Sam's project
 
+res_dat_resilient <- cbind(as(res_resilient_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_resilient_vs_control), ], "matrix")) #make the results a data frame
+res_dat_susceptible <- cbind(as(res_susceptible_vs_control, "data.frame"), as(tax_table(pseq)[rownames(res_susceptible_vs_control), ], "matrix")) #make the results a data frame
+res_dat_RvsS <- cbind(as(res_resilient_vs_susceptible, "data.frame"), as(tax_table(pseq)[rownames(res_resilient_vs_susceptible), ], "matrix")) #make the results a data frame
+
+#filter out significant results
 alpha = 0.05 #Set alpha
 
-sigtab_high = res_dat_high[which(res_dat_high$padj < alpha), ] #filter out significant results
+sigtab_high = res_dat_high[which(res_dat_high$padj < alpha), ]
 sigtab_low = res_dat_low[which(res_dat_low$padj < alpha), ]
 sigtab_high_low = res_dat_high_low[which(res_dat_high_low$padj < alpha), ]
 
-sigtab_PB = res_dat_PB[which(res_dat_PB$padj < alpha), ] #filter out significant results
+sigtab_PB = res_dat_PB[which(res_dat_PB$padj < alpha), ]
 sigtab_PBH = res_dat_PBH[which(res_dat_PBH$padj < alpha), ]
 sigtab_HT = res_dat_HT[which(res_dat_HT$padj < alpha), ]
 
-sigtab_PB = res_dat_PB[which(res_dat_PB$padj < alpha), ] #filter out significant results
+sigtab_PB = res_dat_PB[which(res_dat_PB$padj < alpha), ]
 sigtab_KPB = res_dat_KPB[which(res_dat_KPB$padj < alpha), ]
 sigtab_contPB = res_dat_contPB[which(res_dat_contPB$padj < alpha), ]
 
+sigtab_res = res_dat_resilient[which(res_dat_resilient$padj < alpha), ]
+sigtab_sus = res_dat_susceptible[which(res_dat_susceptible$padj < alpha), ]
+sigtab_RvsS = res_dat_RvsS[which(res_dat_RvsS$padj < alpha), ]
 
 #print only the significant results                              
 sigtab_PB
 sigtab_KPB 
 sigtab_contPB
+
+sigtab_res
+sigtab_sus
+sigtab_RvsS
 
 #plotting
 #source: https://joey711.github.io/phyloseq-extensions/DESeq2.html
@@ -225,8 +254,8 @@ sigtab_contPB <- rownames_to_column(sigtab_contPB, var = "ASV")
 
 
 #Want family identity info on bar graph too (but colouring is too much) so making a new column 
-sigtab_high$Combined_Info <- paste(sigtab_high$Family, sigtab_high$ASV, sep = ";")
-sigtab_low$Combined_Info <- paste(sigtab_low$Family, sigtab_low$ASV, sep = ";")
+sigtab_high$Combined_Info <- paste(sigtab_high$Genus, sigtab_high$ASV, sep = ";")
+sigtab_low$Combined_Info <- paste(sigtab_low$Genus, sigtab_low$ASV, sep = ";")
 # 
 # sigtab_PB$Combined_Info <- paste(sigtab_PB$Genus, sigtab_PB$ASV, sep = ";")
 # sigtab_PBH$Combined_Info <- paste(sigtab_PBH$Genus, sigtab_PBH$ASV, sep = ";")
@@ -262,12 +291,12 @@ custom_palette <- c("#33a02c", "#a6cee3", "#cab2d6","#ffcc00",  "#ff7f00","#00ff
 
 
 
-ggplot(sigtab_low, aes(x = reorder(Combined_Info, log2FoldChange), 
+ggplot(sigtab_high, aes(x = reorder(Combined_Info, log2FoldChange), 
                         y = log2FoldChange, 
                         fill = Class)) +
   geom_bar(stat = "identity", color = "black") +
   coord_flip() +
-  labs(title = "Low Salinity - Control", 
+  labs(title = "High Salinity - Control", 
        x = "Genus; ASV", 
        y = "Log2 Fold Change") +
   theme_bw() +
@@ -358,19 +387,29 @@ library(dplyr)
 psmelt <- psmelt(pseq)
 
 # Assuming psmelt is already loaded in your environment
-# Filter for ASV40
+# Filter for ASVs 507 and 1194
 Alii_data <- psmelt %>%
-  filter(Genus == "Aliikangiella")
+  filter(OTU %in% c("ASV507", "ASV1194"))
+
+# Filter for Yoonia-Loktanella
+Alii_data <- psmelt %>%
+  filter(Genus %in% c("Yoonia-Loktanella")) %>%
+  group_by(Microbial.Source, Genus) %>%
+  summarise(
+    Avg_Abundance = mean(Abundance),
+    SD_Abundance = sd(Abundance),
+    .groups = 'drop'
+  )
 
 # Create the box plot
-ggplot(Alii_data, aes(x = Treatment, y = Abundance)) +
-  geom_boxplot(fill = "skyblue", color = "black") +
-  labs(title = "Average Abundance of ASV40 by Treatment",
-       x = "Treatment",
+ggplot(Alii_data, aes(x = Microbial.Source, y = Abundance, fill = Microbial.Source)) +
+  geom_violin() +
+  labs(title = "Abundance of Yoonia-Loktanella",
+       x = "",
        y = "Abundance") +
-  theme_bw() +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + 
   theme(panel.grid.major = element_blank(),
-        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
         axis.text.y = element_text(size = 12)) +
   facet_wrap(~OTU)
 
@@ -378,25 +417,8 @@ ggplot(Alii_data, aes(x = Treatment, y = Abundance)) +
 #Data normalisation using DESeq2:
 #counts divided by sample-specific size factors determined by median ratio of gene counts relative to geometric mean per gene
 
-if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager") #download deseq
-
-BiocManager::install("DESeq2") #Install deseq
-
-BiocManager::install("DESeq2", force = TRUE)
-
-BiocManager::install("GenomeInfoDb")
-BiocManager::install("DESeq2")
-
-library(DESeq2)
-library(phyloseq)
-
-
-pseq <- MU42022_filtered_NOT_rarefied
-pseq <- mb2021_filtered_NOT_rarefied
-
-#need to remove NAs (algae)
-DeSeq <- phyloseq_to_deseq2(pseq, ~ Age) #convert phyloseq to deseq object
+#convert to deseq object
+DeSeq <- phyloseq_to_deseq2(pseq, ~ Microbial.Source) #convert phyloseq to deseq object
 
 DeSeq2 <- DESeq(DeSeq)
 
@@ -415,7 +437,7 @@ count = as.data.frame(count)
 
 ASV_deseq <- DESeqDataSetFromMatrix(countData = t(count),
                                     colData = fact,
-                                    design = ~ Age)
+                                    design = ~ Microbial.Source)
 
 # positive counts normalisaton (accounts for zero-inflation)
 ASV_deseq <- estimateSizeFactors(DeSeq2, type = "poscounts")
@@ -423,7 +445,7 @@ sizeFactors(ASV_deseq)
 
 # size-factor corrected data are calculated by dividing the raw counts by the sample size factor and adding 0.5 to correct for the zeros
 ASV_deseq_norm <- sapply(row.names(ASV_deseq), function(x){
-  plotCounts(ASV_deseq, x, "Age", returnData = TRUE, normalized = TRUE)$count
+  plotCounts(ASV_deseq, x, "Microbial.Source", returnData = TRUE, normalized = TRUE)$count
   
 })
 rownames(ASV_deseq_norm) <- colnames(ASV_deseq)
@@ -445,10 +467,10 @@ dim(ASV_deseq_norm[, colSums(ASV_deseq_norm) == 0]) # 0
 dim(ASV_deseq_norm[, colSums(ASV_deseq_norm) == 1])
 
 #save normalised table
-write.csv(ASV_deseq_norm, "~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files//normalised_ASV_table_mb2021_Age.csv")
+write.csv(ASV_deseq_norm, "~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files//normalised_ASV_table_Sam_Spat.csv")
 
 #Make new pseq object with normalized ASV table
-mb2021_filtered_NOT_rarefied <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
+Sam_partial_rare_deseq_spat <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/Sam_partial_rare_deseq_spat.rds")
 
 #Check format
 View(pseq@otu_table)
@@ -456,7 +478,7 @@ View(normalised_ASV_table_mb2021_Age)
 
 #correct to make forst column as row names
 
-normalised_ASV_table_mb2021_Age <- as.data.frame(normalised_ASV_table_mb2021_Age)
+ASV_deseq_norm <- as.data.frame(ASV_deseq_norm)
 
 rownames(normalised_ASV_table_mb2021_Age) <- normalised_ASV_table_mb2021_Age[, 1]
 
@@ -464,12 +486,12 @@ rownames(normalised_ASV_table_mb2021_Age) <- normalised_ASV_table_mb2021_Age[, 1
 normalised_ASV_table_MU42022 <- normalised_ASV_table_MU42022[, -1]
 
 # Create a new otu_table object
-new_otu_table <- otu_table(normalised_ASV_table_MU42022, taxa_are_rows = FALSE)
+new_otu_table <- otu_table(ASV_deseq_norm, taxa_are_rows = FALSE)
 View(new_otu_table)
 str(new_otu_table)
 # Replace the old OTU table with the new one
 #otu_table(mb2021_filtered_NOT_rarefied) <- new_otu_table
-otu_table(MU42022_filtered_NOT_rarefied) <- new_otu_table
+otu_table(pseq) <- new_otu_table
 
 #If giving error that sample names do not match
 # Extract the sample names from new_otu_table

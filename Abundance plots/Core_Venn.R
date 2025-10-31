@@ -11,6 +11,8 @@ library(eulerr)
 library(microbiome)
 library(microbiomeutilities)
 library(Venndiagram)
+library(microbiome)
+
 
 pseq<- Marissa_mb2021_filtered_20240203
 pseq <- mb2021_filtered_NOT_rarefied_normalized
@@ -68,7 +70,7 @@ list_core <- c() # an empty object to store information
 for (n in Treatment){ # for each variable n in Treatment
   #print(paste0("Identifying Core Taxa for ", n))
   
-  ps.sub <- subset_samples(pseq, Treatment == n) # Choose sample from DiseaseState by n
+  ps.sub <- subset_samples(pseq, Treatment == n) 
   
   core_m <- core_members(ps.sub, # ps.sub is phyloseq selected with only samples from g 
                          detection = 0.001, # 0.001 in atleast 90% samples 
@@ -169,6 +171,26 @@ for (n in Age_Treatment){ # for each variable n in Treatment
 
 print(list_core)
 
+#test if core ASV abundance different between treatments
+
+core_asvs <- unique(unlist(list_core))
+
+core_data <- subset(ps, OTU %in% core_asvs)
+
+core_data %>%
+  group_by(OTU) %>%
+  do({
+    model <- lm(Abundance ~ Treatment, data = .)
+    data.frame(
+      OTU = unique(.$OTU),
+      p.value = summary(model)$coefficients[2, 4]  # p-value for Treatment
+    )
+  })
+
+core_data %>%
+  group_by(OTU) %>%
+  summarise(p.value = kruskal.test(Abundance ~ Treatment)$p.value)
+
 #must use euleer if more than 5 sample types in venn
 
 install.packages("eulerr")
@@ -192,11 +214,13 @@ mycols <- c("grey", "lightgreen", "skyblue", "#F8766D")
 mycols <- c("grey", "orange", "skyblue2", "#3CB371")
 
 mycols <- c("grey", "skyblue", "orange")
+
+mycols <- c("grey", "cornflowerblue", "orange")
 mycols <- c("grey", "cornflowerblue", "#3CB371")
 
 #order bubbles
 #list_core <- list_core[c("High salinity", "Low salinity", "Control")]  # Change the order as needed
-list_core <- list_core[c("Control", "Probiotics", "Probiotics + HT", "High temperature")]  # Change the order as needed
+list_core <- list_core[c("Control", "Probiotics", "Probiotics + HT")]  # Change the order as needed
 
 # Plot the Venn diagram with the updated order of sets
 plot(venn(list_core), fills = mycols, font = 12)
@@ -290,6 +314,5 @@ for (name in names(list_core)) {
   filename <- paste0(name, "venn_core.txt")  # Create a filename based on the list element name
   writeLines(list_core[[name]], filename)  # Save the list element to a text file
 }
-
 
 

@@ -40,7 +40,7 @@ saveRDS(SMK_Sam, "SMK_Sam.rds")
 saveRDS(SMK_Marissa, "PB2023.rds")
 saveRDS(SMK_Korrina, "SMK_Korrina.rds")
 
-pseq <- PB2023
+pseq <- SMK_Sam
 View(pseq@sam_data)
 
 #Input Sam's metadata
@@ -119,7 +119,8 @@ x2 = prune_taxa(taxa_sums(pseq) > 300, pseq)
 x3 = prune_taxa(taxa_sums(pseq) > 800, pseq)
 #PB2023 used > 300
 #James used > 400
-summarize_phyloseq(pseq)
+#Sam's used > 400
+summarize_phyloseq(x2)
 summarize_phyloseq(x3)
 
 pseq <- x2
@@ -258,37 +259,48 @@ pseq <- subset_samples(pseq, !Sample.ID  %in% c("T16-10-r3", "A-1", "A-3", "A-6"
 #Trying this out based on Knight et al., (2019) paper stating samples should not have > 10x sample read difference
 #So, removing reads that are >10x more than lowest read depth in samples
 
-# Custom function to limit read counts
-limit_reads <- function(x) {
-  ifelse(x > 13130, 13130, x)  # Set any count above 13130 to 13130
+# Function to cap reads per sample to max_depth
+cap_reads <- function(pseq, max_depth = 14550, seed = 123) {
+  set.seed(seed)
+  
+  # Access OTU table
+  otu <- otu_table(pseq)
+  
+  # Ensure OTU table has taxa as rows
+  if (!taxa_are_rows(pseq)) {
+    otu <- t(otu)
+  }
+  
+  capped_otu <- apply(otu, 2, function(sample_counts) {
+    total_reads <- sum(sample_counts)
+    if (total_reads > max_depth) {
+      # Create vector with individual reads (e.g., c(ASV1, ASV1, ASV2...))
+      reads <- rep(seq_along(sample_counts), times = sample_counts)
+      subsampled <- sample(reads, max_depth, replace = FALSE)
+      capped <- tabulate(subsampled, nbins = length(sample_counts))
+    } else {
+      capped <- sample_counts
+    }
+    return(capped)
+  })
+  
+  # Return phyloseq object with capped OTU table
+  capped_otu <- otu_table(capped_otu, taxa_are_rows = TRUE)
+  pseq@otu_table <- capped_otu
+  return(pseq)
 }
 
-# Apply the function to the phyloseq object
-pseq_limited <- transform_sample_counts(pseq, limit_reads)
+pseq_capped <- cap_reads(pseq, max_depth = 14550)
 
-# Check the modified read counts
-otu_table(pseq_limited)
-
-readcount <- data.table(
-  SampleID = rownames(sample_data(pseq_limited)),  # Capture row names directly as SampleID
-  TotalReads = sample_sums(pseq_limited)
-)
-
-# Limit the TotalReads to a maximum of 13130
-readcount[, TotalReads := ifelse(TotalReads > 13130, 13130, TotalReads)]
-
-# Order by TotalReads and select SampleID and TotalReads
-ordered_readcount <- readcount[order(TotalReads), .(SampleID, TotalReads)]
-
-# Print the ordered read counts
-print(ordered_readcount)
+summary(sample_sums(pseq_capped))       # max should be ≤ 14550
+any(sample_sums(pseq_capped) > 14550)    # should be FALSE
 
 
 #saving filtered but not rarefied pseq object for mb2021 project
-saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filtered_NOT_rarefied.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/Sam_all_samples_partial_rarefy.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_Oct92024.rds")
 saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/mb2021_filteredwSpat_only_rarefied_June2024.rds")
-saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/PB2023_spat_limited_10X_reads.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/Sam_all_samples_partial_rare_CSS.rds")
 
 
 otu.rare = otu_table(pseq)
@@ -389,7 +401,7 @@ saveRDS(pseq, file = "PB2023_spat_not_rarefied_normalized_Jan2025.rds")
 #If rarefying ----
 ##rarify data to make sequences an even read depth - selecting read depth of 10,000 = any samples with fewer than 10,000 total reads will be removed, all samples will be equalized to 5000 reads for Denman's samples, 10,000 for Marissa/James'
 set.seed(123)
-Rare <-rarefy_even_depth(pseq, sample.size= 4658, rngseed = TRUE)
+Rare <-rarefy_even_depth(pseq, sample.size= 7476, rngseed = TRUE)
 
 #Marissa/James = 17 samples removed because they contained fewer reads than `sample.size' - first 5 reads are T13-1,T13-2-2,T14-2-2,T15-S-1,T16-10-r3
 
@@ -404,7 +416,7 @@ print(sample_depths)
 ##yes, all samples have 10,000 or 5,000 reads now.
 
 pseq <- Rare
-saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_rarefied_new2025_tryout_2.rds")
+saveRDS(pseq, "/Users/maris/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/Sam_spatonly_Rare.rds")
 
 #Phylogenetic tree ----
 

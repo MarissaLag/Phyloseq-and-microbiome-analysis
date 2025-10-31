@@ -8,6 +8,7 @@ library(phangorn)
 library(ggtree)
 library(ape)
 
+#MU42022 project
 MU42022_filtered_Oct92024 <- readRDS("~/Documents/GitHub/Phyloseq and microbiome analysis/Old RDS files/MU42022_filtered_Oct92024.rds")
 
 pseq <- MU42022_filtered_Oct92024
@@ -15,10 +16,11 @@ pseq <- microbiome::transform(pseq, "compositional")
 pseq <- subset_samples(pseq, !Genetics == "4")
 pseq <- subset_samples(pseq, Age == "Spat")
 any(taxa_sums(pseq) == 0)
-# pseq <- prune_taxa(taxa_sums(pseq) > 0, pseq)
-# any(taxa_sums(pseq) == 0)
+pseq <- prune_taxa(taxa_sums(pseq) > 0, pseq)
+any(taxa_sums(pseq) == 0)
 pseq <- psmelt(pseq) 
 
+#PB2023 project
 pseq <- PB2023_spat_not_rarefied_normalized
 pseq <- PB2023_spat_not_rarefied_CSSnormalized_Jan2025
 pseq <- PB2023_spat_10X_limited_CSS
@@ -30,6 +32,12 @@ any(taxa_sums(pseq_filt) == 0)
 pseq <- microbiome::transform(pseq_filt, "compositional")
 pseq <- psmelt(pseq)
 
+#Sam
+pseq <- Sam_all_samples_partial_rare_CSS
+pseq <- subset_samples(pseq, !Organism %in% c("Water"))
+pseq <- subset_samples(pseq, !Stage %in% c("Parent"))
+pseq <- microbiome::transform(pseq, "compositional")
+pseq <- psmelt(pseq)
 
 #Merge ASV seq with metadata
 colnames(MU42022_sequence_ASVname_mapping) <- c("ASV", "Sequence")
@@ -116,7 +124,7 @@ p <- for (i in seq_along(tip_labels)) {
 }
 
 
-#Add sequence simmularity colouring
+#Add sequence simularity colouring
 # Install the seqinr package if you haven't done so
 install.packages("seqinr")
 
@@ -215,10 +223,11 @@ print(msa_plot + ggtitle("Phylogenetic Tree with MSA Overlay"))
 #Buchan A, Gonzalez JM, Moran MA. 2005. Overview of the marine Roseobacter lineage. Appl. Environ. Microbiol. 71:5665–5677. 10.1128/AEM.71.10.5665-5677.2005. 
 
 # Step 1: Extract ASV558 (MU42022) or ASV230 (PB2023) sequence from the data frame
+#Sam project use ASV230 (most abudnant Roseobacter ASV)
 
 asv558_sequence <- rhodobacteraceae_data$Sequence[rhodobacteraceae_data$OTU == "ASV558"][1]
 
-#asv230_sequence <- rhodobacteraceae_data$Sequence[rhodobacteraceae_data$OTU == "ASV230"][1]
+asv230_sequence <- rhodobacteraceae_data$Sequence[rhodobacteraceae_data$OTU == "ASV230"][1]
 
 # Install and load Biostrings package if not already installed
 if (!requireNamespace("Biostrings", quietly = TRUE)) {
@@ -233,7 +242,7 @@ names(sequences) <- unique(rhodobacteraceae_data$OTU)  # Assign ASV names to the
 
 dna_sequences <- DNAStringSet(sequences)
 
-#ref_seq <- dna_sequences[["ASV230"]]
+ref_seq <- dna_sequences[["ASV230"]]
 
 ref_seq <- dna_sequences[["ASV558"]]
 
@@ -257,18 +266,12 @@ for (i in names(dna_sequences)) {
 
 # Check the results
 print(roseobacter_matches)
-
-# View the names of sequences classified as Roseobacter
 names(roseobacter_matches)
 
-# Add ASV558 to the results if you want to include it explicitly
+# Add ASV558 to the roseobacter matches
 roseobacter_matches[["ASV558"]] <- ref_seq
 #roseobacter_matches[["ASV230"]] <- ref_seq
 
-# Check the results
-print(roseobacter_matches)
-
-# View the names of sequences classified as Roseobacter
 names(roseobacter_matches)
 
 # Step 1: Filter the dataframe for ASVs in roseobacter_matches
@@ -299,7 +302,7 @@ dist_matrix <- dist.ml(aligned_phyDat)
 
 # Build the phylogenetic tree
 tree <- NJ(dist_matrix)
-plot(tree, main = "Roseobacter - Phylogenetic Tree", cex = 1)  # Adjust cex as needed
+plot(tree, main = "Roseobacter - Phylogenetic Tree", cex = 0.35)  # Adjust cex as needed
 
 # highlighted_ASVs_red <- c("ASV11", "ASV88", "ASV198", "ASV178", "ASV201", "ASV471", "ASV613")
 # highlighted_ASVs_blue <- c("ASV7", "ASV18")
@@ -316,10 +319,9 @@ for (i in seq_along(tip_labels)) {
   }
 }
 
-
 #Cirucular tree
-library(ape)      # For plotting phylogenetic trees
-library(phytools) # For additional phylogenetic functions
+library(ape)     
+library(phytools) 
 
 # Assuming 'tree' is your phylogenetic tree object
 highlighted_ASVs_red <- c("ASV11", "ASV88", "ASV198", "ASV178", "ASV201", "ASV471", "ASV613")
@@ -474,17 +476,24 @@ pheatmap(
 
 # Calculate average and standard deviation of Abundance for each OTU across treatment groups
 roseobacter_stats <- roseobacter_df %>%
-  group_by(OTU, Treatment, sample_Family ) %>%
+  group_by(OTU, Treatment, Genetics ) %>%
   summarise(
     Average_Abundance = mean(Abundance, na.rm = TRUE),
     Std_Abundance = sd(Abundance, na.rm = TRUE),
     .groups = 'drop'  # Drop grouping after summarising
   )
 
+roseobacter_stats <- roseobacter_asvs %>%
+  group_by(OTU, Treatment, Genetics ) %>%
+  summarise(
+    Average_Abundance = mean(Abundance, na.rm = TRUE),
+    Std_Abundance = sd(Abundance, na.rm = TRUE),
+    .groups = 'drop'  # Drop grouping after summarising
+  )
 
 library(RColorBrewer)
 
-library(viridis)  # For gradient color palettes
+library(viridis)
 
 roseobacter_stats <- roseobacter_stats %>%
   mutate(Treatment = recode(Treatment,
@@ -497,19 +506,26 @@ roseobacter_stats$Treatment <- factor(roseobacter_stats$Treatment,
 
 # Create a stacked bar plot of ASV abundance by Treatment with no gridlines and a gradient color palette
 ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, fill = OTU)) +
-  geom_bar(stat = "identity", position = "stack") +  # Change position to "stack"
+  geom_bar(stat = "identity", position = "stack") +
   labs(title = "",
        x = "",  
        y = "Average Relative Abundance") +
-  scale_fill_viridis_d(option = "F", direction = 1) +  # Use Viridis palette; adjust option for different colors
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size = 16, face = "bold"),
-        axis.text.y = element_text(size = 16, face = "bold"),
-        axis.title.y = element_text(size=16, face = "bold"),
+  scale_fill_viridis_d(option = "F", direction = 1) +
+  facet_wrap(
+    ~Genetics,
+    labeller = labeller(Genetics = c("1" = "Family 1", 
+                                     "2" = "Family 2", 
+                                     "3" = "Family 3"))
+  ) +
+  theme(axis.text.x = element_text(angle = 0, hjust = 0.5, size = 16),
+        axis.text.y = element_text(size = 16),
+        axis.title.y = element_text(size = 16),
         legend.position = "none",
         panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank()) +
-  facet_wrap(~sample_Family)
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size = 16))  # facet label size here
+
+
 
 #scatter plot
 ggplot(roseobacter_stats, aes(x = Treatment, y = Average_Abundance, color = OTU)) +
@@ -548,6 +564,7 @@ pseq <- MU42022_filtered_Oct92024
 pseq <- subset_samples(pseq, !Treatment %in% c("High temperature"))
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
 pseq <- subset_samples(pseq, Age %in% c("Spat"))
+pseq <- subset_samples(pseq, !Sample.type %in% c("Algae"))
 pseq3 <- microbiome::transform(pseq, "compositional")
 
 pseq3 <- psmelt(pseq3) 
@@ -563,17 +580,22 @@ head(roseobacter_df)
 str(roseobacter_df)
 
 #Look at ASV11 only
-roseobacter_asv11 <- roseobacter_df %>%
-  filter(OTU == "ASV11")
+roseobacter_asvs <- roseobacter_df %>%
+  filter(OTU %in% c("ASV11", "ASV88", "ASV178", "ASV613", "ASV471", "ASV201", "ASV198"))
 
 #Calculate avg roseobacter abundance in each sample, then test treatment effects
 # Calculate the average abundance per sample
 average_abundance_per_sample <- roseobacter_df %>%
-  group_by(Sample, Treatment) %>%
-  summarize(Average_Abundance = mean(Abundance, na.rm = TRUE), .groups = "drop")
+  group_by(Age) %>%
+  summarize(
+    Average_Abundance = mean(Abundance, na.rm = TRUE),
+    SD_Abundance = sd(Abundance, na.rm = TRUE),
+    .groups = "drop"
+  )
+
 
 # One-way ANOVA
-anova_result <- aov(Abundance ~ Treatment, data = roseobacter_asv11)
+anova_result <- aov(Average_Abundance ~ Treatment*Genetics*Age, data = average_abundance_per_sample)
 summary(anova_result)
 plot(anova_result)
 tukey_result <- TukeyHSD(anova_result)
@@ -587,6 +609,16 @@ qqline(residuals, col = "red", lwd = 2)
 
 # Shapiro-Wilk test
 shapiro.test(residuals)
+
+
+#Calc avergae roseobacter abundance per treatment
+average_abundance_treatment <- roseobacter_df %>%
+  group_by(Treatment) %>%
+  summarize(
+    Average_Abundance = mean(Abundance, na.rm = TRUE),
+    SD_Abundance = sd(Abundance, na.rm = TRUE),
+    .groups = "drop"
+  )
 
 
 #Many zeros

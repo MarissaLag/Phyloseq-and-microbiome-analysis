@@ -44,6 +44,11 @@ pseq <- PB2023_spat_not_rarefied_normalized
 pseq <- subset_samples(pseq, !Treatment %in% c("James", "Continuous Probiotics"))
 pseq <- PB2023_rarefied_3764
 
+#Sam
+pseq <- Sam_all_samples_partial_rare_CSS
+pseq <- subset_samples(pseq, Organism %in% c("Water"))
+pseq <- subset_samples(pseq, Stage %in% c("Spat"))
+
 
 #1st create new column that contains Treat*Age information 
 sample_data <- pseq@sam_data
@@ -98,7 +103,7 @@ pseq_psmelt <- psmelt(top10G.core)
 
 
 #plot of rel abundaces of each sample (out of 100%)
-ggplot(pseq_psmelt, aes(fill=Phylum, y=Abundance, x=Treatment)) + 
+ggplot(pseq_psmelt, aes(fill=Phylum, y=Abundance, x=Day)) + 
   geom_bar(position="stack", stat="identity") +
   #scale_fill_brewer(palette = "Paired") +
   labs(title = "All time-points", x = "", y = "Relative abundance") +
@@ -107,7 +112,7 @@ ggplot(pseq_psmelt, aes(fill=Phylum, y=Abundance, x=Treatment)) +
 #look at sample numbers per group ----
 
 sample_counts <- pseq_psmelt %>%
-  group_by(Treatment) %>%
+  group_by(Microbial.Source) %>%
   summarise(Num_Samples = n())
 
 print(sample_counts)
@@ -122,38 +127,38 @@ print(sample_counts)
 #Average abundance per sample group ----
 
 Avg_abundance <- pseq_psmelt %>%
-  group_by(Age_Treatment, Family) %>%
+  group_by(Microbial.Source, Genetic.Background, Family) %>%
   summarise(
     Avg_Abundance = mean(Abundance),
     SD_Abundance = sd(Abundance),
     .groups = 'drop'
   ) %>%
-  separate(Age_Treatment, into = c("Age", "Treatment"), sep = "_") 
+  separate(Age_Treatment, into = c("Microbial.Source", "Genetic.Background"), sep = "_") 
 
 View(Avg_abundance)
 
 #Make abundance out of 100%?
 Avg_abundance <- pseq_psmelt %>%
-  group_by(Age_Treatment, Genus) %>%
+  group_by(Microbial.Source, Genetic.Background, Family) %>%
   summarise(
     Avg_Abundance = mean(Abundance),
     SD_Abundance = sd(Abundance),
     .groups = 'drop'
   ) %>%
-  group_by(Age_Treatment) %>%
-  mutate(Avg_Abundance = 100 * Avg_Abundance / sum(Avg_Abundance)) %>% 
-separate(Age_Treatment, into = c("Age", "Treatment"), sep = "_") 
+  group_by(Microbial.Source, Genetic.Background) %>%
+  mutate(Avg_Abundance = 100 * Avg_Abundance / sum(Avg_Abundance)) 
+#%>% separate(Age_Treatment, into = c("Age", "Treatment"), sep = "_") 
 
 
 
 Avg_abundance <- pseq_psmelt %>%
-  group_by(Age, Genus) %>%
+  group_by(Day, Genus, Microbial.Source) %>%
   summarise(
     Avg_Abundance = mean(Abundance),
     SD_Abundance = sd(Abundance),
     .groups = 'drop'
   ) %>%
-  group_by(Age) %>%
+  group_by(Day, Microbial.Source) %>%
   mutate(Avg_Abundance = 100 * Avg_Abundance / sum(Avg_Abundance))
 
 
@@ -184,21 +189,25 @@ paired_palette <- brewer.pal(12, "Paired")
 extended_palette <- c(paired_palette, "pink",  "yellow", "lightgreen", "green", "brown", "orange", "red", "blue", "lightblue")  # Add a custom color to the palette
 
 # Use ggplot with the extended Paired palette
-ggplot(Avg_abundance, aes(fill = Family, y = Avg_Abundance, x = Treatment)) + 
+ggplot(Avg_abundance, aes(fill = Family, y = Avg_Abundance, x = Microbial.Source)) + 
   geom_bar(position = "stack", stat = "identity", colour = "black") +
   scale_fill_manual(values = extended_palette) +  # Use scale_fill_manual to specify the extended palette
-  labs(title = "", x = "", y = "Relative abundance (%)") +
+  labs(title = "", x = "", y = "Relative abundance") +
   theme(plot.title = element_text(hjust = 0.5)) +
-  theme_bw() +
   theme(
     legend.title = element_text(size = 16, face = "bold"),
     legend.text = element_text(size = 14),
     axis.text.x = element_text(size = 13, angle = 45, hjust = 1, face = "bold"),
-    axis.text.y = element_text(size=13, face = "bold"),
+    axis.text.y = element_text(size=13),
     axis.title.y = element_text(size = 16, face = "bold"),
     strip.background = element_rect(fill = "white"),  # Set facet heading background to white
-    strip.text = element_text( size = 12)           # Set facet heading text to bold
-  ) + facet_wrap(~Age)
+    strip.text = element_text(size = 13, face = "bold")
+  ) +
+  facet_wrap(~Genetic.Background,
+             labeller = labeller(Genetic.Background = c(
+               "Disease Resilient" = "Resilient Genetics",
+               "Disease Susceptible" = "Susceptible Genetics"
+             )))
 
 
 #Vibrionaceae abundances ----
@@ -264,10 +273,10 @@ sum_abundance <- pseq_psmelt %>%
   ) %>% 
   separate(Age_Treatment, into = c("Age", "Treatment"), sep = "_")
 
-ggplot(Avg_abundance, aes(fill = Genus, y = Abundance, x = Treatment)) + 
+ggplot(pseq_psmelt, aes(fill = Genus, y = Abundance, x = Microbial.Source)) + 
   geom_bar(position = "stack", stat = "identity", color = "black") +
   scale_fill_manual(values = extended_palette) +
-  labs(title = "Vibrionaceae (T9 removed)", 
+  labs(title = "Water samples - Vibrionaceae abundance", 
        x = "", 
        y = "Averaage Relative Abundance", 
        fill = "Vibrionaceae (Genus)") +
@@ -277,7 +286,7 @@ ggplot(Avg_abundance, aes(fill = Genus, y = Abundance, x = Treatment)) +
         legend.text = element_text(size = 12),   # Adjust legend text font size
         legend.title = element_text(size = 14),
         panel.border = element_blank()) +  # Adjust legend title font size
-  facet_wrap("Age")
+  facet_wrap("Day")
 
 
 ggplot(Avg_abundance, aes(fill = Genus, y = Abundance, x = Treatment)) + 

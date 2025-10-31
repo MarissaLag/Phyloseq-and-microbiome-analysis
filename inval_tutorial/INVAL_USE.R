@@ -29,6 +29,8 @@ pseq <- MU42022_filtered_NOT_rarefied #579 taxa
 
 pseq <- mb2021_filtered_NOT_rarefied #1007 taxa
 
+pseq <- mb2021_filteredw1dpf_only_rarefied_June2024
+
 pseq <- PB2023_spat_not_rarefied_normalized_Jan2025
 
 pseq <- MU42022_filtered_Oct92024
@@ -36,6 +38,8 @@ pseq <- MU42022_filtered_Oct92024
 pseq <- PB2023_spat_not_rarefied_CSSnormalized_Jan2025
 
 pseq <- PB2023_spat_10X_limited_CSS
+
+pseq <- Sam_all_samples_partial_rare_CSS
 
 #Load objects ----
 
@@ -50,17 +54,19 @@ Tree = pseq@phy_tree
 OTU1 = as(OTU, "matrix")
 write.csv(OTU1, file="Data_fram_1.cvs",row.names=TRUE)
 
-write.table(OTU1,file="data_table_PB2023_spat_CSS_10X_limited.csv",sep=",",dec = ".")
+write.table(OTU1,file="data_table_Sam_spat_CSS.csv",sep=",",dec = ".")
 
 ####Format to example data and reload below for actual test 
 
 #reload edited table
 
-pc_FUN <- data_table_MU42022_oct2024
+pc_FUN <- data_table_Sam_all_samples_CSS
 
 pc_FUN <- data_table_PB2023_spat_norm_CSS
 
-pc_FUN <- data_table_PB2023_spat_CSS_10X_limited
+pc_FUN <- data_table_Sam_spat_CSS
+
+pc_FUN <- data_table_MU42022_oct2024
 
 #if removing samples ----
 
@@ -73,23 +79,41 @@ pc_FUN <- data_table_PB2023_spat_CSS_10X_limited
 
 
 #for mb2021 project remove tank 9 from pc_Fun for mb2021
-pc_FUN <- pc_FUN[!pc_FUN$`Treatment` %in% c("Continuous Probiotics", "James"), ] 
-pc_FUN <- pc_FUN[!pc_FUN$`Treatment` == "NA", ] 
+pc_FUN <- pc_FUN[!pc_FUN$`Treatment` %in% c("High temperature (HT)"), ] 
+pc_FUN <- pc_FUN[pc_FUN$Sample_type == "Spat", ] 
+pc_FUN <- pc_FUN[pc_FUN$Organism == "Oyster", ] 
+pc_FUN <- pc_FUN[!pc_FUN$Microbial.Source == "NA", ] 
 
-View(pc_FUN)
+pc_FUN <- pc_FUN %>%
+  filter(Microbial.Source %in% c("Disease Susceptible", "Disease Resilient", "Control"))
 
-#Day 1 only 
+#remove NAs if above not working
 
-pc_FUN <- pc_FUN[!pc_FUN$'Genetics' == "4", ]
+pc_FUN_clean <- pc_FUN %>%
+  filter(!if_all(everything(), is.na))
 
-#Spat only
+pc_FUN <-pc_FUN_clean
 
-pc_FUN <- pc_FUN[pc_FUN$`Age` == "Day 15", ]
 
 #If present, filter NAs in column 1
 
 pc_FUN <- pc_FUN[-1, ]
 
+#Remove ASVs with zero abundance
+metadata_cols <- 7  # Example: 7 metadata columns before ASVs
+
+# Split metadata and ASV columns
+meta <- pc_FUN[, 1:metadata_cols]
+asvs <- pc_FUN[, (metadata_cols + 1):ncol(pc_FUN)]
+
+# Remove ASVs with all zero values
+asvs_filtered <- asvs[, colSums(asvs) > 0]
+
+
+# Combine metadata and filtered ASVs
+pc_FUN_filtered <- bind_cols(meta, asvs_filtered)
+
+pc_FUN <- pc_FUN_filtered
   
 ####Test ASVs ----
 
@@ -103,7 +127,7 @@ dim(pc_FUN)
 #matrix_F = pc_FUN[ ,6:1012] 
 
 #mb2021
-matrix_F = pc_FUN[ ,7:190]
+matrix_F = pc_FUN[ ,8:586]
 
 ### Make the equation. Saying we want to examine specific column of metadata
 time_a_F = pc_FUN$Treatment
@@ -116,6 +140,20 @@ results <- summary(inv_F_spat)
 
 #save results
 write.csv(inv_F, "Spat_INVALsummary_results.csv", row.names = TRUE)
+
+#Unclear if indicspecies runs an interal p adjustment - I thought it did but can't find documentation of it
+# Extract raw p-values
+raw_p <- inv_F_spat$sign$p.value
+
+# Adjust using Benjamini–Hochberg
+adj_p <- p.adjust(raw_p, method = "BH")
+
+# Add adjusted p-values back to results
+inv_F_spat$sign$adj_p <- adj_p
+
+# View with adjusted p-values
+print(inv_F_spat$sign)
+
 
 #If you want to look at all results
 

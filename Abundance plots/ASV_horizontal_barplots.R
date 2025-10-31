@@ -113,26 +113,23 @@ filtered_ps <- ps %>%
   filter(OTU %in% c("ASV275", "ASV231", "ASV190", "ASV227")) 
 
 filtered_ps <- ps %>% 
-  filter(OTU %in% c( "ASV32", "ASV397","ASV438","ASV597","ASV774","ASV1119")) 
+  filter(OTU %in% c("ASV1211", "ASV227", "ASV231", 
+                    "ASV461", "ASV468", "ASV190", "ASV777", "ASV275", "ASV236", "ASV348"))
 
-filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV227", "ASV166", "ASV167", "ASV353", "ASV597")) 
+filtered_ps$Genus[filtered_ps$OTU == "ASV227" & is.na(filtered_ps$Genus)] <- "Litoreibacter"
 
-filtered_ps <- ps %>% 
-  filter(OTU %in% c("ASV1191", "ASV157", "ASV1032", "ASV1411", "ASV1264", "ASV1287", 
-                    "ASV942", "ASV1131", "ASV297", "ASV236")) 
+filtered_ps$Genus[filtered_ps$OTU == "ASV461" & is.na(filtered_ps$Genus)] <- "Unknown Saccharospirillaceae"
 
+filtered_ps$Genus[filtered_ps$OTU == "ASV236" & is.na(filtered_ps$Genus)] <- "Unknown Methyloligellaceae"
 
-filtered_ps <- ps %>%
-  filter(Genus == "Phaeobacter")
-View(filtered_ps)
+filtered_ps$Genus[filtered_ps$OTU == "ASV348" & is.na(filtered_ps$Genus)] <- "Unknown Microtrichaceae"
 
 
 # Calculate the average abundance for each treatment group
 average_abundance <- filtered_ps %>%
-  group_by(Treatment, sample_Family, OTU) %>%
+  group_by(Treatment, OTU, Genus) %>%
   summarise(Average_Abundance = mean(Abundance),
-            std_Abundance = sd(Abundance)) 
+            std_Abundance = sd(Abundance))
 
 
 # Plot
@@ -144,9 +141,16 @@ paired_palette <- c(brewer.pal(8, "Dark2"),  # 8 more colors from the Dark2 pale
                        brewer.pal(8, "Accent"), # 8 more colors from the Accent palette
                        brewer.pal(6, "Set3"))
 
-ggplot(average_abundance, aes(y = Average_Abundance, x = Treatment, fill = Treatment)) + 
+
+#With error bars or withotu error bars
+ggplot(average_abundance, aes(y = Average_Abundance, x = Treatment, fill = Genus)) + 
   geom_bar(position = "stack", stat = "identity", colour = "black") +
-  scale_fill_manual(values = paired_palette) +
+  geom_errorbar(aes(ymin = Average_Abundance - std_Abundance, 
+                    ymax = Average_Abundance + std_Abundance),
+                width = 0.2, 
+                position = position_dodge(width = 0.9)) +  # Adjusts error bar positioning
+  #scale_fill_manual(values = paired_palette) +
+  scale_fill_viridis_d(option = "rocket") + 
   labs(title = "", 
        x = "", 
        y = "Average Relative Abundance", 
@@ -157,7 +161,74 @@ ggplot(average_abundance, aes(y = Average_Abundance, x = Treatment, fill = Treat
         legend.text = element_text(size = 12),
         legend.title = element_text(size = 14),
         panel.border = element_blank()) + 
-  facet_wrap(~sample_Family)
+  facet_wrap(~OTU)
+
+
+#As box plot 
+#change order
+# Set OTU as a factor with the specified order
+filtered_ps$OTU <- factor(filtered_ps$OTU, levels = c("ASV275", "ASV777", "ASV348", "ASV236", "ASV190", 
+                                                      "ASV1211", "ASV227", "ASV231", "ASV461", "ASV478"))
+
+# Create the OTU_Genus column while maintaining the OTU order
+filtered_ps <- filtered_ps %>%
+  mutate(OTU_Genus = factor(paste(OTU, Genus, sep = " ; "), levels = unique(paste(OTU, Genus, sep = " ; "))))
+
+filtered_ps <- filtered_ps %>%
+  mutate(OTU_Genus = paste(OTU, Genus, sep = " ; ")) %>%
+  mutate(OTU_Genus = factor(OTU_Genus, levels = paste(levels(filtered_ps$OTU), 
+                                                      Genus[match(levels(filtered_ps$OTU), OTU)], 
+                                                      sep = " ; ")))
+
+filtered_ps$Genus <- factor(filtered_ps$Genus, 
+                            levels = unique(filtered_ps$Genus[order(filtered_ps$OTU_Genus)]))
+
+# Generate the plot
+ggplot(filtered_ps, aes(x = Treatment, y = Abundance, fill = Family)) + 
+  geom_boxplot(outlier.shape = NA, alpha = 0.7) +  # Creates the boxplot without showing outliers
+  geom_jitter(aes(color = Family), position = position_jitter(width = 0.2, height = 0), 
+              size = 1.5, alpha = 0.8) +  # Adds jittered points for individual data
+  scale_fill_viridis_d(option = "rocket") + 
+  scale_color_viridis_d(option = "rocket", guide = "none") +  # Keeps jitter points colored but removes extra legend
+  labs(title = "", 
+       x = "", 
+       y = "Average Relative Abundance", 
+       fill = "") +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size = 12, angle = 45, hjust = 1, face = "bold"),
+        axis.title.y = element_text(size = 14),
+        legend.text = element_text(size = 14),
+        legend.title = element_text(size = 14),
+        panel.border = element_blank()) + 
+  facet_wrap(~OTU_Genus, scales = "free_y") +  
+  scale_x_discrete(labels = c("Control" = "Control", 
+                              "Killed-Probiotics" = "Killed-Bacteria Added",
+                              "Probiotics" = "Bacteria Added"))
+
+
+ggplot(filtered_ps, aes(x = Treatment, y = Abundance, fill = Family)) + 
+  geom_violin() +  # Violin plot with scaled width and no trimming
+  #geom_jitter(aes(color = Family), position = position_jitter(width = 0.2, height = 0), 
+             # size = 1.5, alpha = 0.8) +  # Adds jittered points for individual data
+  scale_fill_viridis_d(option = "rocket") + 
+  scale_color_viridis_d(option = "rocket", guide = "none") +  # Keeps jitter points colored but removes extra legend
+  labs(title = "", 
+       x = "", 
+       y = "Average Relative Abundance", 
+       fill = "") +
+  theme(plot.title = element_text(hjust = 0.5),
+        axis.text.x = element_text(size = 12, angle = 45, hjust = 1),
+        axis.title.y = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        legend.title = element_text(size = 14),
+        panel.border = element_blank()) + 
+  facet_wrap(~Genus) +
+  scale_x_discrete(labels = c("Control" = "Control", 
+                              "Killed-Probiotics" = "Killed-Bacteria Added",
+                              "Probiotics" = "Bacteria Added"))
+
+
+
 
 # Update Treatment labels
 filtered_ps <- filtered_ps %>%

@@ -17,6 +17,8 @@ library(pairwiseAdonis)
 
 pseq <- MU42022_filtered_Oct92024
 
+pseq <- Sam_all_samples_partial_rare_CSS
+
 #MU42022 - remove F4 and algal sample
 
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
@@ -40,20 +42,6 @@ pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
 pseq <- microbiome::transform(pseq, "compositional")
 
-#correct family column
-
-# Replace values according to your mapping - mb2021
-# pseq@sam_data$Family <- ifelse(pseq@sam_data$Family %in% c(9, 13), "1",
-#                                ifelse(pseq@sam_data$Family %in% c(10, 14), "2",
-#                                       ifelse(pseq@sam_data$Family %in% c(11, 15), "3",
-#                                              ifelse(pseq@sam_data$Family %in% c(12, 16), "4", pseq@sam_data$Family))))
-# 
-# # Print the updated Family column
-# print(pseq@sam_data$Family)
-# View(pseq@sam_data) 
-
-
-
 #look at data
 
 p <- plot_landscape(pseq, method = "NMDS", distance = "bray", col = "Treatment", size = 3)
@@ -69,36 +57,31 @@ Tree = pseq@phy_tree
 
 #make treatment a factor
 
-Metadata$Treatment <- as.factor(Metadata$Treatment)
-Metadata$Genetics <- as.factor(Metadata$Genetics)
+Metadata$Genetic.Background <- as.factor(Metadata$Genetic.Background)
+Metadata$Microbial.Source <- as.factor(Metadata$Microbial.Source)
+Metadata$Organism <- as.factor(Metadata$Organism)
+Metadata$Day <- as.factor(Metadata$Day)
 
 #PERMAOVA
 #source: https://deneflab.github.io/MicrobeMiseq/demos/mothur_2_phyloseq.html#permanova
-pseq <- MU42022_filtered_Oct92024
-pseq <- subset_samples(pseq, !Genetics %in% c("4"))
-pseq <- subset_samples(pseq, !Treatment %in% c("High temperature"))
-pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
-pseq <- subset_samples(pseq, Age %in% "Spat")
-
+pseq <- Sam_all_samples_partial_rare_CSS
+pseq <- subset_samples(pseq, Stage %in% c("Parent"))
+pseq <- subset_samples(pseq, Organism %in% c("Oyster"))
 set.seed(452)
 
 pseq_bray <- phyloseq::distance(pseq, method = "bray", weighted = TRUE)
 
 Metadata <- as(sample_data(pseq), "data.frame")
 
-Metadata$Treatment <- as.factor(Metadata$Treatment)
-Metadata$Genetics <- as.factor(Metadata$Genetics)
+Metadata$Genetic.Background <- as.factor(Metadata$Genetic.Background)
+Metadata$Microbial.Source <- as.factor(Metadata$Microbial.Source)
 
-summary <- adonis2(pseq_bray ~ Treatment* Genetics*Age, data = Metadata)
-
-summary <- adonis2(pseq_bray ~ Treatment*Genetics, data = Metadata, by = "margin")
-
-summary
-
-
+summary_additive <- adonis2(pseq_bray ~ Microbial.Source + Genetic.Background,
+                            data = Metadata, by = "margin")
+summary_additive
 
 #Homogeneity of dispersion test
-beta <- betadisper(pseq_bray, metadata$Treatment)
+beta <- betadisper(pseq_bray, Metadata$Microbial.Source)
 permutest(beta)
 
 ##treatment/family follows homogeneity but Age does not (p = 0.001)
@@ -106,7 +89,7 @@ permutest(beta)
 #Post-Hoc
 #Issues with pairwise.adonis - not enough permutations
 
-pairwise.adonis(pseq_bray, phyloseq::sample_data(pseq)$Treatment)
+pairwise.adonis(pseq_bray, Metadata$Microbial.Source)
 
 pairwise.adonis(pseq_bray, Metadata$Treatment)
 
@@ -118,76 +101,37 @@ pairwise.adonis(pseq_bray, Metadata$Treatment)
 
 
 #CAP plots ----
-
-pseq <- Marissa_mb2021_filtered_20240203
-
+pseq <- Sam_all_samples_partial_rare_CSS
+pseq <- subset_samples(pseq, Day %in% c("Spat2"))
+pseq <- subset_samples(pseq, Organism %in% c("Oyster"))
+pseq_bray <- phyloseq::distance(pseq, method = "bray", weighted = TRUE)
 
 # CAP ordinate
 cap_ord <- ordinate(
   physeq = pseq, 
   method = "CAP",
   distance = pseq_bray,
-  formula = ~Treatment
+  formula = ~Microbial.Source
 )
 
 # CAP plot
-# cap_plot <- plot_ordination(
-#   physeq = pseq, 
-#   ordination = cap_ord, 
-#   color = "Treatment", 
-#   axes = c(1,2)
-# ) + 
-#   aes(shape = Treatment) + 
-#   geom_point(aes(colour = Treatment), alpha = 0.4, size = 4) + 
-#   #geom_point(colour = "grey90", size = 3) + 
-#   scale_color_manual(values = c("#a65628", "red", "#ffae19", "#4daf4a", 
-#                                 "#1919ff", "darkorchid3", "magenta")
-#   )
-# 
-# 
-# arrowmat <- vegan::scores(cap_ord, display = "bp")
-# 
-# # Add labels, make a data.frame
-# arrowdf <- data.frame(labels = rownames(arrowmat), arrowmat)
-# arrowdf$labels <- ifelse(grepl("High", arrowdf$labels), "Probiotics", "Probiotics + HT")
-# print(arrowdf)
-# 
-# # Define the arrow aesthetic mapping
-# arrow_map <- aes(xend = CAP1, 
-#                  yend = CAP2, 
-#                  x = 0, 
-#                  y = 0, 
-#                  shape = NULL, 
-#                  color = NULL, 
-#                  label = labels)
-# 
-# label_map <- aes(x = 1.3 * CAP1, 
-#                  y = 1.3 * CAP2, 
-#                  shape = NULL, 
-#                  color = NULL, 
-#                  label = labels)
-# 
-# arrowhead = arrow(length = unit(0.01, "npc"))
-# 
-# # Make a new graphic
-# cap_plot + 
-#   geom_segment(
-#     mapping = arrow_map, 
-#     size = .5, 
-#     data = arrowdf, 
-#     color = "grey", 
-#     arrow = arrowhead
-#   ) + 
-#   geom_text(
-#     mapping = label_map, 
-#     size = 4,  
-#     data = arrowdf, 
-#     show.legend = FALSE,
-#     nudge_x = 0.05,
-#     nudge_y = 0.05
-#   ) +
-#   facet_wrap(~Age)
-# 
+p5 <- plot_ordination(
+  physeq = pseq,
+  ordination = cap_ord,
+  color = "Microbial.Source",
+  axes = c(1,2)
+) +
+  aes(shape = Genetic.Background) +
+  geom_point(aes(colour = Microbial.Source),size = 8) +
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) +
+  ggtitle("Spat2 - CAP plot") +
+  theme(plot.title = element_text(hjust = 0.5))
+p5
+
+#Combine plots
+ggarrange(p1, p2,p3, p4, p5, nrow = 2, ncol =3, common.legend = TRUE, legend="bottom")
+
 
 
 #SIMPER

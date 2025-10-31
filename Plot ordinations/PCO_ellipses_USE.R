@@ -2,7 +2,7 @@
 #note: ellipses are not confidence intervals (have no statistical value)
 
 ## Load libraries
-library("devtools")
+library(devtools)
 library(phyloseq)
 library(microbiome)
 library(ggalt)
@@ -38,7 +38,7 @@ pseq <- subset_samples(pseq, !Treatment %in% "High temperature")
 #MB2021 filtering
 pseq <- Marissa_mb2021_filtered_20240203
 pseq <- mb2021_filtered_NOT_rarefied_normalized
-pseq <- subset_samples(pseq, !Age %in% c("Spat"))
+pseq <- subset_samples(pseq, Age %in% c("18 dpf"))
 pseq <- subset_samples(pseq, !Family %in% c("9"))
 
 #Mu42022 - combining to add algae
@@ -47,10 +47,14 @@ View(merged_phyloseq@otu_table)
 pseq <- merged_phyloseq
 
 #PB2023
-pseq <- PB2023_spat_not_rarefied_CSSnormalized_Jan2025
+pseq <- PB2023_spat_10X_limited_CSS
 pseq <- PB2023_rarefied_3000
 pseq <- PB2023_rarefied_1313
 pseq <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
+
+#Sam
+pseq <- Sam_all_samples_partial_rare_CSS
+pseq <- subset_samples(pseq, Age %in% c("18 dpf"))
 
 #convert to compositional data
 
@@ -71,11 +75,11 @@ set.seed(4235421)
 pseq <- Marissa_MU42022_rarefied_20231016
 pseq <- subset_samples(pseq, !Genetics %in% c("4"))
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
-pseq <- subset_samples(pseq, !Age %in% "Spat")
+pseq <- subset_samples(pseq, Age %in% "Spat")
 pseq.rel <- microbiome::transform(pseq, "compositional")
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
-p_legend <- plot_ordination(pseq.rel, ord, color = "Organism", shape = "Age") +
+p_legend <- plot_ordination(pseq.rel, ord, color = "Microbial.Source", shape = "Day") +
   #geom_point(aes(fill = Treatment), size = 6) +
   geom_point(size = 8) +
   scale_colour_manual(values = c("#F8766D", "#00BFC4", "#C77CFF", "lightgreen", "yellow")) +
@@ -283,8 +287,23 @@ p_combined <- grid.arrange(
 # Show the combined plot
 print(p_combined)
 
+#PB2023 ----
+pseq <- PB2023_spat_10X_limited_CSS
+pseq <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
+pseq.rel <- microbiome::transform(pseq, "compositional")
 
-#mb2021 project ----
+ord <- ordinate(pseq.rel, "MDS", "bray")
+
+pSpat <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Family") +
+  geom_point(aes(fill = Treatment), size = 8) +
+  scale_colour_manual(values = c("darkgrey", "orange", "forestgreen")) +
+  scale_fill_manual(values = c("darkgrey", "orange", "forestgreen")) + # Matching colors for ellipses and points
+  ggtitle("") +
+  theme(plot.title = element_text(hjust = 0.5), legend.position = "bottom")
+
+pSpat
+
+#mb2021 ----
 
 #Trying different ordination methods and distance methods
 #Above code uses MDS/PCOa plots with Brays-Curtis distance matrix (relative abundance)
@@ -313,7 +332,7 @@ pseq.rel <- microbiome::transform(pseq, "compositional")
 ord <- ordinate(pseq.rel, "MDS", "bray")
 
 
-p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Age") +
+p <- plot_ordination(pseq.rel, ord, color = "Treatment", shape = "Family") +
   geom_point(aes(fill = Treatment), size = 6) +
   ggforce::geom_mark_ellipse(aes(color = Treatment)) +
   scale_colour_manual(values = c("#F8766D", "chartreuse3", "deepskyblue3")) +
@@ -415,6 +434,133 @@ p_combined <- grid.arrange(
 print(p_combined)
 
 
+#Sam ----
+
+#3 dpf
+#important to note that the PB sequence was not removed
+pseq <- Sam_all_samples_partial_rare_CSS
+pseq <- subset_samples(pseq, Day %in% c("3"))
+pseq <- subset_samples(pseq, Organism %in% c("Oyster"))
+pseq <- subset_samples(pseq, !Sample.ID %in% c("20r3", "20r2"))
+pseq.rel <- microbiome::transform(pseq, "compositional")
+ord <- ordinate(pseq.rel, "MDS", "bray")
+
+library(ggrepel)
+
+p1 <- plot_ordination(pseq.rel, ord, color = "Microbial.Source", shape = "Genetic.Background") +
+  geom_point(aes(fill = Microbial.Source), size = 8) +
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + 
+  #geom_text_repel(aes(label = Sample.ID), size = 3) +  # add labels with repelling
+  ggtitle("Water samples") +
+  theme(plot.title = element_text(hjust = 0.5))
+p1
+
+#6 dpf #only water samples
+#important to note that the PB sequence was not removed
+pseq <- Sam_all_samples_partial_rare_CSS
+pseq <- subset_samples(pseq, Day %in% c("6"))
+#pseq <- subset_samples(pseq, Organism %in% c("Oyster"))
+#pseq <- subset_samples(pseq, !Sample.ID %in% c("20r3", "20r2"))
+pseq.rel <- microbiome::transform(pseq, "compositional")
+ord <- ordinate(pseq.rel, "MDS", "bray")
+
+p2 <- plot_ordination(pseq.rel, ord, color = "Microbial.Source", shape = "Organism") +
+  geom_point(aes(fill = Microbial.Source), size = 8) +
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + 
+  ggtitle("Day 6") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+p2
+
+#10 dpf #only larval samples
+#important to note that the PB sequence was not removed
+pseq <- Sam_all_samples_partial_rare_CSS
+pseq <- subset_samples(pseq, Day %in% c("10"))
+#pseq <- subset_samples(pseq, Organism %in% c("Oyster"))
+#pseq <- subset_samples(pseq, !Sample.ID %in% c("20r3", "20r2"))
+pseq.rel <- microbiome::transform(pseq, "compositional")
+ord <- ordinate(pseq.rel, "MDS", "bray")
+
+p3 <- plot_ordination(pseq.rel, ord, color = "Microbial.Source", shape = "Genetic.Background") +
+  geom_point(aes(fill = Microbial.Source), size = 8) +
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + 
+  ggtitle("Day 10") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+p3
+
+#15 dpf #only larval samples
+#important to note that the PB sequence was not removed
+pseq <- Sam_all_samples_partial_rare_CSS
+pseq <- subset_samples(pseq, Day %in% c("15"))
+#pseq <- subset_samples(pseq, Organism %in% c("Oyster"))
+#pseq <- subset_samples(pseq, !Sample.ID %in% c("20r3", "20r2"))
+pseq.rel <- microbiome::transform(pseq, "compositional")
+ord <- ordinate(pseq.rel, "MDS", "bray")
+
+p4 <- plot_ordination(pseq.rel, ord, color = "Microbial.Source", shape = "Genetic.Background") +
+  geom_point(aes(fill = Microbial.Source), size = 8) +
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + 
+  ggtitle("Day 15") +
+  theme(plot.title = element_text(hjust = 0.5))
+p4
+
+#Spat
+#important to note that the PB sequence was not removed
+pseq <- Sam_all_samples_partial_rare_CSS
+pseq <- subset_samples(pseq, Day %in% c("Spat"))
+#pseq <- subset_samples(pseq, Organism %in% c("Oyster"))
+#pseq <- subset_samples(pseq, !Sample.ID %in% c("20r3", "20r2"))
+pseq.rel <- microbiome::transform(pseq, "compositional")
+ord <- ordinate(pseq.rel, "MDS", "bray")
+
+p5 <- plot_ordination(pseq.rel, ord, color = "Microbial.Source", shape = "Genetic.Background") +
+  geom_point(aes(fill = Microbial.Source), size = 8) +
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + 
+  ggtitle("Spat") +
+  theme(plot.title = element_text(hjust = 0.5))
+p5
+
+#Spat 2
+#important to note that the PB sequence was not removed
+pseq <- Sam_all_samples_partial_rare_CSS
+pseq <- subset_samples(pseq, Day %in% c("Spat2"))
+#pseq <- subset_samples(pseq, Organism %in% c("Oyster"))
+#pseq <- subset_samples(pseq, !Sample.ID %in% c("20r3", "20r2"))
+pseq.rel <- microbiome::transform(pseq, "compositional")
+ord <- ordinate(pseq.rel, "MDS", "bray")
+
+p6 <- plot_ordination(pseq.rel, ord, color = "Microbial.Source", shape = "Genetic.Background") +
+  geom_point(aes(fill = Microbial.Source), size = 8) +
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + 
+  ggtitle("Spat 2") +
+  theme(plot.title = element_text(hjust = 0.5))
+p6
 
 
-#want to try weighted and unweighted Unifrac when I have the phylo tree (need raw seqs to get)
+#Water samples
+pseq <- Sam_all_samples_partial_rare_CSS
+pseq <- subset_samples(pseq, Organism %in% c("Water"))
+#pseq <- subset_samples(pseq, !Sample.ID %in% c("20r3", "20r2"))
+pseq.rel <- microbiome::transform(pseq, "compositional")
+ord <- ordinate(pseq.rel, "MDS", "bray")
+
+p6 <- plot_ordination(pseq.rel, ord, color = "Microbial.Source", shape = "Day") +
+  geom_point(aes(fill = Microbial.Source), size = 8) +
+  scale_colour_manual(values = c("darkgrey",  "cornflowerblue", "orange")) +
+  scale_fill_manual(values = c("darkgrey", "cornflowerblue", "orange")) + 
+  ggtitle("Water") +
+  theme(plot.title = element_text(hjust = 0.5))
+p6
+
+
+#Combine plots
+ggarrange(p1, p3,p4, p5, p6, nrow = 3, ncol =2, common.legend = TRUE, legend="bottom")
+
+

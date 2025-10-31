@@ -32,6 +32,8 @@ pseq <- PB2023_spat_limited_10X_reads
 
 pseq <- mb2021_filtered_NOT_rarefied
 
+pseq <- Sam_all_samples_partial_rarefy
+
 #Preform zComposition (zero imputation) before CSS scaling 
 
 # otu_matrix <- as.matrix(otu_table(pseq))
@@ -71,6 +73,9 @@ names(seq.asv.css) = gsub(pattern = "...", replacement = "---", x = names(seq.as
 # Replace "..." with "---" in the column names of the data frame
 colnames(seq.asv.css) <- gsub("\\.\\.\\.", "---", colnames(seq.asv.css))
 
+#Or if X's
+names(seq.asv.css) = gsub(pattern = "X", replacement = "", x = names(seq.asv.css))
+
 seq.asv.css <- t(seq.asv.css)
 
 # Remove samples that were filtered out from the metadata file before remaking phyloseq object.
@@ -87,6 +92,6 @@ physeq.sub.arch
 # If sample names are column names in the sequence table, taxa_are_rows=TRUE
 # If samples names are row names, taxa_are_rows=FALSE
 
-saveRDS(physeq.sub.arch, file = "mb2021_filtered_NOT_rarefied_CSS.rds")
+saveRDS(physeq.sub.arch, file = "Sam_spat_not_rare_CSS.rds")
 
 

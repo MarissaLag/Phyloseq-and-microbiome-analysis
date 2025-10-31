@@ -62,7 +62,7 @@ pseq <- pseq_filtered
 pseq_rel <- transform_sample_counts(pseq, function(x) x / sum(x))
 # Subset to top 20 ASVs
 # top_asvs <- names(sort(taxa_sums(pseq_rel), decreasing = TRUE))[1:579]
-top_asvs <- names(sort(taxa_sums(pseq_rel), decreasing = TRUE))[1:141]
+top_asvs <- names(sort(taxa_sums(pseq_rel), decreasing = TRUE))[1:183]
 pseq_top <- prune_taxa(top_asvs, pseq_rel)
 
 # Generate a heatmap
@@ -110,18 +110,12 @@ prune_pseq_filt<- prune_taxa(otu_names_list, pseq_filt)
 
 prune_pseq_filt
 
-prune_psmelt <- psmelt(prune_pseq_filt)
+prune_psmelt <- psmelt(pseq_rel)
+
+prune_psmelt <- subset(prune_psmelt, OTU %in% c("ASV1211", "ASV227", "ASV231", 
+                                              "ASV461", "ASV468", "ASV190", "ASV777", "ASV275", "ASV236", "ASV348"))
 
 
-#All data (not just shared otus)
-pseq <- microbiome::transform(pseq, "compositional")
-prune_psmelt <- psmelt(pseq)
-  
-
-
-# Order Age as a factor in the desired order
-# prune_psmelt$Age <- factor(prune_psmelt$Age, levels = c("Day 01", "Day 03", "Day 06", "Day 15", "Spat"))
-#prune_psmelt$Age <- factor(prune_psmelt$Day, levels = c("Day 01", "Day 03", "Day 06", "Day 15", "Spat"))
 
 
 # Summarize abundance by OTU and Age
@@ -193,7 +187,7 @@ heatmap_matrix_scaled[is.nan(heatmap_matrix_scaled)] <- 0
 row_hclust <- hclust(dist(heatmap_matrix_scaled), method = "complete")
 
 # Cut the tree into clusters (e.g., 5 clusters)
-k <- 6  # Number of clusters
+k <- 3  # Number of clusters
 row_clusters <- cutree(row_hclust, k = k)
 
 # Create a data frame for row annotations
@@ -221,15 +215,16 @@ row_annotation$Treatment <- factor(row_annotation$Treatment,
                                    levels = c("Control", "Killed-Probiotics", "Probiotics"),  # Old levels
                                    labels = c("Control", "Killed-Bacteria Added", "Bacteria Added"))  # New labels
 
+colnames(heatmap_matrix_scaled) <- c("Control", "Killed-Bacteria Added", "Bacteria Added")
 
 # Generate the heatmap with cluster labels
 pheatmap(
   heatmap_matrix_scaled,
-  annotation_row = row_annotation,
-  annotation_colors = annotation_colors,
+  #annotation_row = row_annotation,
+  #annotation_colors = annotation_colors,
   cluster_rows = TRUE,  # Ensure clustering
   cluster_cols = FALSE,  # No clustering on columns
-  show_rownames = FALSE,  # Optionally hide row names for clarity
+  show_rownames = TRUE,  # Optionally hide row names for clarity
   main = "",
   angle_col = 0,
   fontsize_col = 18,

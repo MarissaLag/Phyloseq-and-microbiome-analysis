@@ -11,6 +11,20 @@ library(dplyr)
 library(ggplot2)
 library(RColorBrewer)
 
+#Set theme ----
+theme.marissa <- function() {
+  theme_classic(base_size = 14) +
+    theme(
+      panel.border = element_blank(),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      axis.text = element_text(size = 14),
+      axis.title = element_text(size = 16, face = "bold"),
+      legend.text = element_text(size = 16),
+      legend.title = element_text(size = 16, face = "bold"))
+}
+
+theme_set(theme.marissa())
 
 #Load data ----
 
@@ -19,6 +33,8 @@ Marissa_MU42022_rarefied_20231016 <- readRDS("~/GitHub/mb2021_phyloseq/Marissa_M
 pseq <-  Marissa_MU42022_rarefied_20231016
 
 pseq <- Marissa_mb2021_filtered_20240203
+
+pseq <- PB2023_spat_10X_limited_CSS
 
 #Create objects ----
 
@@ -44,21 +60,21 @@ theme.marissa <- function() {
 theme_set(theme.marissa())
 
 
-#remove F4 ----
+#Filtering ----
 
-pseq <- subset_samples(pseq, !Genetics %in% c("4"))
+pseq <- subset_samples(pseq, !Treatment %in% c("Continuous Probiotics", "James"))
 
 #Remove day 3 (only 1 sample remaining) for mb2021 project
 
 pseq <- subset_samples(pseq, !Age %in% c("3 dpf"))
 
-#Day 1 only ----
+#Day 1 only
 
 pseq <- subset_samples(pseq, !Age %in% c("Spat", "Day 03", "Day 06", "Day 15"))
 
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
-#Spat only ----
+#Spat only
 
 pseq <- subset_samples(pseq, !Age %in% c("Day 01", "Day 03", "Day 06", "Day 15"))
 
@@ -66,22 +82,22 @@ pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
 pseq <- subset_samples(pseq, !Genetics %in% "4")
 
-#remove algae ----
+#remove algae
 
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
-#Larvae only with algae ----
+#Larvae only with algae 
 
 pseq <- subset_samples(pseq, !Age %in% "Spat")
 
-#Larvae only without algae ----
+#Larvae only without algae 
 
 pseq <- subset_samples(pseq, !Age %in% "Spat")
 
 pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
 
 
-#Top phyla, all samples ----
+#Top phyla, all samples 
 
 top5F.names = sort(tapply(taxa_sums(pseq), tax_table(pseq)[, "Family"], sum), TRUE)[1:5]
 
@@ -116,22 +132,11 @@ pseq_gen <- microbiome::aggregate_rare(pseq, level = "Genus", detection = 50/100
 pseq.core <- core(pseq.fam.rel, detection = .1/100, prevalence = 95/100)
 
 
-#pseq core - Probiotics + PB + Heat only (must remove all other samples first
-
-pseq <- subset_samples(pseq, !Treatment %in% c("Control", "High temperature"))
-
-pseq <- subset_samples(pseq, !Sample.type %in% "Algae")
-
-pseq.core <- core(pseq, detection = .1/100, prevalence = 90/100)
-
-pseq.core <- microbiome::transform(pseq.core, "compositional")
-
-
 #psmelt ----
 
 #all data
 
-pseq <- psmelt(pseq)
+pseq <- psmelt(pseq.rel)
 
 pseq_core <- psmelt(pseq.core)
 
@@ -260,6 +265,10 @@ if (file.exists(file_path)) {
 
 selected_rows_ASVs <- subset(pseq, OTU %in% c("ASV201", "ASV88", "ASV3"))
 
+
+selected_rows_ASVs <- subset(pseq, OTU %in% c("ASV1211", "ASV227", "ASV231", 
+                                              "ASV461", "ASV468", "ASV190", "ASV777", "ASV275", "ASV236", "ASV348"))
+
 View(selected_rows_ASVs)
 
 #since ASV18 and 7 are 99.8% similar - combine into one OTU (most likely same bacteria)
@@ -349,16 +358,61 @@ ggplot(Avg_abundance, aes(fill=Genus, y=Avg_Abundance, x=Treatment)) +
 
 ###pseq ----
 
-ggplot(top10, aes(x=Treatment, y=Order, size = Abundance, color = Order)) + 
-  geom_point(alpha=1)+ 
-  scale_size(range = c(5, 15)) +
-  scale_colour_brewer() +
-  theme_ipsum() +
-  facet_wrap(~Age)
-  theme(legend.position="bottom") +
-  ylab("Taxa (Family)") +
+selected_rows_ASVs <- subset(pseq, OTU %in% c("ASV1211", "ASV227", "ASV231", 
+                                              "ASV461", "ASV468", "ASV190", "ASV777", "ASV275", "ASV236", "ASV348"))
+
+combined_data <- selected_rows_ASVs
+
+combined_data$Genus[combined_data$OTU == "ASV227" & is.na(combined_data$Genus)] <- "Litoreibacter"
+
+combined_data$Genus[combined_data$OTU == "ASV461" & is.na(combined_data$Genus)] <- "Unknown Saccharospirillaceae"
+
+combined_data$Genus[combined_data$OTU == "ASV236" & is.na(combined_data$Genus)] <- "Unknown Methyloligellaceae"
+
+combined_data$Genus[combined_data$OTU == "ASV348" & is.na(combined_data$Genus)] <- "Unknown Microtrichaceae"
+
+ASV_order <- c("ASV275", "ASV777", "ASV348", "ASV236", "ASV190", "ASV1211", "ASV227", "ASV231", "ASV461", "ASV478")
+
+combined_data$OTU <- factor(combined_data$OTU, levels = ASV_order)
+
+ggplot(combined_data, aes(x = Treatment, y = Genus, size = Abundance, color = Family)) + 
+  geom_point() + 
+  scale_size(range = c(1, 32)) +
+  scale_colour_viridis_d(option = "rocket") +  # Options: "magma", "inferno", "plasma", "cividis"
+  scale_x_discrete(labels = c("Control" = "Control", 
+                              "Killed-Probiotics" = "Killed-Bacteria Added",
+                              "Probiotics" = "Bacteria Added")) + 
+  ylab("") +
   xlab("") +
-  theme(legend.position = "none")
+  theme(legend.position = "right",
+        axis.text.x = element_text(face = "bold", size = 13),
+        axis.text.y = element_text(face = "bold", size = 13)) +
+  guides(color = guide_legend(override.aes = list(size = 6)),  # Increase point size in color legend
+         size = guide_legend(override.aes = list(size = 6)))   # Increase point size in size legend
+
+
+
+#Make bubble plot with abudnance reference to the control treatment
+
+control_means <- combined_data %>%
+  filter(Treatment == "Control") %>%
+  group_by(OTU) %>%
+  summarise(Control_Mean = mean(Abundance, na.rm = TRUE)) 
+
+control_means <- combined_data %>%
+  filter(Treatment == "Control") %>%
+  group_by(OTU) %>%
+  summarise(Control_Mean = mean(Abundance, na.rm = TRUE)) %>%
+  mutate(Control_Mean = Control_Mean + 0.01)  # Add pseudo-count
+
+
+combined_data <- combined_data %>%
+  left_join(control_means, by = "OTU") %>%
+  mutate(LFC = log2((Abundance + 0.01) / (Control_Mean + 0.01))) %>%  # Add pseudo-count before division
+  filter(!Treatment %in% c("Control"))
+
+
+
 
 ###pseq relative ----
 
