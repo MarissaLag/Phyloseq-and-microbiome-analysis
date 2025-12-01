@@ -293,7 +293,7 @@ ggplot(average_abundance, aes(fill = Family, y = Average_Abundance, x = Treatmen
         panel.border = element_blank()) +
   facet_wrap(~OTU, labeller = custom_labeller)
 
-#horizontal bar plot
+#horizontal bar plot ----
 
 pseq <- mb2021_filtered_NOT_rarefied
 pseq <- subset_samples(pseq, Age %in% "Spat")
@@ -302,7 +302,7 @@ pseq <- microbiome::transform(pseq, "compositional")
 
 
 pseq <- MU42022_filtered_Oct92024
-pseq <- subset_samples(pseq, Age %in% "Spat")
+pseq <- subset_samples(pseq, Age %in% "90 dpf")
 pseq <- subset_samples(pseq, !Genetics %in% "4")
 pseq <- subset_samples(pseq, Treatment %in% c("Control", "Probiotics", "Probiotics + HT"))
 pseq <- microbiome::transform(pseq, "compositional")
@@ -326,7 +326,6 @@ filtered_phyloseq <- prune_taxa(selected_asvs, pseq)
 melted_phyloseq <- psmelt(filtered_phyloseq)
 
 #Calulcate log-fold change
-
 average_abundance <- melted_phyloseq %>%
   group_by(Treatment, OTU, Family) %>%
   summarise(Average_Abundance = mean(Abundance), .groups = 'drop') %>%
