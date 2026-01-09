@@ -75,7 +75,6 @@ fnRs[1:3]
 #Quality of reads: Most Illumina sequencing data shows a trend of decreasing average quality towards the end of sequencing reads.
 #This only shows you the first 2. Which direction is this for? 
 plotQualityProfile(fnFs[1:10])
-
 plotQualityProfile(fnRs[50:59])
 
 #for mb2021 - forward reads good, reverse good (above QS of 30) until 200bp - may want to remove reverse

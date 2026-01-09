@@ -1,5 +1,13 @@
 #plot ASVs overtime
 
+
+
+#Packages ----
+install.packages("phyloseq")
+install.packages("ggplot2")
+install.packages("dplyr")
+install.packages("microbiome")
+
 library(phyloseq)
 library(ggplot2)
 library(dplyr)
@@ -33,13 +41,13 @@ pseq_filtered <- pseq_psmelt %>%
   )
 
 # List of ASVs you're interested in
-asv_ids <- c("ASV88", "ASV178")
+asv_ids <- c("ASV88", "ASV178", "ASV7", "ASV18", "ASV11", "ASV198", "ASV201", "ASV471", "ASV613")
 asv_ids <- c("ASV7", "ASV18")
 asv_ids <- c("ASV11", "ASV198", "ASV201", "ASV471", "ASV613")
 asv_ids <- c("ASV1", "ASV3", "ASV8", "ASV10", "ASV11")
 
 # Filter the phyloseq object to only include these ASVs
-pseq_filtered <- prune_taxa(taxa_names(pseq) %in% asv_ids, pseq)
+pseq_filtered <- prune_taxa(taxa_names(pseq3) %in% asv_ids, pseq3)
 pseq_filtered <- psmelt(pseq_filtered)
 
 pseq_filtered$OTU <- factor(pseq_filtered$OTU, levels = c("ASV1", "ASV3", "ASV8", "ASV10", "ASV11"))
@@ -49,9 +57,9 @@ pseq_filtered$OTU <- factor(pseq_filtered$OTU, levels = c("ASV11", "ASV198", "AS
 #reorder levels
 pseq_filtered$Day <- factor(pseq_filtered$Day, levels = c("3", "10", "15", "Spat", "Spat2"))
 
-ggplot(pseq_filtered, aes(x = Day, y = Avg_Abundance, color = Microbial.Source)) +
+ggplot(pseq_filtered, aes(x = Age, y = Abundance, color = Treatment)) +
   geom_point(size = 3) +
-  geom_line(aes(group = interaction(Microbial.Source)), linetype = "dashed") +
+  geom_line(aes(group = interaction(Treatment)), linetype = "dashed") +
   facet_wrap(~ Genus, scales = "free_y") +  # Facet by OTU with custom ordering
   scale_color_manual(values = c("darkgrey", "cornflowerblue", "orange")) +  # Custom color for Treatment
   labs(title = "",
@@ -105,7 +113,7 @@ facet_labels <- c(
 # Use the labeller argument in facet_wrap()
 ggplot(pseq_avg, aes(x = Age, y = Avg_Abundance, color = Treatment)) +
   geom_point(size = 4) +
-  geom_line(aes(group = interaction(OTU, Treatment)), linetype = "dashed") +  
+  geom_line(aes(group = interaction(OTU, Treatment)), linetype = "line") +  
   facet_wrap(~ OTU, scales = "free_y", labeller = labeller(OTU = facet_labels)) +  
   scale_color_manual(values = c("darkgrey", "cornflowerblue", "orange")) +  
   labs(title = "",
@@ -136,4 +144,5 @@ ggplot(pseq_avg, aes(x = Age, y = Avg_Abundance, color = Treatment)) +
         axis.text.x = element_text(size = 12, angle = 45, hjust = 1),  # Larger and slanted x-axis labels
         strip.background = element_rect(fill = "white", color = "black"),
         axis.title.y = element_text(size=14),
-        strip.text = element_text(size = 14)) 
+        strip.text = element_text(size = 14)) +
+  facet_wrap(~ OTU, scales = "free_y") # Facet by OTU

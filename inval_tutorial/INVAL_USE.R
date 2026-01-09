@@ -7,15 +7,17 @@
 
 
 #Packages ----
-
-install.packages("indicspecies")
-library(indicspecies)
+#Misc. packages
 library(ggplot2)
 library(dplyr)
 library(microbiome)
 library(phyloseq)
 library(RColorBrewer)
 library(tidyr)
+
+#inval test
+#install.packages("indicspecies")
+library(indicspecies)
 
 #Set data ----
 
